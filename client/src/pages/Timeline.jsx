@@ -11,12 +11,15 @@ const Timeline = () => {
   const coldStartTimer = useRef(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchAll = async () => {
       coldStartTimer.current = setTimeout(() => setIsColdStart(true), 3000);
 
       try {
         const res = await api.get('/api/placements', {
           params: { limit: 500, sort: 'date_desc' },
+          signal: abortController.signal
         });
         const placements = res.data.data;
 
@@ -34,6 +37,7 @@ const Timeline = () => {
 
         setGrouped(groups);
       } catch (err) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error('Failed to fetch placements:', err);
       } finally {
         clearTimeout(coldStartTimer.current);
@@ -42,7 +46,10 @@ const Timeline = () => {
       }
     };
     fetchAll();
-    return () => clearTimeout(coldStartTimer.current);
+    return () => {
+      clearTimeout(coldStartTimer.current);
+      abortController.abort();
+    };
   }, []);
 
   const formatDate = (dateStr) => {

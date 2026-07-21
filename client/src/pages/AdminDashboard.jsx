@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import PlacementForm from '../components/PlacementForm';
@@ -20,21 +20,43 @@ const AdminDashboard = () => {
 
   // Search
   const [search, setSearch] = useState('');
+  const abortControllerRef = useRef(null);
 
   const fetchPlacements = useCallback(async (page = 1) => {
     setLoading(true);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const params = { page, limit: 15, sort: 'newest' };
       if (search) params.search = search;
-      const res = await api.get('/api/placements', { params });
+      const res = await api.get('/api/placements', { 
+        params,
+        signal: abortController.signal
+      });
       setPlacements(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
       console.error('Failed to fetch:', err);
     } finally {
-      setLoading(false);
+      if (abortControllerRef.current === abortController) {
+        setLoading(false);
+      }
     }
   }, [search]);
+
+  // Clean up abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchPlacements(1), 300);

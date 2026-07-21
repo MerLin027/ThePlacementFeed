@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const PlacementDetail = () => {
   const { id } = useParams();
@@ -11,17 +13,24 @@ const PlacementDetail = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchPlacement = async () => {
       try {
-        const res = await api.get(`/api/placements/${id}`);
+        const res = await api.get(`/api/placements/${id}`, {
+          signal: abortController.signal
+        });
         setPlacement(res.data.data);
       } catch (err) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         setError(err.response?.data?.message || 'Failed to load placement');
       } finally {
         setLoading(false);
       }
     };
     fetchPlacement();
+
+    return () => abortController.abort();
   }, [id]);
 
   const formatDate = (dateStr) => {
@@ -89,9 +98,21 @@ const PlacementDetail = () => {
             {placement.company}
           </h1>
           <p className="text-lg text-slate-600">{placement.role}</p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200">
-            <span className="text-sm text-slate-500">CTC:</span>
-            <span className="text-lg font-bold text-slate-900">₹{placement.ctc} LPA</span>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200">
+              <span className="text-sm text-slate-500">CTC:</span>
+              <span className="text-lg font-bold text-slate-900">₹{placement.ctc} LPA</span>
+            </div>
+            {placement.formUrl && (
+              <a
+                href={placement.formUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+              >
+                Apply Now
+              </a>
+            )}
           </div>
         </div>
 
@@ -144,10 +165,17 @@ const PlacementDetail = () => {
         {placement.jdDescription && (
           <div className="p-6 sm:p-8 border-b border-slate-200">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Job Description</h2>
-            <div className="prose prose-slate max-w-none">
-              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+            <div className="markdown-body text-slate-700">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                  ),
+                }}
+              >
                 {placement.jdDescription}
-              </p>
+              </ReactMarkdown>
             </div>
           </div>
         )}

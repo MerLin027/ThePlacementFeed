@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 
 const PlacementCard = ({ placement }) => {
-  const { _id, company, role, type, ctc, status, driveDate, deadline, eligibility, tags } = placement;
+  const { _id, company, role, type, ctc, status, driveDate, deadline, eligibility, tags, formUrl } = placement;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -85,6 +85,22 @@ const PlacementCard = ({ placement }) => {
                 +{tags.length - 3}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Apply Now */}
+        {formUrl && (
+          <div className="mt-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(formUrl, '_blank', 'noopener,noreferrer');
+              }}
+              className="w-full btn-primary py-2 text-sm"
+            >
+              Apply Now
+            </button>
           </div>
         )}
       </div>

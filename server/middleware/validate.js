@@ -86,7 +86,7 @@ const placementValidationRules = [
     .withMessage('Each tag must be a string'),
 
   body('formUrl')
-    .optional({ checkFalsy: true })
+    .optional({ values: 'falsy' })
     .isURL()
     .withMessage('formUrl must be a valid URL string'),
 ];

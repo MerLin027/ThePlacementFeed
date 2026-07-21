@@ -17,6 +17,7 @@ const INITIAL_FORM = {
   status: 'Upcoming',
   jdDescription: '',
   tags: [],
+  formUrl: '',
 };
 
 const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
@@ -45,6 +46,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         status: initialData.status || 'Upcoming',
         jdDescription: initialData.jdDescription || '',
         tags: initialData.tags || [],
+        formUrl: initialData.formUrl || '',
       });
     }
   }, [initialData]);
@@ -69,6 +71,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     if (!form.company.trim()) return setError('Company name is required');
     if (!form.role.trim()) return setError('Role is required');
     if (form.ctc === '' || form.ctc < 0) return setError('CTC must be a non-negative number');
+    if (form.formUrl && !/^https?:\/\//i.test(form.formUrl.trim())) return setError('Google Form URL must start with http:// or https://');
 
     setIsSubmitting(true);
     try {
@@ -82,6 +85,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         },
         driveDate: form.driveDate || undefined,
         deadline: form.deadline || undefined,
+        formUrl: form.formUrl.trim() || undefined,
       };
       await onSubmit(payload);
     } catch (err) {
@@ -227,6 +231,18 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             onChange={(branches) => handleEligibilityChange('branches', branches)}
           />
         </div>
+      </div>
+
+      {/* Form URL */}
+      <div>
+        <label className="label">Google Form URL (optional)</label>
+        <input
+          type="text"
+          value={form.formUrl}
+          onChange={(e) => handleChange('formUrl', e.target.value)}
+          className="input-field"
+          placeholder="e.g. https://forms.gle/..."
+        />
       </div>
 
       {/* JD Description */}

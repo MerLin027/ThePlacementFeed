@@ -21,10 +21,18 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [isColdStart, setIsColdStart] = useState(false);
   const coldStartTimer = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const fetchPlacements = useCallback(async (page = 1) => {
     setLoading(true);
     setIsColdStart(false);
+
+    // Abort previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     // Start cold-start timer
     coldStartTimer.current = setTimeout(() => {
@@ -40,17 +48,32 @@ const Home = () => {
       if (filters.ctcMax) params.ctcMax = filters.ctcMax;
       if (filters.sort) params.sort = filters.sort;
 
-      const res = await api.get('/api/placements', { params });
+      const res = await api.get('/api/placements', { 
+        params,
+        signal: abortController.signal
+      });
       setPlacements(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
       console.error('Failed to fetch placements:', err);
     } finally {
       clearTimeout(coldStartTimer.current);
-      setLoading(false);
-      setIsColdStart(false);
+      if (abortControllerRef.current === abortController) {
+        setLoading(false);
+        setIsColdStart(false);
+      }
     }
   }, [filters]);
+
+  // Clean up abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Debounce search input
   useEffect(() => {
