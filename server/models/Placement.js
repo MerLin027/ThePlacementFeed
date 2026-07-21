@@ -64,6 +64,10 @@ const placementSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    formUrl: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

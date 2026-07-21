@@ -84,6 +84,11 @@ const placementValidationRules = [
     .optional()
     .isString()
     .withMessage('Each tag must be a string'),
+
+  body('formUrl')
+    .optional({ checkFalsy: true })
+    .isURL()
+    .withMessage('formUrl must be a valid URL string'),
 ];
 
 // Middleware to check validation results

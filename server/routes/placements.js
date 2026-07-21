@@ -145,7 +145,33 @@ router.post(
   validate,
   async (req, res, next) => {
     try {
-      const placement = await Placement.create(req.body);
+      const {
+        company,
+        role,
+        type,
+        ctc,
+        eligibility,
+        driveDate,
+        deadline,
+        status,
+        jdDescription,
+        tags,
+        formUrl,
+      } = req.body;
+      
+      const placement = await Placement.create({
+        company,
+        role,
+        type,
+        ctc,
+        eligibility,
+        driveDate,
+        deadline,
+        status,
+        jdDescription,
+        tags,
+        formUrl,
+      });
       res.status(201).json({ success: true, data: placement });
     } catch (error) {
       next(error);
@@ -162,9 +188,35 @@ router.put(
   validate,
   async (req, res, next) => {
     try {
+      const {
+        company,
+        role,
+        type,
+        ctc,
+        eligibility,
+        driveDate,
+        deadline,
+        status,
+        jdDescription,
+        tags,
+        formUrl,
+      } = req.body;
+
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        {
+          company,
+          role,
+          type,
+          ctc,
+          eligibility,
+          driveDate,
+          deadline,
+          status,
+          jdDescription,
+          tags,
+          formUrl,
+        },
         { new: true, runValidators: true }
       );
       if (!placement) {
