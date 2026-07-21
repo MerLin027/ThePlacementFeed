@@ -235,30 +235,44 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
 
       {/* Form URL */}
       <div>
-        <label className="label">Google Form URL (optional)</label>
-        <input
-          type="text"
-          value={form.formUrl}
-          onChange={(e) => handleChange('formUrl', e.target.value)}
-          className="input-field"
-          placeholder="e.g. https://forms.gle/..."
-        />
+        <label className="label">
+          Application Form URL <span className="text-slate-400 font-normal ml-1">(optional)</span>
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={form.formUrl}
+            onChange={(e) => handleChange('formUrl', e.target.value)}
+            className="input-field pl-9"
+            placeholder="https://forms.gle/..."
+          />
+        </div>
       </div>
 
       {/* JD Description */}
       <div>
-        <label className="label">Job Description</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="label !mb-0">Job Description</label>
+          <span className="text-xs text-slate-400">Supports Markdown</span>
+        </div>
         <textarea
           value={form.jdDescription}
           onChange={(e) => handleChange('jdDescription', e.target.value)}
-          className="input-field min-h-[160px] resize-y"
-          placeholder="Paste the full job description here..."
+          className="input-field min-h-[200px] resize-y font-mono text-sm leading-relaxed"
+          placeholder="# Job Title&#10;&#10;## Requirements&#10;- Requirement 1&#10;- Requirement 2"
           maxLength={50000}
-          rows={8}
+          rows={10}
         />
-        <p className="text-xs text-slate-400 mt-1">
-          {form.jdDescription.length.toLocaleString()} / 50,000 characters
-        </p>
+        <div className="flex justify-end mt-1.5">
+          <p className="text-xs text-slate-400">
+            {form.jdDescription.length.toLocaleString()} / 50,000 characters
+          </p>
+        </div>
       </div>
 
       {/* Tags */}

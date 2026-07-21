@@ -122,13 +122,21 @@ const Home = () => {
       {loading ? (
         <ColdStartLoader isColdStart={isColdStart} />
       ) : placements.length === 0 ? (
-        <div className="text-center py-16">
-          <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-lg font-medium text-slate-600 mb-1">No placements found</h3>
-          <p className="text-sm text-slate-400">Try adjusting your filters or search query.</p>
+        <div className="text-center py-20 px-4 bg-white rounded-xl border border-slate-200 border-dashed">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 mb-1">No placements found</h3>
+          <p className="text-sm text-slate-500">We couldn't find anything matching your current filters.</p>
+          <button
+            onClick={() => setFilters(DEFAULT_FILTERS)}
+            className="mt-6 btn-secondary text-sm"
+          >
+            Clear all filters
+          </button>
         </div>
       ) : (
         <>

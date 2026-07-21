@@ -71,17 +71,17 @@ const PlacementCard = ({ placement }) => {
 
         {/* Tags */}
         {tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
+          <div className="flex flex-wrap gap-1.5 mt-4">
             {tags.slice(0, 3).map((tag, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-500"
+                className="px-2 py-0.5 text-[11px] font-medium tracking-wide rounded bg-slate-100 text-slate-500 uppercase"
               >
                 {tag}
               </span>
             ))}
             {tags.length > 3 && (
-              <span className="px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-400">
+              <span className="px-2 py-0.5 text-[11px] font-medium tracking-wide rounded bg-slate-100 text-slate-400 uppercase">
                 +{tags.length - 3}
               </span>
             )}
@@ -90,16 +90,19 @@ const PlacementCard = ({ placement }) => {
 
         {/* Apply Now */}
         {formUrl && (
-          <div className="mt-4">
+          <div className="mt-5 pt-4 border-t border-slate-100">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 window.open(formUrl, '_blank', 'noopener,noreferrer');
               }}
-              className="w-full btn-primary py-2 text-sm"
+              className="w-full btn-primary py-2 text-sm font-medium group flex items-center justify-center gap-2"
             >
               Apply Now
+              <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </button>
           </div>
         )}
