@@ -1,5 +1,10 @@
 # Project History
 
+## July 22, 2026 — Minor UI Label Update
+
+### Task 1 — Rename "View Results" Button Label
+- Renamed the "View Results" button label to "View Details" on placement cards with a "Completed" status in `PlacementCard.jsx` to improve clarity.
+
 ## July 22, 2026 — Design Polish Batch 1: Accessibility & Quick Fixes
 
 ### Task 1 — Navbar Logo Alignment (`Navbar.jsx`)

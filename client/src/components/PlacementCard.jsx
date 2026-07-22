@@ -25,7 +25,7 @@ const PlacementCard = ({ placement }) => {
     },
     Completed: {
       className: 'btn-secondary w-full py-3 justify-center text-secondary',
-      label: 'View Results',
+      label: 'View Details',
     },
   };
 
