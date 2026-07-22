@@ -9,6 +9,10 @@
 - Updated `PlacementCard.jsx` to show "Apply Now" (with primary styling) only if `formUrl` exists, regardless of status.
 - If `formUrl` is missing, the card now falls back to "View Details" (with secondary styling appropriate for the status) even for "Upcoming" drives.
 
+### Task 3 — Placement Detail Layout Fix
+- Fixed an issue in `PlacementDetail.jsx` where the footer was pushed off-screen and content failed to center properly.
+- Removed `flex-grow` from the page wrapper and nested the grid inside a standard block container. This allows the parent `<main className="flex-1">` in `App.jsx` to correctly handle pushing the footer to the bottom of the viewport for short content, while preventing the grid rows from stretching vertically.
+
 ## July 22, 2026 — Design Polish Batch 1: Accessibility & Quick Fixes
 
 ### Task 1 — Navbar Logo Alignment (`Navbar.jsx`)
