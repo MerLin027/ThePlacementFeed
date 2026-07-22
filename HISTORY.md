@@ -5,6 +5,10 @@
 ### Task 1 — Rename "View Results" Button Label
 - Renamed the "View Results" button label to "View Details" on placement cards with a "Completed" status in `PlacementCard.jsx` to improve clarity.
 
+### Task 2 — Fix "Apply Now" Fallback Logic
+- Updated `PlacementCard.jsx` to show "Apply Now" (with primary styling) only if `formUrl` exists, regardless of status.
+- If `formUrl` is missing, the card now falls back to "View Details" (with secondary styling appropriate for the status) even for "Upcoming" drives.
+
 ## July 22, 2026 — Design Polish Batch 1: Accessibility & Quick Fixes
 
 ### Task 1 — Navbar Logo Alignment (`Navbar.jsx`)

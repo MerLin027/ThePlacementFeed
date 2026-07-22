@@ -13,23 +13,30 @@ const PlacementCard = ({ placement }) => {
     });
   };
 
-  // Determine the bottom button style & text based on status
-  const buttonConfig = {
-    Upcoming: {
-      className: 'btn-primary w-full py-3 justify-center',
-      label: 'Apply Now',
-    },
-    Ongoing: {
-      className: 'btn-secondary w-full py-3 justify-center text-primary',
+  // Determine the bottom button style & text based on formUrl and status
+  const getButtonConfig = () => {
+    if (formUrl) {
+      return {
+        className: 'btn-primary w-full py-3 justify-center',
+        label: 'Apply Now',
+        isApply: true,
+      };
+    }
+
+    const secondaryStyles = {
+      Upcoming: 'btn-secondary w-full py-3 justify-center text-primary',
+      Ongoing: 'btn-secondary w-full py-3 justify-center text-primary',
+      Completed: 'btn-secondary w-full py-3 justify-center text-secondary',
+    };
+
+    return {
+      className: secondaryStyles[status] || secondaryStyles.Upcoming,
       label: 'View Details',
-    },
-    Completed: {
-      className: 'btn-secondary w-full py-3 justify-center text-secondary',
-      label: 'View Details',
-    },
+      isApply: false,
+    };
   };
 
-  const btn = buttonConfig[status] || buttonConfig.Upcoming;
+  const btn = getButtonConfig();
 
   // Bottom detail row — varies by status
   const renderDetailRow = () => {
@@ -83,7 +90,7 @@ const PlacementCard = ({ placement }) => {
         </div>
 
         {/* Action Button */}
-        {formUrl && status === 'Upcoming' ? (
+        {btn.isApply ? (
           <button
             onClick={(e) => {
               e.preventDefault();
