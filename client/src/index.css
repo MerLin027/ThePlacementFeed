@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,69 +8,125 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-background text-on-background antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-brand-600 text-white font-medium rounded-md
-           hover:bg-brand-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-4 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-lg hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-white text-slate-700 font-medium rounded-md
-           border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2
-           transition-all duration-200;
+    @apply inline-flex items-center justify-center px-4 py-2 bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md rounded-lg border border-outline-variant hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white font-medium rounded-md
-           hover:bg-red-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-           transition-all duration-200;
+    @apply inline-flex items-center justify-center px-4 py-2 bg-error text-on-error font-label-md text-label-md rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-error focus:ring-offset-2 transition-all duration-200;
   }
 
   .input-field {
-    @apply w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 shadow-sm
-           placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
-           transition-all duration-200;
+    @apply w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface placeholder-outline shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
   }
 
   .select-field {
-    @apply w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
-           transition-all duration-200 appearance-none cursor-pointer;
+    @apply w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 appearance-none cursor-pointer;
   }
 
   .card {
-    @apply bg-white rounded-lg border border-slate-200 hover:border-slate-300
-           transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
+    @apply bg-surface-container-lowest border border-outline-variant rounded-xl hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200;
   }
 
   .label {
-    @apply block text-sm font-medium text-slate-700 mb-1;
+    @apply block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1;
   }
 
-  .markdown-body { @apply text-slate-700 leading-relaxed; }
-  .markdown-body h1 { @apply text-2xl font-bold text-slate-900 mb-4 mt-8 first:mt-0; }
-  .markdown-body h2 { @apply text-xl font-bold text-slate-900 mb-3 mt-6; }
-  .markdown-body h3 { @apply text-lg font-semibold text-slate-900 mb-2 mt-5; }
-  .markdown-body p { @apply mb-4; }
-  .markdown-body ul { @apply list-disc list-outside mb-4 space-y-1.5 ml-5; }
-  .markdown-body ol { @apply list-decimal list-outside mb-4 space-y-1.5 ml-5; }
-  .markdown-body a { @apply text-brand-600 hover:text-brand-700 hover:underline underline-offset-2 decoration-brand-300; }
-  .markdown-body strong { @apply font-bold text-slate-900; }
-  .markdown-body blockquote { @apply border-l-4 border-brand-300 bg-brand-50 pl-4 py-3 pr-4 italic text-slate-700 my-5 rounded-r-lg; }
-  .markdown-body code { @apply bg-slate-100 text-brand-600 px-1.5 py-0.5 rounded-md text-sm font-mono border border-slate-200; }
-  .markdown-body pre { @apply bg-slate-800 text-slate-50 p-4 rounded-lg overflow-x-auto mb-5 border border-slate-700 shadow-sm; }
-  .markdown-body pre code { @apply bg-transparent text-inherit p-0 rounded-none border-none shadow-none font-mono; }
-  .markdown-body table { @apply w-full text-left border-collapse mb-5 shadow-sm rounded-lg overflow-hidden border border-slate-200; }
-  .markdown-body th { @apply border-b-2 border-slate-200 py-3 px-4 font-semibold bg-slate-50 text-slate-800; }
-  .markdown-body td { @apply border-b border-slate-100 py-3 px-4; }
-  .markdown-body tr:last-child td { @apply border-b-0; }
-  .markdown-body img { @apply rounded-lg max-w-full h-auto shadow-sm my-4 border border-slate-200; }
-  .markdown-body hr { @apply my-8 border-slate-200; }
-  .markdown-body p:last-child { @apply mb-0; }
+  .markdown-body {
+    @apply text-on-surface-variant leading-relaxed;
+  }
+
+  .markdown-body h1 {
+    @apply text-2xl font-bold text-on-surface mb-4 mt-8 first:mt-0;
+  }
+
+  .markdown-body h2 {
+    @apply text-xl font-bold text-on-surface mb-3 mt-6;
+  }
+
+  .markdown-body h3 {
+    @apply text-lg font-semibold text-on-surface mb-2 mt-5;
+  }
+
+  .markdown-body h4 {
+    @apply font-label-md text-label-md text-on-surface mt-4 mb-1;
+  }
+
+  .markdown-body p {
+    @apply mb-4;
+  }
+
+  .markdown-body ul {
+    @apply list-disc list-outside mb-4 space-y-1.5 ml-5;
+  }
+
+  .markdown-body ol {
+    @apply list-decimal list-outside mb-4 space-y-1.5 ml-5;
+  }
+
+  .markdown-body a {
+    @apply text-primary hover:text-primary-container hover:underline underline-offset-2 decoration-primary/30;
+  }
+
+  .markdown-body strong {
+    @apply font-bold text-on-surface;
+  }
+
+  .markdown-body blockquote {
+    @apply border-l-4 border-primary/30 bg-primary-fixed/20 pl-4 py-3 pr-4 italic text-on-surface-variant my-5 rounded-r-lg;
+  }
+
+  .markdown-body code {
+    @apply bg-surface-container px-1.5 py-0.5 rounded-md text-sm font-mono border border-outline-variant text-primary;
+  }
+
+  .markdown-body pre {
+    @apply bg-inverse-surface text-inverse-on-surface p-4 rounded-lg overflow-x-auto mb-5 border border-outline shadow-sm;
+  }
+
+  .markdown-body pre code {
+    @apply bg-transparent text-inherit p-0 rounded-none border-none shadow-none font-mono;
+  }
+
+  .markdown-body table {
+    @apply w-full text-left border-collapse mb-5 shadow-sm rounded-lg overflow-hidden border border-outline-variant;
+  }
+
+  .markdown-body th {
+    @apply border-b-2 border-outline-variant py-3 px-4 font-semibold bg-surface-container-low text-on-surface;
+  }
+
+  .markdown-body td {
+    @apply border-b border-surface-variant py-3 px-4;
+  }
+
+  .markdown-body tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .markdown-body img {
+    @apply rounded-lg max-w-full h-auto shadow-sm my-4 border border-outline-variant;
+  }
+
+  .markdown-body hr {
+    @apply my-8 border-outline-variant;
+  }
+
+  .markdown-body p:last-child {
+    @apply mb-0;
+  }
 }

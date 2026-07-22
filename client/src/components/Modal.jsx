@@ -19,30 +19,28 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-sm">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] overflow-y-auto z-10 animate-in`}
+        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] overflow-y-auto z-10 animate-in`}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 rounded-t-xl flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        <div className="sticky top-0 bg-surface-container-lowest border-b border-outline-variant px-md py-sm rounded-t-xl flex items-center justify-between">
+          <h2 className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
         {/* Body */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-md py-sm">{children}</div>
       </div>
     </div>
   );

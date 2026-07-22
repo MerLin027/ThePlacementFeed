@@ -22,32 +22,30 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-8">
+    <div className="flex items-center justify-center gap-1 mt-lg">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md
-                   hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+                   hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
+        <span className="material-symbols-outlined text-[20px]">chevron_left</span>
       </button>
 
       {getPageNumbers().map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-2 py-2 text-sm text-slate-400">
+          <span key={`dots-${i}`} className="px-2 py-2 font-body-sm text-body-sm text-outline">
             …
           </span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors
+            className={`w-10 h-10 flex items-center justify-center rounded-lg font-label-md text-label-md transition-colors
               ${
                 p === page
-                  ? 'bg-brand-600 text-white'
-                  : 'text-slate-600 bg-white border border-slate-300 hover:bg-slate-50'
+                  ? 'bg-primary-container text-on-primary'
+                  : 'bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:bg-surface-container-low'
               }`}
           >
             {p}
@@ -58,12 +56,10 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md
-                   hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+                   hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+        <span className="material-symbols-outlined text-[20px]">chevron_right</span>
       </button>
     </div>
   );

@@ -18,42 +18,33 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
   ].filter(Boolean).length;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-sm">
         <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
+            search
+          </span>
           <input
             type="text"
             placeholder="Search by company or role..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
-            className="input-field !pl-10"
+            className="w-full h-11 pl-10 pr-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary transition-colors"
           />
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`btn-secondary gap-2 ${activeFilterCount > 0 ? '!border-brand-300 !text-brand-600' : ''}`}
+          className={`inline-flex items-center gap-2 h-11 px-4 rounded-lg font-label-md text-label-md border transition-colors ${
+            activeFilterCount > 0
+              ? 'bg-primary/5 border-primary/30 text-primary'
+              : 'bg-surface-container-lowest border-outline-variant text-on-surface-variant hover:bg-surface-container-low'
+          }`}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
+          <span className="material-symbols-outlined text-[20px]">tune</span>
           <span className="hidden sm:inline">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="bg-brand-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="bg-primary-container text-on-primary text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {activeFilterCount}
             </span>
           )}
@@ -62,8 +53,8 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
 
       {/* Expanded filters */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-slate-200">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-md pt-md border-t border-outline-variant">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-sm">
             {/* Status */}
             <div>
               <label className="label">Status</label>
@@ -122,9 +113,9 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
           </div>
 
           {/* Sort + Reset */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-slate-700">Sort by:</label>
+          <div className="flex items-center justify-between mt-md pt-md border-t border-outline-variant">
+            <div className="flex items-center gap-sm">
+              <label className="font-label-md text-label-md text-on-surface-variant">Sort by:</label>
               <select
                 value={filters.sort || 'newest'}
                 onChange={(e) => handleChange('sort', e.target.value)}
@@ -140,7 +131,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
             </div>
             <button
               onClick={onReset}
-              className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
+              className="font-label-md text-label-md text-secondary hover:text-primary transition-colors"
             >
               Reset Filters
             </button>

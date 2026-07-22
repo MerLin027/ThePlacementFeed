@@ -102,7 +102,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+        <div className="p-sm bg-error-container border border-error/20 rounded-lg font-body-sm text-body-sm text-on-error-container">
           {error}
         </div>
       )}
@@ -196,8 +196,8 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
       </div>
 
       {/* Eligibility */}
-      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-        <h4 className="text-sm font-semibold text-slate-700 mb-3">Eligibility Criteria</h4>
+      <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant">
+        <h4 className="font-label-md text-label-md text-on-surface mb-sm">Eligibility Criteria</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="label">Min CGPA</label>
@@ -236,11 +236,11 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
       {/* Form URL */}
       <div>
         <label className="label">
-          Application Form URL <span className="text-slate-400 font-normal ml-1">(optional)</span>
+          Application Form URL <span className="text-outline font-normal ml-1">(optional)</span>
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-4 w-4 text-outline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
           </div>
@@ -258,7 +258,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="label !mb-0">Job Description</label>
-          <span className="text-xs text-slate-400">Supports Markdown</span>
+          <span className="font-label-sm text-label-sm text-outline">Supports Markdown</span>
         </div>
         <textarea
           value={form.jdDescription}
@@ -269,7 +269,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           rows={10}
         />
         <div className="flex justify-end mt-1.5">
-          <p className="text-xs text-slate-400">
+          <p className="font-label-sm text-label-sm text-outline">
             {form.jdDescription.length.toLocaleString()} / 50,000 characters
           </p>
         </div>

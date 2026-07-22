@@ -43,12 +43,21 @@ const PlacementDetail = () => {
     });
   };
 
+  const formatDateShort = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="relative">
-          <div className="w-10 h-10 rounded-full border-4 border-slate-200" />
-          <div className="w-10 h-10 rounded-full border-4 border-brand-600 border-t-transparent animate-spin absolute inset-0" />
+          <div className="w-12 h-12 rounded-full border-4 border-outline-variant" />
+          <div className="w-12 h-12 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
         </div>
       </div>
     );
@@ -56,119 +65,130 @@ const PlacementDetail = () => {
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">Oops!</h2>
-        <p className="text-slate-500 mb-6">{error}</p>
-        <button onClick={() => navigate('/')} className="btn-primary">
-          Back to Home
-        </button>
+      <div className="w-full max-w-container-max mx-auto px-md md:px-lg py-xl text-center">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl">
+          <span className="material-symbols-outlined text-[48px] text-error mb-md block">error</span>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-xs">Oops!</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-md">{error}</p>
+          <button onClick={() => navigate('/')} className="btn-primary">
+            Back to Home
+          </button>
+        </div>
       </div>
     );
   }
 
-  const typeColor = {
-    'Full-Time': 'bg-violet-50 text-violet-700 border-violet-200',
-    'Internship': 'bg-sky-50 text-sky-700 border-sky-200',
-    '6M Intern + FTE': 'bg-teal-50 text-teal-700 border-teal-200',
+  const typeConfig = {
+    'Full-Time': 'bg-primary-container/10 text-primary',
+    'Internship': 'bg-surface-container-high text-on-surface-variant border border-surface-variant',
+    '6M Intern + FTE': 'bg-tertiary-container/10 text-tertiary',
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Back button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back
-      </button>
+    <div className="flex-grow w-full max-w-container-max mx-auto px-sm md:px-lg py-lg grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg">
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        {/* Header */}
-        <div className="p-6 sm:p-8 border-b border-slate-200">
-          <div className="flex flex-wrap items-start gap-3 mb-4">
-            <StatusBadge status={placement.status} />
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border ${typeColor[placement.type] || ''}`}>
-              {placement.type}
-            </span>
+      {/* Back navigation breadcrumb */}
+      <div className="md:col-span-12 -mb-xs">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+        >
+          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          Back to Drives
+        </button>
+      </div>
+      {/* Left Column (Company Info & Action) */}
+      <div className="md:col-span-4 flex flex-col gap-md">
+        {/* Company Info Card */}
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md flex flex-col gap-sm">
+          <div className="w-12 h-12 border border-surface-variant rounded-lg flex items-center justify-center overflow-hidden mb-sm">
+            <span className="material-symbols-outlined text-secondary text-[28px]">domain</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-            {placement.company}
-          </h1>
-          <p className="text-lg text-slate-600">{placement.role}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200">
-              <span className="text-sm text-slate-500">CTC:</span>
-              <span className="text-lg font-bold text-slate-900">₹{placement.ctc} LPA</span>
-            </div>
-            {placement.formUrl && (
+          <h1 className="font-display-lg text-display-lg text-on-surface mb-base">{placement.company}</h1>
+          <p className="font-headline-sm text-headline-sm text-on-surface-variant mb-xs">{placement.role}</p>
+          <div className="flex items-baseline gap-xs mb-sm">
+            <span className="font-headline-md text-headline-md text-primary">{placement.ctc} LPA</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">(CTC)</span>
+          </div>
+          <div className="flex flex-wrap gap-xs mb-md">
+            {placement.type && (
+              <span className={`font-label-sm text-label-sm uppercase px-3 py-1 rounded-full ${typeConfig[placement.type] || typeConfig['Full-Time']}`}>
+                {placement.type}
+              </span>
+            )}
+            <StatusBadge status={placement.status} />
+          </div>
+          {placement.formUrl && (
+            <div className="border-t border-surface-variant mt-sm pt-sm">
               <a
                 href={placement.formUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary shadow-sm hover:shadow-md transition-all flex items-center gap-2 px-6 py-2.5 group"
+                className="btn-primary w-full py-3 mt-auto"
               >
                 Apply Now
-                <svg className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Details grid */}
-        <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-6 border-b border-slate-200">
-          <div>
-            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-1">Drive Date</h3>
-            <p className="text-slate-900 font-medium">{formatDate(placement.driveDate)}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-1">Application Deadline</h3>
-            <p className="text-slate-900 font-medium">{formatDate(placement.deadline)}</p>
-          </div>
-        </div>
-
-        {/* Eligibility */}
-        <div className="p-6 sm:p-8 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Eligibility Criteria</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-500 mb-1">Minimum CGPA</p>
-              <p className="text-xl font-bold text-slate-900">
-                {placement.eligibility?.cgpa != null ? placement.eligibility.cgpa : 'Not specified'}
-              </p>
+        {/* Quick Meta Card */}
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md flex flex-col gap-sm">
+          <h3 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
+            Important Dates
+          </h3>
+          {placement.deadline && (
+            <div className="flex justify-between items-center py-xs">
+              <span className="font-body-sm text-body-sm text-on-surface-variant">Application Deadline</span>
+              <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.deadline)}</span>
             </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-500 mb-1">Max Backlogs</p>
-              <p className="text-xl font-bold text-slate-900">
-                {placement.eligibility?.backlog != null ? placement.eligibility.backlog : 'Not specified'}
-              </p>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-sm text-slate-500 mb-1">Branches</p>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {placement.eligibility?.branches?.length > 0 ? (
-                  placement.eligibility.branches.map((b) => (
-                    <span key={b} className="px-2 py-0.5 text-xs font-medium bg-brand-50 text-brand-700 rounded border border-brand-200">
-                      {b}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-slate-500">All branches</span>
-                )}
-              </div>
-            </div>
+          )}
+          <div className="flex justify-between items-center py-xs">
+            <span className="font-body-sm text-body-sm text-on-surface-variant">Drive Date</span>
+            <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.driveDate)}</span>
           </div>
         </div>
+      </div>
 
-        {/* JD Description */}
+      {/* Right Column (Detailed Details) */}
+      <div className="md:col-span-8 flex flex-col gap-md">
+        {/* Eligibility Section */}
+        <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+          <div className="flex items-center gap-xs mb-sm">
+            <span className="material-symbols-outlined text-secondary">verified_user</span>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility Criteria</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+            <div className="flex flex-col bg-surface-container-low p-sm rounded-lg">
+              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-base">
+                Academic Requirement
+              </span>
+              <span className="font-body-md text-body-md text-on-surface">
+                {placement.eligibility?.cgpa != null
+                  ? `CGPA > ${placement.eligibility.cgpa}${placement.eligibility.backlog != null ? ` (Max ${placement.eligibility.backlog} Backlogs)` : ' (No Active Backlogs)'}`
+                  : 'Not specified'}
+              </span>
+            </div>
+            <div className="flex flex-col bg-surface-container-low p-sm rounded-lg">
+              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-base">
+                Eligible Branches
+              </span>
+              <span className="font-body-md text-body-md text-on-surface">
+                {placement.eligibility?.branches?.length > 0
+                  ? placement.eligibility.branches.join(', ')
+                  : 'All branches'}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Job Description Section */}
         {placement.jdDescription && (
-          <div className="p-6 sm:p-8 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Job Description</h2>
-            <div className="markdown-body max-w-none text-slate-700 bg-slate-50/50 p-6 rounded-lg border border-slate-100">
+          <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-sm pb-xs border-b border-surface-variant">
+              Job Description & Responsibilities
+            </h2>
+            <div className="prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -180,29 +200,63 @@ const PlacementDetail = () => {
                 {placement.jdDescription}
               </ReactMarkdown>
             </div>
-          </div>
+          </section>
+        )}
+
+        {/* Selection Process Section */}
+        {placement.selectionProcess?.length > 0 && (
+          <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-sm pb-xs border-b border-surface-variant">
+              Selection Process
+            </h2>
+            <div className="flex flex-col gap-sm relative">
+              {/* Vertical Line */}
+              <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block" />
+              {placement.selectionProcess.map((step, index) => (
+                <div key={index} className="flex items-start gap-sm relative z-10">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-1 ${
+                      index === 0
+                        ? 'bg-primary-container text-on-primary-container'
+                        : 'bg-surface-container-high border border-surface-variant text-on-surface'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <div>
+                    <h4 className="font-label-md text-label-md text-on-surface">
+                      {typeof step === 'string' ? step : step.title || step.name || `Step ${index + 1}`}
+                    </h4>
+                    {typeof step === 'object' && step.description && (
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{step.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Tags */}
         {placement.tags?.length > 0 && (
-          <div className="p-6 sm:p-8">
-            <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Tags</h2>
-            <div className="flex flex-wrap gap-2">
+          <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+            <h2 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-sm">Tags</h2>
+            <div className="flex flex-wrap gap-xs">
               {placement.tags.map((tag, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1 text-sm bg-slate-100 text-slate-600 rounded-full"
+                  className="px-3 py-1 font-label-sm text-label-sm bg-surface-container text-on-surface-variant rounded-full"
                 >
                   {tag}
                 </span>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
 
       {/* Timestamps */}
-      <div className="mt-4 text-xs text-slate-400 text-right">
+      <div className="md:col-span-12 font-body-sm text-body-sm text-on-surface-variant text-right">
         <span>Added {formatDate(placement.createdAt)}</span>
         {placement.updatedAt !== placement.createdAt && (
           <span> · Updated {formatDate(placement.updatedAt)}</span>

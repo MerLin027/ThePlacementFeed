@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import logo from '../../assets/logo.png';
 
 const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -14,103 +15,100 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Auth-aware admin link
+  const adminTo = isAdmin ? '/admin/dashboard' : '/admin/login';
+  const adminLabel = isAdmin ? 'Dashboard' : 'Login';
+
   return (
-    <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-slate-900">
+    <header className="bg-surface border-b border-outline-variant w-full sticky top-0 z-50">
+      <div className="flex items-center w-full px-sm md:px-lg h-16">
+
+        {/* Left zone — logo, flex-1 so it balances the right zone */}
+        <div className="flex-1 flex items-center">
+          <Link to="/" className="flex items-center gap-xs">
+            <img
+              src={logo}
+              alt="The Placement Feed"
+              className="h-9 w-auto object-contain"
+            />
+            <span className="font-headline-md text-headline-md font-semibold text-primary hidden sm:block">
               The Placement Feed
             </span>
           </Link>
+        </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${isActive(link.to)
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="w-px h-6 bg-slate-200 mx-2" />
-            {isAdmin ? (
-              <Link
-                to="/admin/dashboard"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${isActive('/admin/dashboard')
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/admin/login"
-                className="px-3 py-2 rounded-md text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                Admin
-              </Link>
-            )}
-          </div>
+        {/* Center zone — desktop nav, truly centered between left and right zones */}
+        <nav className="hidden md:flex items-center gap-md">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`h-16 flex items-center px-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm ${
+                isActive(link.to)
+                  ? 'text-primary font-bold border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            to={adminTo}
+            className={`h-16 flex items-center px-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm ${
+              isActive(adminTo)
+                ? 'text-primary font-bold border-b-2 border-primary'
+                : 'text-on-surface-variant hover:text-primary'
+            }`}
+          >
+            {adminLabel}
+          </Link>
+        </nav>
 
-          {/* Mobile hamburger */}
+        {/* Right zone — flex-1 balances the logo zone; hamburger sits here on mobile */}
+        <div className="flex-1 flex items-center justify-end">
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="md:hidden p-2 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            className="md:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {isMobileOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            <span className="material-symbols-outlined text-[24px]">
+              {isMobileOpen ? 'close' : 'menu'}
+            </span>
           </button>
         </div>
 
-        {/* Mobile menu */}
-        {isMobileOpen && (
-          <div className="md:hidden pb-4 border-t border-slate-100 mt-2 pt-2 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setIsMobileOpen(false)}
-                className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${isActive(link.to)
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link
-              to={isAdmin ? '/admin/dashboard' : '/admin/login'}
-              onClick={() => setIsMobileOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              {isAdmin ? 'Dashboard' : 'Admin'}
-            </Link>
-          </div>
-        )}
       </div>
-    </nav>
+
+      {/* Mobile menu — Home, Timeline, Login / Dashboard */}
+      {isMobileOpen && (
+        <div className="md:hidden border-t border-outline-variant bg-surface-container-lowest px-sm py-sm space-y-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setIsMobileOpen(false)}
+              className={`block px-sm py-xs rounded-lg font-body-md text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+                isActive(link.to)
+                  ? 'bg-primary/5 text-primary font-semibold'
+                  : 'text-on-surface-variant hover:bg-surface-container-low'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            to={adminTo}
+            onClick={() => setIsMobileOpen(false)}
+            className={`block px-sm py-xs rounded-lg font-body-md text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+              isActive(adminTo)
+                ? 'bg-primary/5 text-primary font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-low'
+            }`}
+          >
+            {adminLabel}
+          </Link>
+        </div>
+      )}
+    </header>
   );
 };
 

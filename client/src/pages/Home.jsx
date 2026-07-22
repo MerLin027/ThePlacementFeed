@@ -48,7 +48,7 @@ const Home = () => {
       if (filters.ctcMax) params.ctcMax = filters.ctcMax;
       if (filters.sort) params.sort = filters.sort;
 
-      const res = await api.get('/api/placements', { 
+      const res = await api.get('/api/placements', {
         params,
         signal: abortController.signal
       });
@@ -89,14 +89,12 @@ const Home = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero section */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
-          CHARUSAT Placement Drives
-        </h1>
-        <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-          Browse the latest campus placement opportunities from CDPC. Filter by branch, status, CTC, and more.
+    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
+      {/* Header & Subtitle */}
+      <div className="mb-md md:mb-lg">
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Active Drives</h1>
+        <p className="font-body-lg text-body-lg text-on-surface-variant">
+          Track and apply to upcoming placement opportunities.
         </p>
       </div>
 
@@ -109,8 +107,8 @@ const Home = () => {
 
       {/* Results summary */}
       {!loading && (
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-slate-500">
+        <div className="flex items-center justify-between mb-md">
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
             {pagination.total === 0
               ? 'No placements found'
               : `Showing ${placements.length} of ${pagination.total} placement${pagination.total !== 1 ? 's' : ''}`}
@@ -122,25 +120,24 @@ const Home = () => {
       {loading ? (
         <ColdStartLoader isColdStart={isColdStart} />
       ) : placements.length === 0 ? (
-        <div className="text-center py-20 px-4 bg-white rounded-xl border border-slate-200 border-dashed">
-          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-            <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="text-center py-lg px-md bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant">
+          <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-sm">
+            <span className="material-symbols-outlined text-[32px] text-outline">search_off</span>
           </div>
-          <h3 className="text-lg font-medium text-slate-900 mb-1">No placements found</h3>
-          <p className="text-sm text-slate-500">We couldn't find anything matching your current filters.</p>
+          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-xs">No placements found</h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            We couldn&apos;t find anything matching your current filters.
+          </p>
           <button
             onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="mt-6 btn-secondary text-sm"
+            className="mt-md btn-secondary"
           >
             Clear all filters
           </button>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
             {placements.map((p) => (
               <PlacementCard key={p._id} placement={p} />
             ))}

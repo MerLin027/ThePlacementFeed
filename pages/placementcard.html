@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Placement Detail - The Placement Feed</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#505f76",
+                        "outline": "#737686",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#996100",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-background": "#191c1d",
+                        "on-tertiary-container": "#ffeedd",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "surface-container-high": "#e7e8e9",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface-variant": "#434655",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "surface": "#f8f9fa",
+                        "on-primary-container": "#eeefff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#2563eb",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e1e3e4",
+                        "inverse-primary": "#b4c5ff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "surface-dim": "#d9dadb",
+                        "on-secondary-container": "#54647a",
+                        "tertiary-fixed": "#ffddb8",
+                        "inverse-surface": "#2e3132",
+                        "on-error": "#ffffff",
+                        "surface-container": "#edeeef",
+                        "on-surface": "#191c1d",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e1e3e4",
+                        "background": "#f8f9fa",
+                        "secondary-container": "#d0e1fb",
+                        "tertiary": "#784b00",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "on-tertiary-fixed": "#2a1700",
+                        "outline-variant": "#c3c6d7",
+                        "on-primary-fixed": "#00174b",
+                        "surface-tint": "#0053db",
+                        "primary": "#004ac6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "container-max": "1280px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "base": "4px",
+                        "xs": "8px",
+                        "sm": "16px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-md": [
+                            "Geist"
+                        ],
+                        "display-lg": [
+                            "Geist"
+                        ],
+                        "body-lg": [
+                            "Inter"
+                        ],
+                        "headline-lg-mobile": [
+                            "Geist"
+                        ],
+                        "headline-sm": [
+                            "Geist"
+                        ],
+                        "body-md": [
+                            "Inter"
+                        ],
+                        "label-md": [
+                            "Geist"
+                        ],
+                        "label-sm": [
+                            "Geist"
+                        ],
+                        "body-sm": [
+                            "Inter"
+                        ]
+                    },
+                    "fontSize": {
+                        "headline-md": [
+                            "24px",
+                            {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "display-lg": [
+                            "36px",
+                            {
+                                "lineHeight": "44px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "body-lg": [
+                            "18px",
+                            {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "headline-lg-mobile": [
+                            "28px",
+                            {
+                                "lineHeight": "36px",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "headline-sm": [
+                            "20px",
+                            {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "body-md": [
+                            "16px",
+                            {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "label-md": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.02em",
+                                "fontWeight": "600"
+                            }
+                        ],
+                        "label-sm": [
+                            "12px",
+                            {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                            }
+                        ],
+                        "body-sm": [
+                            "14px",
+                            {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                            }
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <header class="bg-surface border-b border-outline-variant w-full sticky top-0 z-50">
+        <div class="flex justify-between items-center w-full px-md md:px-lg max-w-container-max mx-auto h-16">
+            <div class="flex items-center gap-md">
+                <a class="font-headline-md text-headline-md font-bold text-primary" href="#">The Placement Feed</a>
+                <nav class="hidden md:flex gap-md">
+                    <a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer transition-all duration-200"
+                        href="#">Home</a>
+                    <a class="font-body-md text-body-md text-primary font-bold border-b-2 border-primary cursor-pointer transition-all duration-200"
+                        href="#">Timeline</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-md">
+                <button
+                    class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer transition-all duration-200">Admin
+                    Login</button>
+                <button
+                    class="bg-primary-container text-on-primary-container font-label-md text-label-md px-4 py-2 rounded-lg hover:bg-surface-tint transition-colors">Login</button>
+            </div>
+        </div>
+    </header>
+    <!-- Main Content Canvas -->
+    <main
+        class="flex-grow w-full max-w-container-max mx-auto px-md md:px-lg py-lg grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg">
+        <!-- Left Column (Company Info & Action) -->
+        <div class="md:col-span-4 flex flex-col gap-md">
+            <div class="bg-surface-container-lowest border border-surface-variant rounded-xl p-md flex flex-col gap-sm">
+                <div
+                    class="w-12 h-12 border border-surface-variant rounded-lg flex items-center justify-center overflow-hidden mb-sm">
+                    <img class="w-full h-full object-cover"
+                        data-alt="A clean, minimalist 48x48 pixel logo placeholder featuring a highly stylized, modern geometric 'M' symbol in a vibrant corporate blue on a pure white background. The design is flat, crisp, and represents a technology company in a light mode aesthetic."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdgFTjuazcJg0v1xGGqX-uDMI-zYC2zC6kn2Nro0H23FMrelKjdvhuA3AZj_B8qhDWHr1pEzK4Ixx0lYZ-qkulTdETWrGXfTAecnn5BUeJEpgWqtcBhI0HEr_gd95NguZWKsLSQU3tqkQgPU__20Pp6FDy3pdNlMt57v4tnJTV9E_8tyrLotLa5pzop9sMgnPXVjG-F8zfUl3fLA8MGylA7DHN0BT0KuaexecMsmqyb4tRA1ZeQINJGC1uq14uqGzU55Kq6rmhvBZN" />
+                </div>
+                <h1 class="font-display-lg text-display-lg text-on-surface mb-base">Microsoft</h1>
+                <p class="font-headline-sm text-headline-sm text-on-surface-variant mb-xs">Software Development Engineer
+                </p>
+                <div class="flex items-baseline gap-xs mb-sm">
+                    <span class="font-headline-md text-headline-md text-primary">45 LPA</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">(CTC)</span>
+                </div>
+                <div class="flex flex-wrap gap-xs mb-md">
+                    <span
+                        class="bg-primary-container/10 text-primary font-label-sm text-label-sm uppercase px-3 py-1 rounded-full">On-campus</span>
+                    <span
+                        class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm uppercase px-3 py-1 rounded-full border border-surface-variant">Tech</span>
+                    <span
+                        class="bg-tertiary-container/10 text-tertiary font-label-sm text-label-sm uppercase px-3 py-1 rounded-full">Ongoing</span>
+                </div>
+                <button
+                    class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-3 rounded-lg hover:bg-surface-tint transition-colors text-center mt-auto">Apply
+                    Now</button>
+            </div>
+            <!-- Quick Meta Card -->
+            <div class="bg-surface-container-lowest border border-surface-variant rounded-xl p-md flex flex-col gap-sm">
+                <h3
+                    class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
+                    Important Dates</h3>
+                <div class="flex justify-between items-center py-xs">
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Application Deadline</span>
+                    <span class="font-label-md text-label-md text-on-surface">Oct 15, 2024</span>
+                </div>
+                <div class="flex justify-between items-center py-xs">
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Online Assessment</span>
+                    <span class="font-label-md text-label-md text-on-surface">Oct 20, 2024</span>
+                </div>
+            </div>
+        </div>
+        <!-- Right Column (Detailed Details) -->
+        <div class="md:col-span-8 flex flex-col gap-md">
+            <!-- Eligibility Section -->
+            <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+                <div class="flex items-center gap-xs mb-sm">
+                    <span class="material-symbols-outlined text-secondary">verified_user</span>
+                    <h2 class="font-headline-sm text-headline-sm text-on-surface">Eligibility Criteria</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+                    <div class="flex flex-col bg-surface-container-low p-sm rounded-lg">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-base">Academic
+                            Requirement</span>
+                        <span class="font-body-md text-body-md text-on-surface">CGPA &gt; 7.5 (No Active
+                            Backlogs)</span>
+                    </div>
+                    <div class="flex flex-col bg-surface-container-low p-sm rounded-lg">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-base">Eligible
+                            Branches</span>
+                        <span class="font-body-md text-body-md text-on-surface">B.Tech CS / IT / EC</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Job Description Section -->
+            <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+                <h2
+                    class="font-headline-sm text-headline-sm text-on-surface mb-sm pb-xs border-b border-surface-variant">
+                    Job Description &amp; Responsibilities</h2>
+                <div class="prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant">
+                    <p class="mb-sm">We are looking for passionate Software Development Engineers to join our core
+                        infrastructure team. You will be responsible for designing, building, and maintaining
+                        high-performance, scalable systems.</p>
+                    <h4 class="font-label-md text-label-md text-on-surface mt-md mb-xs">Key Responsibilities</h4>
+                    <ul class="list-disc pl-sm mb-sm space-y-xs">
+                        <li>Design, implement, and deploy scalable software solutions using modern cloud architectures.
+                        </li>
+                        <li>Collaborate with cross-functional teams to define, design, and ship new features.</li>
+                        <li>Write clean, maintainable, and efficient code in C++, C#, or Java.</li>
+                        <li>Conduct code reviews and contribute to engineering best practices.</li>
+                    </ul>
+                    <h4 class="font-label-md text-label-md text-on-surface mt-md mb-xs">Requirements</h4>
+                    <ul class="list-disc pl-sm space-y-xs">
+                        <li>Strong understanding of <strong>Data Structures and Algorithms</strong>.</li>
+                        <li>Experience with object-oriented design and programming.</li>
+                        <li>Excellent problem-solving skills and ability to work independently.</li>
+                    </ul>
+                </div>
+            </section>
+            <!-- Selection Process Section -->
+            <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
+                <h2
+                    class="font-headline-sm text-headline-sm text-on-surface mb-sm pb-xs border-b border-surface-variant">
+                    Selection Process</h2>
+                <div class="flex flex-col gap-sm relative">
+                    <!-- Vertical Line -->
+                    <div class="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block"></div>
+                    <div class="flex items-start gap-sm relative z-10">
+                        <div
+                            class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-1">
+                            1</div>
+                        <div>
+                            <h4 class="font-label-md text-label-md text-on-surface">Online Coding Assessment</h4>
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">90 minutes on HackerRank
+                                platform focusing on DSA.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-sm relative z-10">
+                        <div
+                            class="w-6 h-6 rounded-full bg-surface-container-high border border-surface-variant text-on-surface flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-1">
+                            2</div>
+                        <div>
+                            <h4 class="font-label-md text-label-md text-on-surface">Technical Interview - Round 1</h4>
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">Focuses on algorithms, system
+                                design, and core CS concepts.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-sm relative z-10">
+                        <div
+                            class="w-6 h-6 rounded-full bg-surface-container-high border border-surface-variant text-on-surface flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-1">
+                            3</div>
+                        <div>
+                            <h4 class="font-label-md text-label-md text-on-surface">HR / Culture Fit Round</h4>
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">Discussion on behavioral
+                                questions and organizational alignment.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-surface-container-low border-t border-outline-variant mt-auto">
+        <div
+            class="flex flex-col md:flex-row justify-between items-center w-full px-md md:px-lg py-lg max-w-container-max mx-auto gap-md">
+            <div class="flex flex-col md:flex-row items-center gap-md">
+                <div
+                    class="w-[120px] h-[40px] border border-dashed border-outline-variant flex items-center justify-center font-body-sm text-body-sm text-secondary">
+                    CHARUSAT Logo
+                </div>
+                <div
+                    class="w-[120px] h-[40px] border border-dashed border-outline-variant flex items-center justify-center font-body-sm text-body-sm text-secondary">
+                    CDPC Logo
+                </div>
+            </div>
+            <p class="font-body-sm text-body-sm text-secondary">© 2024 The Placement Feed. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
