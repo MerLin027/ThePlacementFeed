@@ -1,4 +1,4 @@
-# Project History
+### Reposition Existing Sections into Two-Column Layout (Wireframe-Based)\n- Rearranged PlacementDetail.jsx layout according to new wireframe: Left column (Company Info, Important Dates, Selection Process) and Right column (Eligibility, Job Description, Tags).\n- Re-implemented selectionRounds support in backend schema, validation, and admin form PlacementForm.jsx.\n\n# Project History
 
 ## July 23, 2026 — Fix Broken Markdown Rendering on Job Description
 

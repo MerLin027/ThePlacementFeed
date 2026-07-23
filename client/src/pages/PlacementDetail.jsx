@@ -100,7 +100,7 @@ const PlacementDetail = () => {
       {/* Outer grid: gap-xs vertically between the breadcrumb row and the columns */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-xs md:gap-sm items-start">
 
-        {/* Back navigation breadcrumb — no negative margin needed; gap-xs handles spacing */}
+        {/* Back navigation breadcrumb */}
         <div className="md:col-span-12">
           <button
             onClick={() => navigate(-1)}
@@ -111,25 +111,20 @@ const PlacementDetail = () => {
           </button>
         </div>
 
-        {/* Left Column */}
-        <div className="md:col-span-4 flex flex-col gap-xs">
+        {/* Left Column (Narrower) */}
+        <div className="md:col-span-4 flex flex-col gap-xs md:gap-sm">
 
-          {/* Company Info Card — p-sm (16px) instead of p-md (24px) */}
+          {/* 1. Company Info Card */}
           <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm flex flex-col">
-            {/* Logo icon — slightly smaller */}
             <div className="w-10 h-10 border border-surface-variant rounded-lg flex items-center justify-center overflow-hidden mb-xs">
               <span className="material-symbols-outlined text-secondary text-[24px]">domain</span>
             </div>
-            {/* Company name — unchanged (display-lg, primary content) */}
-            <h1 className="font-display-lg text-display-lg text-on-surface mb-[2px]">{placement.company}</h1>
-            {/* Role — unchanged (headline-sm) */}
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-[2px]">{placement.company}</h1>
             <p className="font-headline-sm text-headline-sm text-on-surface-variant mb-xs">{placement.role}</p>
-            {/* CTC — unchanged (headline-md, primary content) */}
             <div className="flex items-baseline gap-xs mb-xs">
               <span className="font-headline-md text-headline-md text-primary">{placement.ctc} LPA</span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">(CTC)</span>
             </div>
-            {/* Badges */}
             <div className="flex flex-wrap gap-xs">
               {placement.type && (
                 <span className={`font-label-sm text-label-sm uppercase px-3 py-1 rounded-full ${typeConfig[placement.type] || typeConfig['Full-Time']}`}>
@@ -152,9 +147,8 @@ const PlacementDetail = () => {
             )}
           </div>
 
-          {/* Important Dates Card — p-sm, compact rows */}
+          {/* 2. Important Dates Card */}
           <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
-            {/* Section label — label-sm (12px) instead of label-md (14px) */}
             <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
               Important Dates
             </h3>
@@ -169,12 +163,46 @@ const PlacementDetail = () => {
               <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.driveDate)}</span>
             </div>
           </div>
+
+          {/* 3. Selection Process Card */}
+          {placement.selectionRounds?.length > 0 && (
+            <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
+                Selection Process
+              </h2>
+              <div className="flex flex-col gap-xs relative">
+                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block" />
+                {placement.selectionRounds.map((step, index) => (
+                  <div key={index} className="flex items-start gap-xs relative z-10">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-0.5 ${
+                        index === 0
+                          ? 'bg-primary-container text-on-primary-container'
+                          : 'bg-surface-container-high border border-surface-variant text-on-surface'
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-label-md text-label-md text-on-surface">
+                        {step.roundName}
+                      </h4>
+                      {step.roundDescription && (
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">{step.roundDescription}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
         </div>
 
-        {/* Right Column */}
-        <div className="md:col-span-8 flex flex-col gap-xs">
+        {/* Right Column (Wider) */}
+        <div className="md:col-span-8 flex flex-col gap-xs md:gap-sm">
 
-          {/* Eligibility Section — p-sm, tighter header margin */}
+          {/* 1. Eligibility Section */}
           <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
             <div className="flex items-center gap-xs mb-xs">
               <span className="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
@@ -182,11 +210,9 @@ const PlacementDetail = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
               <div className="flex flex-col bg-surface-container-low p-xs rounded-lg">
-                {/* Sub-label — label-sm (12px) */}
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-[3px]">
                   Academic Requirement
                 </span>
-                {/* Value — body-md unchanged (primary content) */}
                 <span className="font-body-md text-body-md text-on-surface">
                   {placement.eligibility?.cgpa != null
                     ? `CGPA > ${placement.eligibility.cgpa}${placement.eligibility.backlog != null ? ` (Max ${placement.eligibility.backlog} Backlogs)` : ' (No Active Backlogs)'}`
@@ -206,16 +232,12 @@ const PlacementDetail = () => {
             </div>
           </section>
 
-          {/* Job Description Section */}
+          {/* 2. Job Description Section */}
           {placement.jdDescription && (
             <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Job Description &amp; Responsibilities
               </h2>
-              {/* markdown-body applies full typography: headings, lists, tables, bold, links.
-                  remark-gfm enables GFM tables, strikethrough, task lists.
-                  stripRawHtml pre-processes the source to remove HTML tags that
-                  react-markdown (without rehype-raw) would otherwise display as literal text. */}
               <div className="markdown-body">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -227,39 +249,6 @@ const PlacementDetail = () => {
                 >
                   {stripRawHtml(placement.jdDescription)}
                 </ReactMarkdown>
-              </div>
-            </section>
-          )}
-
-          {/* Selection Process Section */}
-          {placement.selectionProcess?.length > 0 && (
-            <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
-                Selection Process
-              </h2>
-              <div className="flex flex-col gap-xs relative">
-                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block" />
-                {placement.selectionProcess.map((step, index) => (
-                  <div key={index} className="flex items-start gap-xs relative z-10">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-0.5 ${
-                        index === 0
-                          ? 'bg-primary-container text-on-primary-container'
-                          : 'bg-surface-container-high border border-surface-variant text-on-surface'
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h4 className="font-label-md text-label-md text-on-surface">
-                        {typeof step === 'string' ? step : step.title || step.name || `Step ${index + 1}`}
-                      </h4>
-                      {typeof step === 'object' && step.description && (
-                        <p className="font-body-sm text-body-sm text-on-surface-variant">{step.description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
             </section>
           )}
@@ -280,15 +269,17 @@ const PlacementDetail = () => {
               </div>
             </section>
           )}
+
         </div>
 
-        {/* Timestamps — label-sm (12px) instead of body-sm (14px) */}
+        {/* Timestamps */}
         <div className="md:col-span-12 font-label-sm text-label-sm text-on-surface-variant text-right font-normal tracking-normal">
           <span>Added {formatDate(placement.createdAt)}</span>
           {placement.updatedAt !== placement.createdAt && (
             <span> · Updated {formatDate(placement.updatedAt)}</span>
           )}
         </div>
+
       </div>
     </div>
   );
