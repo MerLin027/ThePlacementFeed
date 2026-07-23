@@ -89,6 +89,23 @@ const placementValidationRules = [
     .optional({ values: 'falsy' })
     .isURL()
     .withMessage('formUrl must be a valid URL string'),
+
+  body('selectionRounds')
+    .optional()
+    .isArray()
+    .withMessage('selectionRounds must be an array'),
+
+  body('selectionRounds.*.roundName')
+    .trim()
+    .notEmpty()
+    .withMessage('Each round must have a roundName')
+    .isLength({ max: 200 })
+    .withMessage('Round name cannot exceed 200 characters'),
+
+  body('selectionRounds.*.roundDescription')
+    .optional({ values: 'falsy' })
+    .isLength({ max: 1000 })
+    .withMessage('Round description cannot exceed 1000 characters'),
 ];
 
 // Middleware to check validation results

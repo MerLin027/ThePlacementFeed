@@ -1,6 +1,48 @@
-# Project History
+### Placement Detail Redesign & Selection Process\n- Redesigned Placement Detail layout to feature a top Company Info Card, a horizontal row of 3 stat cards, and a two-column main/sidebar layout below it.\n- Added selectionRounds support across the stack to allow admins to specify selection steps (rounds).\n- Added Mongoose schema validation for selectionRounds in Placement.js and alidate.js.\n- Updated PlacementForm.jsx with dynamic inputs to add/remove rounds.\n- Added timeline UI in PlacementDetail.jsx to render the selection process if available.\n\n# Project History
+
+## July 23, 2026 — Sitewide Heading Size & Navbar-to-Heading Spacing Consistency
+
+### Problem
+- The Timeline page had excessive vertical space between the Navbar and the "Placement Timeline" heading (`py-md md:py-xl` gave 64px top on desktop vs. the standard 40px established on Home).
+- All primary page-title headings (`Active Drives`, `Placement Timeline`, `Admin Dashboard`, company name on Placement Detail) used `display-lg` (36px), which was one step too large.
+
+### Changes
+**`client/src/pages/Timeline.jsx`**
+- Top padding changed from `py-md md:py-xl` → `pt-md pb-xl md:pt-lg md:pb-xl` (matches Home's standard: 24px mobile / 40px desktop)
+- `h1` heading token changed from `display-lg` (36px) → `headline-lg-mobile` (28px)
+
+**`client/src/pages/Home.jsx`**
+- `h1` "Active Drives" heading token changed from `display-lg` (36px) → `headline-lg-mobile` (28px)
+
+**`client/src/pages/AdminDashboard.jsx`**
+- Top padding changed from `py-md md:py-xl` → `pt-md pb-xl md:pt-lg md:pb-xl`
+- `h1` "Admin Dashboard" heading token changed from `display-lg` (36px) → `headline-lg-mobile` (28px)
+
+**`client/src/pages/PlacementDetail.jsx`**
+- Company name `h1` token changed from `display-lg` (36px) → `headline-lg-mobile` (28px)
+- Updated stale code comment to reflect the new token
+
+**Note:** `AdminLogin` was left unchanged — its heading sits inside a card and already uses `headline-md` (24px), which is appropriate for that context.
+
+---
+
+## July 23, 2026 — Render Keep-Alive Cron Job & Cold Start Threshold Fix
+
+### Render Keep-Alive Setup
+- Set up an external cron job on **cron-job.org** to ping `GET /api/health` every **5 minutes**
+- Prevents Render's free tier from spinning down the server after 15 minutes of inactivity
+- The health endpoint at `server/index.js` was already in place — no server code changes needed
+
+### Cold Start Loader Threshold Fix (`client/src/pages/Home.jsx`)
+- Increased the `ColdStartLoader` trigger threshold from **3 seconds → 8 seconds**
+- The previous 3s threshold was too aggressive: even a warm server + MongoDB Atlas can take 3–6s on Render's free tier for a DB-backed request
+- The "Waking up the server..." UI was showing during normal (non-cold-start) latency
+- 8 seconds correctly distinguishes a true Render cold start (~40s) from normal slow responses
+
+---
 
 ## July 23, 2026 — Fix Broken Markdown Rendering on Job Description
+
 
 ### Root Cause Analysis
 Three compounding bugs were causing the Job Description section to render as unstyled, raw text:

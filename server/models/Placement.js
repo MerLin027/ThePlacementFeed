@@ -60,6 +60,19 @@ const placementSchema = new mongoose.Schema(
       type: String,
       maxlength: [50000, 'JD description cannot exceed 50000 characters'],
     },
+    selectionRounds: [{
+      roundName: {
+        type: String,
+        required: [true, 'Round name is required'],
+        trim: true,
+        maxlength: [200, 'Round name cannot exceed 200 characters'],
+      },
+      roundDescription: {
+        type: String,
+        trim: true,
+        maxlength: [1000, 'Round description cannot exceed 1000 characters'],
+      },
+    }],
     tags: {
       type: [String],
       default: [],
