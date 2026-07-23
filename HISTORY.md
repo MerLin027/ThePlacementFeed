@@ -1,5 +1,8 @@
 # Project History
 
+## July 23, 2026 — Eliminate Native Window Scrollbar
+- **`index.css`**: Added `html { height: 100%; overflow: hidden; }` and `overflow: hidden` to `body`. The React root `<div>` already had `h-screen overflow-hidden`, but `<html>` and `<body>` were unconstrained, allowing the browser to still render a native window-level scrollbar. Locking both to `h-full overflow-hidden` ensures the ONLY scrollable element is `<main id="main-content">` with its custom thin styled scrollbar.
+
 ## July 23, 2026 — Font Loading & Image Compression (Performance)
 
 ### Task 1 — Move Google Fonts from CSS @import to HTML link tags

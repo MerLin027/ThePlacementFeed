@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  /* Lock html + body to viewport height so the native window scrollbar
+     never appears. The only scrollable region is <main> in App.jsx. */
+  html {
+    @apply h-full overflow-hidden;
+  }
+
   body {
-    @apply bg-background text-on-background antialiased;
+    @apply h-full overflow-hidden bg-background text-on-background antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
