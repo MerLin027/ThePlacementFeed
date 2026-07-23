@@ -37,7 +37,7 @@ const Home = () => {
     // Start cold-start timer
     coldStartTimer.current = setTimeout(() => {
       setIsColdStart(true);
-    }, 8000);
+    }, 3000);
 
     try {
       const params = { page, limit: 12 };
@@ -92,7 +92,7 @@ const Home = () => {
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
       {/* Header & Subtitle */}
       <div className="mb-md md:mb-lg">
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Active Drives</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Active Drives</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">
           Track and apply to upcoming placement opportunities.
         </p>

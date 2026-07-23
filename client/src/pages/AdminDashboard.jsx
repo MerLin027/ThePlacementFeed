@@ -106,11 +106,11 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
+    <div className="max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-sm mb-md">
         <div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Admin Dashboard</h1>
+          <h1 className="font-display-lg text-display-lg text-on-surface">Admin Dashboard</h1>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
             Manage placement drives · {pagination.total} total
           </p>

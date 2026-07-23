@@ -71,9 +71,9 @@ const Timeline = () => {
   const sortedKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
+    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
       <div className="text-center mb-lg">
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Placement Timeline</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement Timeline</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">Chronological view of all placement drives</p>
       </div>
 

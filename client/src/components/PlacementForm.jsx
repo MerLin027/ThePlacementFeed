@@ -18,7 +18,6 @@ const INITIAL_FORM = {
   jdDescription: '',
   tags: [],
   formUrl: '',
-  selectionRounds: [],
 };
 
 const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
@@ -48,7 +47,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         jdDescription: initialData.jdDescription || '',
         tags: initialData.tags || [],
         formUrl: initialData.formUrl || '',
-        selectionRounds: initialData.selectionRounds || [],
       });
     }
   }, [initialData]);
@@ -62,28 +60,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     setForm((prev) => ({
       ...prev,
       eligibility: { ...prev.eligibility, [field]: value },
-    }));
-  };
-
-  const addRound = () => {
-    setForm((prev) => ({
-      ...prev,
-      selectionRounds: [...prev.selectionRounds, { roundName: '', roundDescription: '' }],
-    }));
-  };
-
-  const updateRound = (index, field, value) => {
-    setForm((prev) => {
-      const newRounds = [...prev.selectionRounds];
-      newRounds[index] = { ...newRounds[index], [field]: value };
-      return { ...prev, selectionRounds: newRounds };
-    });
-  };
-
-  const removeRound = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      selectionRounds: prev.selectionRounds.filter((_, i) => i !== index),
     }));
   };
 
@@ -110,12 +86,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         driveDate: form.driveDate || undefined,
         deadline: form.deadline || undefined,
         formUrl: form.formUrl.trim() || undefined,
-        selectionRounds: form.selectionRounds
-          .filter(r => r.roundName.trim())
-          .map(r => ({
-            roundName: r.roundName.trim(),
-            roundDescription: r.roundDescription?.trim() || undefined,
-          })),
       };
       await onSubmit(payload);
     } catch (err) {
@@ -303,61 +273,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             {form.jdDescription.length.toLocaleString()} / 50,000 characters
           </p>
         </div>
-      </div>
-
-      {/* Selection Process */}
-      <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant">
-        <div className="flex items-center justify-between mb-sm">
-          <h4 className="font-label-md text-label-md text-on-surface">Selection Process <span className="text-outline font-normal ml-1">(optional)</span></h4>
-          <button
-            type="button"
-            onClick={addRound}
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest text-primary font-label-sm text-label-sm rounded-lg border border-outline-variant hover:bg-surface-container-high focus:outline-none transition-colors"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            Add Round
-          </button>
-        </div>
-        {form.selectionRounds.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant text-center py-sm border border-dashed border-outline-variant rounded-lg">
-            No selection rounds added.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {form.selectionRounds.map((round, index) => (
-              <div key={index} className="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant relative group">
-                <div className="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-2">
-                  {index + 1}
-                </div>
-                <div className="flex-1 space-y-3">
-                  <input
-                    type="text"
-                    value={round.roundName}
-                    onChange={(e) => updateRound(index, 'roundName', e.target.value)}
-                    className="input-field"
-                    placeholder="Round Name (e.g. Online Assessment)"
-                    maxLength={200}
-                  />
-                  <textarea
-                    value={round.roundDescription}
-                    onChange={(e) => updateRound(index, 'roundDescription', e.target.value)}
-                    className="input-field min-h-[80px] py-2 resize-y"
-                    placeholder="Round Description (optional)"
-                    maxLength={1000}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeRound(index)}
-                  className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-md hover:bg-error-container"
-                  title="Remove Round"
-                >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Tags */}
