@@ -85,7 +85,7 @@ const Home = () => {
 
   const handlePageChange = (page) => {
     fetchPlacements(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

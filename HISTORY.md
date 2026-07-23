@@ -1,5 +1,40 @@
 # Project History
 
+## July 23, 2026 — Font Loading & Image Compression (Performance)
+
+### Task 1 — Move Google Fonts from CSS @import to HTML link tags
+- **`index.html`**: Added `<link rel="preconnect">` hints for `fonts.googleapis.com` and `fonts.gstatic.com` (with `crossorigin`), then declared all three font stylesheets (Inter, Geist, Material Symbols) as `<link rel="stylesheet">` tags directly in `<head>`. This eliminates the cascading delay where the browser had to parse `index.css` before it could even discover the font URLs.
+- **`index.css`**: Removed all three `@import url(...)` font declarations — fonts are now loaded via HTML, not CSS.
+- All font URLs retain `&display=swap` so text renders immediately in a system fallback font and swaps in once the custom font arrives (no invisible text while loading).
+
+### Task 2 — Logo Image Compression (Sharp)
+Compressed all logo PNG assets using `sharp` (max PNG compression + palette quantization + resize to max display width):
+
+| File | Before | After | Reduction |
+|---|---|---|---|
+| `src/assets/cdpc-logo.png` | 3,843 KB | 23 KB | **-99%** |
+| `src/assets/charusat-logo.png` | 256 KB | 18 KB | **-93%** |
+| `src/assets/logo.png` | 80 KB | 24 KB | **-70%** |
+| `public/logo.png` | 597 KB | 25 KB | **-96%** |
+
+The CDPC logo was the most egregious — a 2752×1536 px source image for a 36px-tall footer logo. Resized to 300px wide (still 8× retina), saving 3.8 MB per page load.
+
+### Note on Render Cold Starts
+Backend API cold-start delay (Render free tier sleeping) is a known, separate issue and not addressed here. Asset loading and API latency are independent.
+
+## July 23, 2026 — Fixed Navbar/Footer Layout + Custom Scrollbar
+
+### Task 1 — Fixed Navbar/Footer with Scrollable Content Area
+- **`App.jsx`**: Changed the root wrapper from `flex flex-col min-h-screen` to `h-screen overflow-hidden flex flex-col`. The `<main>` element is now `flex-1 min-h-0 overflow-y-auto content-scrollbar` — the only scrollable region on every page. Added `id="main-content"` to `<main>` so pages can programmatically scroll it.
+- **`Footer.jsx`**: Removed `mt-auto` (no longer needed since footer is the last flex child of the fixed-height container) and added `flex-shrink-0` to ensure it never collapses.
+- **`Home.jsx`**: Updated `handlePageChange` to call `document.getElementById('main-content')?.scrollTo(...)` instead of `window.scrollTo(...)`, since the window is no longer the scroll source.
+- **`AdminLogin.jsx`**: Changed the page wrapper from `flex-1 flex items-center` to `min-h-full flex items-center` so the login card remains vertically centered inside the new `overflow-y-auto` main container.
+
+### Task 2 — Custom Scrollbar Styling
+- **`index.css`**: Added `.content-scrollbar` component class with cross-browser custom scrollbar styling:
+  - Firefox: `scrollbar-width: thin` + `scrollbar-color` with muted slate thumb on transparent track.
+  - Chromium/WebKit: 6px wide scrollbar, transparent track, rounded-full slate thumb (`rgba(100,116,139,0.35)`), darker on hover (`rgba(100,116,139,0.6)`). Uses `background-clip: content-box` with a 2px transparent border for visual breathing room.
+
 ## July 22, 2026 — Minor UI Label Update
 
 ### Task 1 — Rename "View Results" Button Label
@@ -12,6 +47,11 @@
 ### Task 3 — Placement Detail Layout Fix
 - Fixed an issue in `PlacementDetail.jsx` where the footer was pushed off-screen and content failed to center properly.
 - Removed `flex-grow` from the page wrapper and nested the grid inside a standard block container. This allows the parent `<main className="flex-1">` in `App.jsx` to correctly handle pushing the footer to the bottom of the viewport for short content, while preventing the grid rows from stretching vertically.
+
+### Task 4 — Placement Detail Scrollbar Fix
+- Added `items-start` to the main grid container (`grid-cols-1 md:grid-cols-12`) in `PlacementDetail.jsx` to override the default CSS Grid behavior (`align-items: stretch`). 
+- This prevents the right column (Eligibility Criteria, etc.) from artificially stretching to match the height of the left column (Company Info) when its actual content is short.
+- Confirmed there are no stray `min-h-screen` or fixed heights applied to the main content area or its columns.
 
 ## July 22, 2026 — Design Polish Batch 1: Accessibility & Quick Fixes
 

@@ -1,7 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -128,5 +124,32 @@
 
   .markdown-body p:last-child {
     @apply mb-0;
+  }
+
+  /* ── Scrollable content area ─────────────────────────────────────────── */
+  .content-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+  }
+
+  /* Chromium / WebKit */
+  .content-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .content-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .content-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .content-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.6);
   }
 }

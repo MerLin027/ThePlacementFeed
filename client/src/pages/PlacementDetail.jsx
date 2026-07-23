@@ -86,7 +86,7 @@ const PlacementDetail = () => {
 
   return (
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-lg">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg items-start">
 
       {/* Back navigation breadcrumb */}
       <div className="md:col-span-12 -mb-xs">

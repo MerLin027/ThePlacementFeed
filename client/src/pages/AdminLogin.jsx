@@ -44,7 +44,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center py-lg px-sm">
+    <div className="min-h-full flex items-center justify-center py-lg px-sm">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
