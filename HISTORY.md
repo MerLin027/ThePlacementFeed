@@ -1,5 +1,23 @@
 # Project History
 
+## July 23, 2026 — Compact Placement Detail Layout (Eliminate Scroll on Short Entries)
+
+- **`PlacementDetail.jsx`**: Surgical compaction to ensure short entries require zero scrolling, without sacrificing readability of primary content.
+  - **Page wrapper**: `py-lg` (40px × 2) → `py-sm` (16px × 2). Saves 48px of vertical whitespace.
+  - **Outer grid gap**: `gap-md md:gap-lg` → `gap-xs md:gap-sm`. Tighter row gap between breadcrumb and columns, and column gap between left/right.
+  - **Column card gap**: `gap-md` → `gap-xs` in both left and right columns. Cards sit closer together.
+  - **Card internal padding**: All cards changed from `p-md` (24px) to `p-sm` (16px). Consistent inset reduction across Company Info, Important Dates, and Eligibility cards.
+  - **Eligibility sub-cards**: Internal padding from `p-sm` (16px) → `p-xs` (8px); label margin from `mb-base` → `mb-[3px]`.
+  - **Row padding in Important Dates**: `py-xs` (8px) → `py-[6px]` for a tighter date row height.
+  - **Section header margin**: `mb-sm` → `mb-xs` throughout all section headings.
+  - **Secondary labels** (`ACADEMIC REQUIREMENT`, `ELIGIBLE BRANCHES`, `IMPORTANT DATES`): downgraded from `font-label-md text-label-md` (14px) to `font-label-sm text-label-sm` (12px). Primary content values unchanged.
+  - **Timestamps line**: downgraded from `font-body-sm text-body-sm` (14px) to `font-label-sm text-label-sm` (12px) with `font-normal tracking-normal` override to maintain readability.
+  - **Logo icon**: 48×48 → 40×40, icon size 28px → 24px.
+  - **Primary content unchanged**: company name (`display-lg`), role (`headline-sm`), CTC (`headline-md`), eligibility values (`body-md`), section headings (`headline-sm`).
+  - Long entries with Job Descriptions / Selection Process steps still scroll normally — `<main>` scroll container in `App.jsx` is untouched.
+
+---
+
 ## July 23, 2026 — Eliminate Native Window Scrollbar
 - **`index.css`**: Added `html { height: 100%; overflow: hidden; }` and `overflow: hidden` to `body`. The React root `<div>` already had `h-screen overflow-hidden`, but `<html>` and `<body>` were unconstrained, allowing the browser to still render a native window-level scrollbar. Locking both to `h-full overflow-hidden` ensures the ONLY scrollable element is `<main id="main-content">` with its custom thin styled scrollbar.
 
