@@ -1,15 +1,5 @@
 # Project History
 
-## July 23, 2026 — Fix Unnecessary Scroll on Placement Detail Page
-
-- **`PlacementDetail.jsx`**: Fixed unnecessary scrollbar appearing on short placement entries.
-  - Reduced outer page wrapper padding from `py-lg` (40px × 2 = 80px) to `py-md` (24px × 2 = 48px). This 32px saving was the primary cause — combined with card content, the total height exceeded the viewport on typical screens even for short entries.
-  - Reduced horizontal grid gap from `gap-md md:gap-lg` (24px / 40px) to `gap-sm md:gap-md` (16px / 24px) — smaller gap between the two main columns.
-  - Reduced vertical card gap within each column from `gap-md` (24px) to `gap-sm` (16px) — tighter spacing between Company Info card, Important Dates card, and Eligibility section.
-  - Long entries with lengthy Job Descriptions still scroll normally; the `<main>` scroll container in `App.jsx` is unchanged.
-
----
-
 ## July 23, 2026 — Eliminate Native Window Scrollbar
 - **`index.css`**: Added `html { height: 100%; overflow: hidden; }` and `overflow: hidden` to `body`. The React root `<div>` already had `h-screen overflow-hidden`, but `<html>` and `<body>` were unconstrained, allowing the browser to still render a native window-level scrollbar. Locking both to `h-full overflow-hidden` ensures the ONLY scrollable element is `<main id="main-content">` with its custom thin styled scrollbar.
 

@@ -85,8 +85,8 @@ const PlacementDetail = () => {
   };
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-sm md:gap-md items-start">
+    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-lg">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg items-start">
 
       {/* Back navigation breadcrumb */}
       <div className="md:col-span-12 -mb-xs">
@@ -99,7 +99,7 @@ const PlacementDetail = () => {
         </button>
       </div>
       {/* Left Column (Company Info & Action) */}
-      <div className="md:col-span-4 flex flex-col gap-sm">
+      <div className="md:col-span-4 flex flex-col gap-md">
         {/* Company Info Card */}
         <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md flex flex-col gap-sm">
           <div className="w-12 h-12 border border-surface-variant rounded-lg flex items-center justify-center overflow-hidden mb-sm">
@@ -152,7 +152,7 @@ const PlacementDetail = () => {
       </div>
 
       {/* Right Column (Detailed Details) */}
-      <div className="md:col-span-8 flex flex-col gap-sm">
+      <div className="md:col-span-8 flex flex-col gap-md">
         {/* Eligibility Section */}
         <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-md">
           <div className="flex items-center gap-xs mb-sm">
