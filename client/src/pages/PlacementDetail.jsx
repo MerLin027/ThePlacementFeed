@@ -5,6 +5,16 @@ import StatusBadge from '../components/StatusBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// Strip raw HTML tags (e.g. <div align="center">, </div>) from markdown source
+// so they don't render as visible literal text. react-markdown v9 does NOT
+// render raw HTML by default (no rehype-raw), and without stripping they appear
+// verbatim in the output.
+const stripRawHtml = (text) => {
+  if (!text) return '';
+  // Remove complete HTML tags — both opening (<tag ...>) and closing (</tag>)
+  return text.replace(/<\/?[a-zA-Z][^>]*>/g, '');
+};
+
 const PlacementDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -202,7 +212,11 @@ const PlacementDetail = () => {
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Job Description &amp; Responsibilities
               </h2>
-              <div className="prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant">
+              {/* markdown-body applies full typography: headings, lists, tables, bold, links.
+                  remark-gfm enables GFM tables, strikethrough, task lists.
+                  stripRawHtml pre-processes the source to remove HTML tags that
+                  react-markdown (without rehype-raw) would otherwise display as literal text. */}
+              <div className="markdown-body">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -211,7 +225,7 @@ const PlacementDetail = () => {
                     ),
                   }}
                 >
-                  {placement.jdDescription}
+                  {stripRawHtml(placement.jdDescription)}
                 </ReactMarkdown>
               </div>
             </section>

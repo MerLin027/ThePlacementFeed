@@ -1,6 +1,31 @@
 # Project History
 
+## July 23, 2026 — Fix Broken Markdown Rendering on Job Description
+
+### Root Cause Analysis
+Three compounding bugs were causing the Job Description section to render as unstyled, raw text:
+1. **Wrong CSS class**: The container used `prose prose-sm max-w-none` (Tailwind Typography plugin classes), but `@tailwindcss/typography` was **not installed** (`plugins: []` in `tailwind.config.js`). The correct typography styles were already fully written in `index.css` under `.markdown-body`, but pointed at the wrong class name.
+2. **Raw HTML showing as visible text**: `react-markdown` v9 does not render raw HTML by default (no `rehype-raw` plugin). Tags like `<div align="center">` were being passed through as text nodes and rendered verbatim. Required a pre-processing step to strip them.
+3. **`remark-gfm` was already wired correctly** — the import and plugin array were correct; this was not the issue.
+
+### Changes — `PlacementDetail.jsx`
+- Added `stripRawHtml()` helper function (top-level, outside the component) that uses a regex to remove all raw HTML tags from the markdown source string before passing it to `ReactMarkdown`. This ensures tags like `<div align="center">` are silently dropped rather than displayed as visible characters.
+- Changed the markdown container class from `prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant` → `markdown-body`. This wires up the complete typography stylesheet already defined in `index.css` covering: headings (h1–h4 with size hierarchy), paragraphs, unordered/ordered lists with indentation and markers, tables with borders and header row, bold/strong, links (primary color, new tab target), blockquotes, inline code, code blocks, images, and horizontal rules.
+- No new packages were installed — `remark-gfm` (already a dependency) provides GFM table, strikethrough, and task list support.
+
+### Verified element types
+- **Headings**: h1 (2xl bold), h2 (xl bold), h3 (lg semibold), h4 (label-md) — clear size hierarchy
+- **Tables**: bordered via `border-collapse`, header row has `bg-surface-container-low` + `font-semibold`, rows separated by `border-b border-surface-variant`
+- **Bullet lists**: `list-disc list-outside ml-5 space-y-1.5`
+- **Bold**: `font-bold text-on-surface`
+- **Links**: `text-primary hover:underline`, open in new tab via `target="_blank"`
+- **Raw HTML stripping**: `<div align="center">`, `</div>` and similar tags are removed before parsing
+- **Paragraphs**: `mb-4` spacing, `text-on-surface-variant` color
+
+---
+
 ## July 23, 2026 — Compact Placement Detail Layout (Eliminate Scroll on Short Entries)
+
 
 - **`PlacementDetail.jsx`**: Surgical compaction to ensure short entries require zero scrolling, without sacrificing readability of primary content.
   - **Page wrapper**: `py-lg` (40px × 2) → `py-sm` (16px × 2). Saves 48px of vertical whitespace.
