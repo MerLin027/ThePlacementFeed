@@ -104,17 +104,17 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         ctc: Number(form.ctc),
         eligibility: {
           branches: form.eligibility.branches,
-          cgpa: form.eligibility.cgpa !== '' ? Number(form.eligibility.cgpa) : undefined,
-          backlog: form.eligibility.backlog !== '' ? Number(form.eligibility.backlog) : undefined,
+          cgpa: form.eligibility.cgpa !== '' ? Number(form.eligibility.cgpa) : null,
+          backlog: form.eligibility.backlog !== '' ? Number(form.eligibility.backlog) : null,
         },
-        driveDate: form.driveDate || undefined,
-        deadline: form.deadline || undefined,
-        formUrl: form.formUrl.trim() || undefined,
+        driveDate: form.driveDate || null,
+        deadline: form.deadline || null,
+        formUrl: form.formUrl.trim() || "",
         selectionRounds: form.selectionRounds
           .filter(r => r.roundName.trim())
           .map(r => ({
             roundName: r.roundName.trim(),
-            roundDescription: r.roundDescription?.trim() || undefined,
+            roundDescription: r.roundDescription?.trim() || "",
           })),
       };
       await onSubmit(payload);

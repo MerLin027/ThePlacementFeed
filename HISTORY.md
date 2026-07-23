@@ -1,4 +1,11 @@
-### Reposition Existing Sections into Two-Column Layout (Wireframe-Based)\n- Rearranged PlacementDetail.jsx layout according to new wireframe: Left column (Company Info, Important Dates, Selection Process) and Right column (Eligibility, Job Description, Tags).\n- Re-implemented selectionRounds support in backend schema, validation, and admin form PlacementForm.jsx.\n\n# Project History
+# Project History
+
+## July 23, 2026 — Full Functional QA Pass Across Entire Site
+
+- Conducted a comprehensive code-level QA pass across all main site workflows (Navigation, Home page, Placement Detail page, Timeline page, Admin Login, Admin Dashboard).
+- Verified filter debouncing, form state logic, empty state handling, pagination, dynamic route rendering, markdown parsing, and admin interactions.
+- **Bug Fix**: Fixed the "Back to Drives" link in `PlacementDetail.jsx`. It was incorrectly using `navigate(-1)` (which would return the user to their previous history state, which could be the Timeline or an external site). Updated to `navigate('/')` to explicitly route back to the Home page as per the requirements.
+- **Bug Fix**: Fixed a bug in `PlacementForm.jsx` where clearing an optional field (like `formUrl`, `driveDate`, or `cgpa`) and saving would not actually remove the data from the database. The form was sending `undefined` for empty fields, which gets stripped out during JSON serialization, causing Mongoose's `$set` logic to ignore the field. Updated to explicitly send `""` (for strings) or `null` (for dates/numbers) so the database properly unsets them.
 
 ## July 23, 2026 — Fix Broken Markdown Rendering on Job Description
 

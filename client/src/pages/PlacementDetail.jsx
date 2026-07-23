@@ -103,7 +103,7 @@ const PlacementDetail = () => {
         {/* Back navigation breadcrumb */}
         <div className="md:col-span-12">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
