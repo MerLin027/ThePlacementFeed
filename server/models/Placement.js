@@ -58,7 +58,7 @@ const placementSchema = new mongoose.Schema(
     },
     jdDescription: {
       type: String,
-      maxlength: [50000, 'JD description cannot exceed 50000 characters'],
+      maxlength: [10000, 'JD description cannot exceed 10000 characters'],
     },
     selectionRounds: [{
       roundName: {
@@ -80,6 +80,19 @@ const placementSchema = new mongoose.Schema(
     formUrl: {
       type: String,
       trim: true,
+      maxlength: [500, 'Form URL cannot exceed 500 characters'],
+      validate: {
+        validator: function (v) {
+          if (!v) return true; // optional field
+          try {
+            const url = new URL(v);
+            return url.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        },
+        message: 'Form URL must be a valid HTTPS URL',
+      },
     },
   },
   {

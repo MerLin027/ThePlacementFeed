@@ -5,15 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Strip raw HTML tags (e.g. <div align="center">, </div>) from markdown source
-// so they don't render as visible literal text. react-markdown v9 does NOT
-// render raw HTML by default (no rehype-raw), and without stripping they appear
-// verbatim in the output.
-const stripRawHtml = (text) => {
-  if (!text) return '';
-  // Remove complete HTML tags — both opening (<tag ...>) and closing (</tag>)
-  return text.replace(/<\/?[a-zA-Z][^>]*>/g, '');
-};
+
 
 const PlacementDetail = () => {
   const { id } = useParams();
@@ -247,7 +239,7 @@ const PlacementDetail = () => {
                     ),
                   }}
                 >
-                  {stripRawHtml(placement.jdDescription)}
+                  {placement.jdDescription}
                 </ReactMarkdown>
               </div>
             </section>

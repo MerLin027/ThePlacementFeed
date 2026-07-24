@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const Placement = require('../models/Placement');
 const auth = require('../middleware/auth');
 const csrfCheck = require('../middleware/csrfCheck');
@@ -13,8 +14,21 @@ function escapeRegex(str) {
 
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
 
+// Rate limit public GET endpoints: 100 requests per 15 minutes per IP
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: {
+    success: false,
+    message: 'Too many requests. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // GET /api/placements — public, paginated, filterable
-router.get('/', async (req, res, next) => {
+router.get('/', apiLimiter, async (req, res, next) => {
+
   try {
     const { branch, status, ctcMin, ctcMax, search, sort, page, limit } =
       req.query;
@@ -121,7 +135,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // GET /api/placements/:id — public
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', apiLimiter, async (req, res, next) => {
   try {
     const placement = await Placement.findById(req.params.id).lean();
     if (!placement) {

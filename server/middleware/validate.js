@@ -72,8 +72,8 @@ const placementValidationRules = [
 
   body('jdDescription')
     .optional()
-    .isLength({ max: 50000 })
-    .withMessage('JD description cannot exceed 50000 characters'),
+    .isLength({ max: 10000 })
+    .withMessage('JD description cannot exceed 10000 characters'),
 
   body('tags')
     .optional()
@@ -87,8 +87,10 @@ const placementValidationRules = [
 
   body('formUrl')
     .optional({ values: 'falsy' })
-    .isURL()
-    .withMessage('formUrl must be a valid URL string'),
+    .isLength({ max: 500 })
+    .withMessage('Form URL cannot exceed 500 characters')
+    .isURL({ protocols: ['https'], require_protocol: true })
+    .withMessage('Form URL must be a valid HTTPS URL'),
 
   body('selectionRounds')
     .optional()

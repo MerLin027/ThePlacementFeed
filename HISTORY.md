@@ -1,5 +1,29 @@
 # Project History
 
+## July 24, 2026 — Phase 6: Security Hardening Pass
+
+### Schema Bounds Tightened (Task 3)
+- `jdDescription` maxlength reduced from 50000 → 10000 in both Mongoose schema and express-validator.
+- `formUrl` now enforces HTTPS-only via `new URL()` protocol check in schema and `isURL({ protocols: ['https'], require_protocol: true })` in validator. Maxlength 500 added.
+
+### API Rate Limiting (Task 5)
+- Added `apiLimiter` (100 req/15min/IP) to both `GET /api/placements` and `GET /api/placements/:id` to prevent scraping/abuse.
+
+### XSS Sanitizer Fix (Task 10)
+- Removed fragile regex-based `stripRawHtml` function from `PlacementDetail.jsx`. `react-markdown` without `rehype-raw` already safely ignores raw HTML — the regex was cosmetic and bypassable.
+
+### Dependency Audit (Task 11)
+- `npm audit` returned 0 vulnerabilities in both `client/` and `server/`.
+
+### Verified (No Changes Needed)
+- CSRF: `csrfCheck` middleware confirmed on all mutating routes.
+- Regex escaping: `escapeRegex` covers all 12 special chars.
+- JWT/Cookies: `SameSite=None` in prod, `Lax` in dev, `httpOnly` always, 3h expiry, generic login errors.
+- Query param validation: already enforced in `placements.js`.
+- Helmet/CORS: already correctly configured.
+- Error handler: never leaks stack traces.
+- Access control: `auth` middleware on all mutating routes.
+
 ## July 23, 2026 — Full Functional QA Pass Across Entire Site
 
 - Conducted a comprehensive code-level QA pass across all main site workflows (Navigation, Home page, Placement Detail page, Timeline page, Admin Login, Admin Dashboard).
