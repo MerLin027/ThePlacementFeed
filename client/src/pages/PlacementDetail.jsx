@@ -137,6 +137,15 @@ const PlacementDetail = () => {
                 </a>
               </div>
             )}
+            {/* Timestamp footnote */}
+            <div className="border-t border-surface-variant mt-xs pt-xs">
+              <p className="font-label-sm text-label-sm text-outline font-normal tracking-normal">
+                Added {formatDate(placement.createdAt)}
+                {placement.updatedAt !== placement.createdAt && (
+                  <span> · Updated {formatDate(placement.updatedAt)}</span>
+                )}
+              </p>
+            </div>
           </div>
 
           {/* 2. Important Dates Card */}
@@ -167,11 +176,7 @@ const PlacementDetail = () => {
                 {placement.selectionRounds.map((step, index) => (
                   <div key={index} className="flex items-start gap-xs relative z-10">
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-0.5 ${
-                        index === 0
-                          ? 'bg-primary-container text-on-primary-container'
-                          : 'bg-surface-container-high border border-surface-variant text-on-surface'
-                      }`}
+                      className="w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-0.5 bg-primary-container text-on-primary-container"
                     >
                       {index + 1}
                     </div>
@@ -264,13 +269,7 @@ const PlacementDetail = () => {
 
         </div>
 
-        {/* Timestamps */}
-        <div className="md:col-span-12 font-label-sm text-label-sm text-on-surface-variant text-right font-normal tracking-normal">
-          <span>Added {formatDate(placement.createdAt)}</span>
-          {placement.updatedAt !== placement.createdAt && (
-            <span> · Updated {formatDate(placement.updatedAt)}</span>
-          )}
-        </div>
+
 
       </div>
     </div>

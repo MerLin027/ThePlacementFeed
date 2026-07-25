@@ -1,5 +1,21 @@
 # Project History
 
+## July 25, 2026 — Selection Process Step Indicator Color Fix
+
+### Bug Fix: Consistent Step Circle Colors (`PlacementDetail.jsx`)
+- Removed the `index === 0` conditional that gave the first selection round circle a different color (`bg-primary-container`) than all subsequent ones (`bg-surface-container-high`).
+- All step indicator circles now uniformly use `bg-primary-container text-on-primary-container` (the site's primary accent blue) regardless of position.
+- Connecting line (`bg-surface-variant`), round name, and description text styling are unchanged.
+
+### UI: Timestamp Relocated into Company Info Card (`PlacementDetail.jsx`)
+- The "Added [date] · Updated [date]" line was previously a standalone element at the very bottom of the page grid (full-width, right-aligned).
+- Moved it inside the Company Info Card, below the Apply Now button, as a quiet footnote.
+- Uses the same `border-t border-surface-variant mt-xs pt-xs` divider pattern already used above the Apply Now button in the same card.
+- Styled with `text-outline` (muted, non-competing) and `font-label-sm` — matching the rest of the card's secondary text scale.
+- Removed the standalone bottom-of-page timestamp block entirely; timestamp now appears in exactly one place.
+
+---
+
 ## July 24, 2026 — Phase 6: Security Hardening Pass
 
 ### Schema Bounds Tightened (Task 3)
