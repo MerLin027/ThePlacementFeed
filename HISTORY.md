@@ -1,5 +1,11 @@
 # Project History
 
+## July 26, 2026 — UI Fix: Notification Panel Controls
+
+- **Notification Panel Header**: Added a visible close ("X") button next to the "Clear all" action to explicitly close the panel without clearing notifications.
+- **Dismiss Button Shape**: Fixed the individual notification dismiss button to render as a perfect circle regardless of content by replacing padding-based sizing with explicit width/height and flexbox centering.
+
+---
 ## July 26, 2026 — Notification System for Placement Drives
 
 ### Backend Updates

@@ -223,8 +223,24 @@ router.put(
   validate,
   async (req, res, next) => {
     try {
+      const existingPlacement = await Placement.findById(req.params.id);
+      if (!existingPlacement) {
+        return res.status(404).json({
+          success: false,
+          message: 'Placement not found',
+        });
+      }
+
       const updateData = { ...req.body };
       delete updateData.recentChanges;
+
+      let statusChanged = false;
+      if (updateData.status && updateData.status !== existingPlacement.status) {
+        statusChanged = true;
+        updateData.statusManuallySet = true;
+      }
+
+      const changeType = statusChanged ? 'statusChange' : 'edit';
 
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
@@ -232,19 +248,13 @@ router.put(
           $set: updateData,
           $push: {
             recentChanges: {
-              $each: [{ type: 'edit', changedAt: new Date() }],
+              $each: [{ type: changeType, changedAt: new Date() }],
               $slice: -10,
             },
           },
         },
         { new: true, runValidators: true }
       );
-      if (!placement) {
-        return res.status(404).json({
-          success: false,
-          message: 'Placement not found',
-        });
-      }
       res.json({ success: true, data: placement });
     } catch (error) {
       next(error);

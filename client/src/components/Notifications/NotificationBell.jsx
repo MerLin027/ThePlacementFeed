@@ -61,14 +61,23 @@ const NotificationBell = () => {
         <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh]">
           <div className="flex items-center justify-between p-4 border-b border-outline-variant">
             <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Notifications</h3>
-            {notifications.length > 0 && (
+            <div className="flex items-center gap-3">
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="text-primary hover:text-primary-focus text-label-md font-label-md transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
               <button
-                onClick={clearAll}
-                className="text-primary hover:text-primary-focus text-label-md font-label-md transition-colors"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center w-8 h-8 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Close notifications"
               >
-                Clear all
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
-            )}
+            </div>
           </div>
           
           <div className="overflow-y-auto flex-1 content-scrollbar">
@@ -104,7 +113,7 @@ const NotificationBell = () => {
                         e.stopPropagation();
                         dismissNotification(notif.id);
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-error/10 focus-visible:opacity-100"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-error/10 focus-visible:opacity-100 focus-visible:outline-none"
                       aria-label="Dismiss notification"
                     >
                       <span className="material-symbols-outlined text-[20px]">close</span>
