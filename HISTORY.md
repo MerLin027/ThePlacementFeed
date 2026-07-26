@@ -6,7 +6,7 @@
 - **Backend:** Added `isPostponed` (Boolean, default `false`) to the `Placement` schema.
 - **Backend:** Added a dedicated `PATCH /api/placements/:id/postpone` endpoint for lightweight toggling, backed by a minimal `postponeValidationRules` array (auth and CSRF protected).
 - **Frontend (Admin):** Added a "Mark as Postponed" checkbox in `PlacementForm.jsx` (saved via the standard full form PUT).
-- **Frontend (Admin):** Added an inline quick-toggle button in `AdminDashboard.jsx` (STATUS column) that calls the new `PATCH` endpoint to instantly flag/unflag without full form edits. Includes a loading spinner and handles error display.
+- **Frontend (Admin):** Added a dedicated "POSTPONE" column in the `AdminDashboard.jsx` table (visible on medium+ screens) featuring a quick-toggle button that instantly flags/unflags drives without full form edits. Includes a loading spinner and handles error display.
 - **Frontend (Display):** Updated `StatusBadge.jsx` to intercept the `isPostponed` prop. When true, it completely replaces the regular status visual with a new red `POSTPONED` badge (`bg-red-100 text-red-700`).
 - **Frontend (Integration):** Passed the `isPostponed` field to `StatusBadge` on all public surfaces (`Home.jsx` via `PlacementCard.jsx`, `PlacementDetail.jsx`, `Timeline.jsx`) and inside the Admin Dashboard table. Preserved all original button display logic (which remains tied solely to `formUrl` presence).
 

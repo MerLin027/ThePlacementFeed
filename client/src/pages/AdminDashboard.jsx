@@ -178,6 +178,7 @@ const AdminDashboard = () => {
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Type</th>
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">CTC</th>
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Status</th>
+                <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Postpone</th>
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Drive Date</th>
                 <th className="text-right px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Actions</th>
               </tr>
@@ -185,7 +186,7 @@ const AdminDashboard = () => {
             <tbody className="divide-y divide-surface-variant">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-sm py-xl text-center">
+                  <td colSpan={7} className="px-sm py-xl text-center">
                     <div className="flex items-center justify-center">
                       <div className="relative">
                         <div className="w-8 h-8 rounded-full border-4 border-outline-variant" />
@@ -196,7 +197,7 @@ const AdminDashboard = () => {
                 </tr>
               ) : placements.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
+                  <td colSpan={7} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
                     No placements found. Click &quot;Add Placement&quot; to create one.
                   </td>
                 </tr>
@@ -215,11 +216,13 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-sm py-sm hidden md:table-cell">
                       <StatusBadge status={p.status} isPostponed={p.isPostponed} />
+                    </td>
+                    <td className="px-sm py-sm hidden md:table-cell">
                       <button
                         onClick={() => handlePostponeToggle(p)}
                         disabled={!!toggling[p._id]}
                         title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
-                        className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           p.isPostponed
                             ? 'bg-red-100 text-red-700 hover:bg-red-200'
                             : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-surface-variant'
