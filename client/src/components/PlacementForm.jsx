@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import BranchSelect from './BranchSelect';
 import TagInput from './TagInput';
 
@@ -118,6 +118,13 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             roundDescription: r.roundDescription?.trim() || "",
           })),
       };
+
+      // Set statusManuallySet if status was explicitly changed
+      const originalStatus = initialData ? initialData.status : INITIAL_FORM.status;
+      if (form.status !== originalStatus) {
+        payload.statusManuallySet = true;
+      }
+
       await onSubmit(payload);
     } catch (err) {
       const msg =

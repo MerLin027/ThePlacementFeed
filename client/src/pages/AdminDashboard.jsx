@@ -118,6 +118,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetStatusAutomation = async (p) => {
+    const id = p._id;
+    setToggling((prev) => ({ ...prev, [id]: true }));
+    setToggleError((prev) => ({ ...prev, [id]: '' }));
+    try {
+      const res = await api.patch(`/api/placements/${id}/reset-status-automation`, {
+        statusManuallySet: false,
+      });
+      setPlacements((prev) =>
+        prev.map((item) => (item._id === id ? res.data.data : item))
+      );
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to reset — please try again';
+      setToggleError((prev) => ({ ...prev, [id]: msg }));
+    } finally {
+      setToggling((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -240,6 +259,28 @@ const AdminDashboard = () => {
                         )}
                         {p.isPostponed ? 'Un-postpone' : 'Postpone'}
                       </button>
+                      
+                      {p.statusManuallySet && (
+                        <button
+                          onClick={() => handleResetStatusAutomation(p)}
+                          disabled={!!toggling[p._id]}
+                          title="Status was manually set. Click to restore automatic updates."
+                          className="mt-2 inline-flex flex-col items-start gap-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-1">
+                            {toggling[p._id] ? (
+                              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            ) : (
+                              <span className="material-symbols-outlined text-[12px]">restart_alt</span>
+                            )}
+                            Reset Auto Status
+                          </span>
+                        </button>
+                      )}
+
                       {toggleError[p._id] && (
                         <p className="mt-1 font-label-sm text-label-sm text-red-600">{toggleError[p._id]}</p>
                       )}

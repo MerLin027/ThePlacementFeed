@@ -1,5 +1,19 @@
 # Project History
 
+## July 26, 2026 — Automate Placement Status Transitions
+
+### Automation & Background Jobs
+- **Backend:** Added `statusManuallySet` (Boolean, default `false`) to the `Placement` schema to control whether the automation script is allowed to alter the placement status.
+- **Backend:** Installed `node-cron` and created `server/jobs/statusCron.js`, which runs daily at 00:05 IST to auto-transition statuses (`Upcoming` → `Ongoing` via `deadline`/`driveDate`, and `Ongoing` → `Completed` via `driveDate`). 
+- **Backend:** Built timezone-aware logic (`Asia/Kolkata`) that executes strictly via UTC midnight cutoff comparisons directly matching `<input type="date">` MongoDB serialization to prevent drift.
+
+### Manual Overrides & UI
+- **Backend:** Exposed a new lightweight toggle route `PATCH /api/placements/:id/reset-status-automation` backed by custom validation to let administrators restore automation control on manually overriden items.
+- **Frontend (Admin):** Added logic in `PlacementForm.jsx` to dynamically mark `statusManuallySet: true` in the API payload whenever an administrator explicitly alters the status dropdown from its initial value.
+- **Frontend (Admin):** Upgraded `AdminDashboard.jsx`'s table column to conditionally display a "Reset Auto Status" button below the postpone controls when a placement's status has been manually set. Features spinner integration and asynchronous state handling mirroring existing hooks.
+
+---
+
 ## July 26, 2026 — Feature: "Postponed" Status Override
 
 ### Added `isPostponed` Display Override

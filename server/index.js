@@ -75,10 +75,15 @@ app.use(errorHandler);
 // --- Start server ---
 const PORT = process.env.PORT || 5000;
 
+const { initCronJobs } = require('./jobs/statusCron');
+
 const startServer = async () => {
   try {
     await connectDB();
     await seedAdmin();
+    
+    // Initialize scheduled jobs
+    initCronJobs();
 
     app.listen(PORT, () => {
       console.log(

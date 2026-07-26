@@ -60,6 +60,10 @@ const placementSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    statusManuallySet: {
+      type: Boolean,
+      default: false,
+    },
     jdDescription: {
       type: String,
       maxlength: [10000, 'JD description cannot exceed 10000 characters'],

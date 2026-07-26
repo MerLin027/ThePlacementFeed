@@ -114,6 +114,12 @@ const placementValidationRules = [
     .isBoolean()
     .withMessage('isPostponed must be a boolean')
     .toBoolean(),
+
+  body('statusManuallySet')
+    .optional()
+    .isBoolean()
+    .withMessage('statusManuallySet must be a boolean')
+    .toBoolean(),
 ];
 
 // Minimal validation rules for the PATCH /postpone quick-toggle route
@@ -123,6 +129,16 @@ const postponeValidationRules = [
     .withMessage('isPostponed is required')
     .isBoolean()
     .withMessage('isPostponed must be a boolean')
+    .toBoolean(),
+];
+
+// Minimal validation rules for the PATCH /reset-status-automation quick-toggle route
+const resetStatusValidationRules = [
+  body('statusManuallySet')
+    .notEmpty()
+    .withMessage('statusManuallySet is required')
+    .isBoolean()
+    .withMessage('statusManuallySet must be a boolean')
     .toBoolean(),
 ];
 
@@ -142,4 +158,4 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { placementValidationRules, postponeValidationRules, validate };
+module.exports = { placementValidationRules, postponeValidationRules, resetStatusValidationRules, validate };
