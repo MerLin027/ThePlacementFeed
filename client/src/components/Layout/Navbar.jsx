@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from '../Notifications/NotificationBell';
 import logo from '../../assets/logo.png';
 
 const Navbar = () => {
@@ -65,7 +66,8 @@ const Navbar = () => {
         </nav>
 
         {/* Right zone — flex-1 balances the logo zone; hamburger sits here on mobile */}
-        <div className="flex-1 flex items-center justify-end">
+        <div className="flex-1 flex items-center justify-end gap-2">
+          <NotificationBell />
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             className="md:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors"

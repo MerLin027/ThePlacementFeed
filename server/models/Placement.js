@@ -102,6 +102,16 @@ const placementSchema = new mongoose.Schema(
         message: 'Form URL must be a valid HTTPS URL',
       },
     },
+    recentChanges: [{
+      type: {
+        type: String,
+        enum: ['new', 'statusChange', 'postponed', 'unpostponed', 'edit'],
+      },
+      changedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
   },
   {
     timestamps: true,
@@ -109,6 +119,7 @@ const placementSchema = new mongoose.Schema(
 );
 
 // Index for common queries
+placementSchema.index({ 'recentChanges.changedAt': -1 });
 placementSchema.index({ status: 1 });
 placementSchema.index({ company: 'text', role: 'text' });
 placementSchema.index({ driveDate: -1 });

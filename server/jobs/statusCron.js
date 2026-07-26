@@ -59,6 +59,11 @@ async function runStatusTransitionJob() {
     for (const p of upcomingToOngoing) {
       const oldStatus = p.status;
       p.status = 'Ongoing';
+      p.recentChanges = p.recentChanges || [];
+      p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
+      if (p.recentChanges.length > 10) {
+        p.recentChanges.shift();
+      }
       await p.save();
       console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to Ongoing at ${new Date().toISOString()}`);
     }
@@ -75,6 +80,11 @@ async function runStatusTransitionJob() {
     for (const p of ongoingToCompleted) {
       const oldStatus = p.status;
       p.status = 'Completed';
+      p.recentChanges = p.recentChanges || [];
+      p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
+      if (p.recentChanges.length > 10) {
+        p.recentChanges.shift();
+      }
       await p.save();
       console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to Completed at ${new Date().toISOString()}`);
     }

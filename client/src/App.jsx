@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -13,8 +15,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="h-screen overflow-hidden flex flex-col">
-          <Navbar />
+        <NotificationProvider>
+          <div className="h-screen overflow-hidden flex flex-col">
+            <Toaster position="top-right" />
+            <Navbar />
           <main id="main-content" className="flex-1 min-h-0 overflow-y-auto content-scrollbar">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -33,6 +37,7 @@ function App() {
           </main>
           <Footer />
         </div>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

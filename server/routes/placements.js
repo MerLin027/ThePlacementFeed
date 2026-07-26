@@ -134,6 +134,50 @@ router.get('/', apiLimiter, async (req, res, next) => {
   }
 });
 
+// GET /api/placements/changes — public, get recent changes since a timestamp
+router.get('/changes', apiLimiter, async (req, res, next) => {
+  try {
+    const { since } = req.query;
+    if (!since) {
+      return res.status(400).json({ success: false, message: 'since timestamp is required' });
+    }
+
+    const sinceDate = new Date(since);
+    if (isNaN(sinceDate.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid since timestamp' });
+    }
+
+    const placements = await Placement.find({
+      'recentChanges.changedAt': { $gt: sinceDate },
+    }).lean();
+
+    // Flatten recent changes
+    let changes = [];
+    placements.forEach((placement) => {
+      placement.recentChanges.forEach((change) => {
+        if (change.changedAt > sinceDate) {
+          changes.push({
+            id: `${placement._id}-${change.type}-${change.changedAt.getTime()}`,
+            placementId: placement._id,
+            company: placement.company,
+            role: placement.role,
+            type: change.type,
+            changedAt: change.changedAt,
+          });
+        }
+      });
+    });
+
+    // Sort by changedAt descending (Native Date subtraction is vastly faster)
+    changes.sort((a, b) => b.changedAt - a.changedAt);
+
+    // Cap at 50 to prevent massive payloads if a very old timestamp is maliciously provided
+    res.json({ success: true, data: changes.slice(0, 50) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/placements/:id — public
 router.get('/:id', apiLimiter, async (req, res, next) => {
   try {
@@ -159,7 +203,10 @@ router.post(
   validate,
   async (req, res, next) => {
     try {
-      const placement = await Placement.create(req.body);
+      const placementData = { ...req.body };
+      placementData.recentChanges = [{ type: 'new', changedAt: new Date() }];
+      
+      const placement = await Placement.create(placementData);
       res.status(201).json({ success: true, data: placement });
     } catch (error) {
       next(error);
@@ -176,9 +223,20 @@ router.put(
   validate,
   async (req, res, next) => {
     try {
+      const updateData = { ...req.body };
+      delete updateData.recentChanges;
+
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        {
+          $set: updateData,
+          $push: {
+            recentChanges: {
+              $each: [{ type: 'edit', changedAt: new Date() }],
+              $slice: -10,
+            },
+          },
+        },
         { new: true, runValidators: true }
       );
       if (!placement) {
@@ -205,7 +263,20 @@ router.patch(
     try {
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
-        { $set: { isPostponed: req.body.isPostponed } },
+        {
+          $set: { isPostponed: req.body.isPostponed },
+          $push: {
+            recentChanges: {
+              $each: [
+                {
+                  type: req.body.isPostponed ? 'postponed' : 'unpostponed',
+                  changedAt: new Date(),
+                },
+              ],
+              $slice: -10,
+            },
+          },
+        },
         { new: true, runValidators: true }
       );
       if (!placement) {
@@ -232,7 +303,15 @@ router.patch(
     try {
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
-        { $set: { statusManuallySet: req.body.statusManuallySet } },
+        {
+          $set: { statusManuallySet: req.body.statusManuallySet },
+          $push: {
+            recentChanges: {
+              $each: [{ type: 'statusChange', changedAt: new Date() }],
+              $slice: -10,
+            },
+          },
+        },
         { new: true, runValidators: true }
       );
       if (!placement) {

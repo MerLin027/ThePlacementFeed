@@ -1,5 +1,20 @@
 # Project History
 
+## July 26, 2026 — Notification System for Placement Drives
+
+### Backend Updates
+- Added a capped `recentChanges` array to the `Placement` schema to log `new`, `edit`, `postponed`, `unpostponed`, and `statusChange` mutations for notifications.
+- Added `GET /api/placements/changes?since=<timestamp>` endpoint to retrieve all recent changes.
+- Updated `POST /`, `PUT /:id`, `PATCH /:id/postpone`, `PATCH /:id/reset-status-automation`, and the background cron job to actively push their changes to the array.
+
+### Frontend Updates
+- Added `react-hot-toast` for global application toast alerts.
+- Created `NotificationContext` that polls the backend every 60 seconds using the `lastPollTime` boundary, persisting unseen changes to `localStorage` across reloads to ensure no missed updates.
+- Built a `NotificationBell` navbar component that displays an unread count badge. Contains a dropdown menu tracking the recent 15 updates, marking them as read upon open and allowing dismissal individually or all at once.
+- Postponed alerts are uniquely elevated by triggering a prominent red toast from `react-hot-toast` directly onto the screen.
+
+---
+
 ## July 26, 2026 — Automate Placement Status Transitions
 
 ### Automation & Background Jobs
