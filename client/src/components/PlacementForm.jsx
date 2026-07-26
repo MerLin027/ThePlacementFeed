@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import BranchSelect from './BranchSelect';
 import TagInput from './TagInput';
 
@@ -218,7 +218,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             Mark as Postponed
           </label>
           <p className="font-body-sm text-body-sm text-red-500 mt-0.5">
-            Use this to flag the drive as postponed due to unforeseen circumstances � the original status is preserved and can be restored by unchecking this.
+            Use this to flag the drive as postponed due to unforeseen circumstances — the original status is preserved and can be restored by unchecking this.
           </p>
         </div>
       </div>
