@@ -8,7 +8,8 @@
 - **Frontend (Admin):** Added a "Mark as Postponed" checkbox in `PlacementForm.jsx` (saved via the standard full form PUT).
 - **Frontend (Admin):** Added a dedicated "POSTPONE" column in the `AdminDashboard.jsx` table (visible on medium+ screens) featuring a quick-toggle button that instantly flags/unflags drives without full form edits. Includes a loading spinner and handles error display.
 - **Frontend (Display):** Updated `StatusBadge.jsx` to intercept the `isPostponed` prop. When true, it completely replaces the regular status visual with a new red `POSTPONED` badge (`bg-red-100 text-red-700`).
-- **Frontend (Integration):** Passed the `isPostponed` field to `StatusBadge` on all public surfaces (`Home.jsx` via `PlacementCard.jsx`, `PlacementDetail.jsx`, `Timeline.jsx`) and inside the Admin Dashboard table. Preserved all original button display logic (which remains tied solely to `formUrl` presence).
+- **Frontend (Integration):** Passed the `isPostponed` field to `StatusBadge` on all public surfaces (`Home.jsx` via `PlacementCard.jsx`, `PlacementDetail.jsx`, `Timeline.jsx`) and inside the Admin Dashboard table. 
+- **Frontend (Styling):** Updated `PlacementCard.jsx` to style the "View Details" button with a red accent (`text-red-700 border-red-200 bg-red-50`) when `isPostponed` is true, matching the urgency of the badge. Preserved all original button display logic for non-postponed cards, as well as the priority of the "Apply Now" button if a `formUrl` is present.
 
 ---
 

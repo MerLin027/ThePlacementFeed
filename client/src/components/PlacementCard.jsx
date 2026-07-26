@@ -23,6 +23,14 @@ const PlacementCard = ({ placement }) => {
       };
     }
 
+    if (isPostponed) {
+      return {
+        className: 'btn-secondary w-full py-3 justify-center text-red-700 border-red-200 hover:bg-red-50 focus:ring-red-700',
+        label: 'View Details',
+        isApply: false,
+      };
+    }
+
     const secondaryStyles = {
       Upcoming: 'btn-secondary w-full py-3 justify-center text-primary',
       Ongoing: 'btn-secondary w-full py-3 justify-center text-primary',
