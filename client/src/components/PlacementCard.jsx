@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 
 const PlacementCard = ({ placement }) => {
-  const { _id, company, role, ctc, status, driveDate, deadline, eligibility, formUrl } = placement;
+  const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility, formUrl } = placement;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -73,7 +73,7 @@ const PlacementCard = ({ placement }) => {
           <div className="w-12 h-12 border border-outline-variant rounded-lg flex items-center justify-center bg-surface p-1">
             <span className="material-symbols-outlined text-secondary text-[28px]">domain</span>
           </div>
-          <StatusBadge status={status} />
+          <StatusBadge status={status} isPostponed={isPostponed} />
         </div>
 
         {/* Company & Role */}

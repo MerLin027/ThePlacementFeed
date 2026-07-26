@@ -20,6 +20,8 @@ const AdminDashboard = () => {
 
   // Search
   const [search, setSearch] = useState('');
+  const [toggling, setToggling] = useState({});
+  const [toggleError, setToggleError] = useState({});
   const abortControllerRef = useRef(null);
 
   const fetchPlacements = useCallback(async (page = 1) => {
@@ -94,6 +96,26 @@ const AdminDashboard = () => {
   const openEdit = (p) => {
     setEditingPlacement(p);
     setShowForm(true);
+  };
+
+  const handlePostponeToggle = async (p) => {
+    const id = p._id;
+    setToggling((prev) => ({ ...prev, [id]: true }));
+    setToggleError((prev) => ({ ...prev, [id]: '' }));
+    try {
+      const res = await api.patch(`/api/placements/${id}/postpone`, {
+        isPostponed: !p.isPostponed,
+      });
+      // Update only this row in state; no full refetch
+      setPlacements((prev) =>
+        prev.map((item) => (item._id === id ? res.data.data : item))
+      );
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to update — please try again';
+      setToggleError((prev) => ({ ...prev, [id]: msg }));
+    } finally {
+      setToggling((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   const formatDate = (dateStr) => {
@@ -192,7 +214,32 @@ const AdminDashboard = () => {
                       <span className="font-label-md text-label-md text-on-surface">₹{p.ctc} LPA</span>
                     </td>
                     <td className="px-sm py-sm hidden md:table-cell">
-                      <StatusBadge status={p.status} />
+                      <StatusBadge status={p.status} isPostponed={p.isPostponed} />
+                      <button
+                        onClick={() => handlePostponeToggle(p)}
+                        disabled={!!toggling[p._id]}
+                        title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
+                        className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          p.isPostponed
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-surface-variant'
+                        }`}
+                      >
+                        {toggling[p._id] ? (
+                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : (
+                          <span className="material-symbols-outlined text-[12px]">
+                            {p.isPostponed ? 'undo' : 'pause_circle'}
+                          </span>
+                        )}
+                        {p.isPostponed ? 'Un-postpone' : 'Postpone'}
+                      </button>
+                      {toggleError[p._id] && (
+                        <p className="mt-1 font-label-sm text-label-sm text-red-600">{toggleError[p._id]}</p>
+                      )}
                     </td>
                     <td className="px-sm py-sm hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant">
                       {formatDate(p.driveDate)}

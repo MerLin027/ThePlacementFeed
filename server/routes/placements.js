@@ -3,7 +3,7 @@ const rateLimit = require('express-rate-limit');
 const Placement = require('../models/Placement');
 const auth = require('../middleware/auth');
 const csrfCheck = require('../middleware/csrfCheck');
-const { placementValidationRules, validate } = require('../middleware/validate');
+const { placementValidationRules, postponeValidationRules, validate } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -179,6 +179,33 @@ router.put(
       const placement = await Placement.findByIdAndUpdate(
         req.params.id,
         req.body,
+        { new: true, runValidators: true }
+      );
+      if (!placement) {
+        return res.status(404).json({
+          success: false,
+          message: 'Placement not found',
+        });
+      }
+      res.json({ success: true, data: placement });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// PATCH /api/placements/:id/postpone — lightweight toggle, auth required
+router.patch(
+  '/:id/postpone',
+  auth,
+  csrfCheck,
+  postponeValidationRules,
+  validate,
+  async (req, res, next) => {
+    try {
+      const placement = await Placement.findByIdAndUpdate(
+        req.params.id,
+        { $set: { isPostponed: req.body.isPostponed } },
         { new: true, runValidators: true }
       );
       if (!placement) {

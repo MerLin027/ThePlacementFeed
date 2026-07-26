@@ -108,6 +108,22 @@ const placementValidationRules = [
     .optional({ values: 'falsy' })
     .isLength({ max: 1000 })
     .withMessage('Round description cannot exceed 1000 characters'),
+
+  body('isPostponed')
+    .optional()
+    .isBoolean()
+    .withMessage('isPostponed must be a boolean')
+    .toBoolean(),
+];
+
+// Minimal validation rules for the PATCH /postpone quick-toggle route
+const postponeValidationRules = [
+  body('isPostponed')
+    .notEmpty()
+    .withMessage('isPostponed is required')
+    .isBoolean()
+    .withMessage('isPostponed must be a boolean')
+    .toBoolean(),
 ];
 
 // Middleware to check validation results
@@ -126,4 +142,4 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { placementValidationRules, validate };
+module.exports = { placementValidationRules, postponeValidationRules, validate };

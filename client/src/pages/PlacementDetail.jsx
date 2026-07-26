@@ -123,7 +123,7 @@ const PlacementDetail = () => {
                   {placement.type}
                 </span>
               )}
-              <StatusBadge status={placement.status} />
+              <StatusBadge status={placement.status} isPostponed={placement.isPostponed} />
             </div>
             {placement.formUrl && (
               <div className="border-t border-surface-variant mt-xs pt-xs">

@@ -56,6 +56,10 @@ const placementSchema = new mongoose.Schema(
       },
       default: 'Upcoming',
     },
+    isPostponed: {
+      type: Boolean,
+      default: false,
+    },
     jdDescription: {
       type: String,
       maxlength: [10000, 'JD description cannot exceed 10000 characters'],

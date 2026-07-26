@@ -15,6 +15,7 @@ const INITIAL_FORM = {
   driveDate: '',
   deadline: '',
   status: 'Upcoming',
+  isPostponed: false,
   jdDescription: '',
   tags: [],
   formUrl: '',
@@ -45,6 +46,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           ? new Date(initialData.deadline).toISOString().split('T')[0]
           : '',
         status: initialData.status || 'Upcoming',
+        isPostponed: initialData.isPostponed ?? false,
         jdDescription: initialData.jdDescription || '',
         tags: initialData.tags || [],
         formUrl: initialData.formUrl || '',
@@ -91,7 +93,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     e.preventDefault();
     setError('');
 
-    // Basic client-side validation
     if (!form.company.trim()) return setError('Company name is required');
     if (!form.role.trim()) return setError('Role is required');
     if (form.ctc === '' || form.ctc < 0) return setError('CTC must be a non-negative number');
@@ -203,6 +204,25 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         </div>
       </div>
 
+      {/* Postponed toggle */}
+      <div className="flex items-start gap-3 p-sm bg-red-50 border border-red-200 rounded-xl">
+        <input
+          id="isPostponed"
+          type="checkbox"
+          checked={form.isPostponed}
+          onChange={(e) => handleChange('isPostponed', e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-red-600 cursor-pointer flex-shrink-0"
+        />
+        <div>
+          <label htmlFor="isPostponed" className="font-label-md text-label-md text-red-700 cursor-pointer select-none">
+            Mark as Postponed
+          </label>
+          <p className="font-body-sm text-body-sm text-red-500 mt-0.5">
+            Use this to flag the drive as postponed due to unforeseen circumstances — the original status is preserved and can be restored by unchecking this.
+          </p>
+        </div>
+      </div>
+
       {/* Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -294,7 +314,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           value={form.jdDescription}
           onChange={(e) => handleChange('jdDescription', e.target.value)}
           className="input-field min-h-[200px] resize-y font-mono text-sm leading-relaxed"
-          placeholder="# Job Title&#10;&#10;## Requirements&#10;- Requirement 1&#10;- Requirement 2"
+          placeholder={"# Job Title\n\n## Requirements\n- Requirement 1\n- Requirement 2"}
           maxLength={50000}
           rows={10}
         />

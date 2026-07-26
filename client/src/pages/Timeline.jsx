@@ -114,7 +114,7 @@ const Timeline = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-xs flex-wrap mb-xs">
                           <h3 className="font-headline-sm text-headline-sm text-on-surface">{p.company}</h3>
-                          <StatusBadge status={p.status} />
+                          <StatusBadge status={p.status} isPostponed={p.isPostponed} />
                         </div>
                         <p className="font-body-sm text-body-sm text-on-surface-variant">{p.role}</p>
                       </div>
