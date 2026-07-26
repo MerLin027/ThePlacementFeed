@@ -27,10 +27,10 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
       />
       {/* Modal */}
       <div
-        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] overflow-y-auto z-10 animate-in`}
+        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] flex flex-col z-10 animate-in`}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-surface-container-lowest border-b border-outline-variant px-md py-sm rounded-t-xl flex items-center justify-between">
+        <div className="flex-shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-sm rounded-t-xl flex items-center justify-between z-20">
           <h2 className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
           <button
             onClick={onClose}
@@ -40,7 +40,9 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
           </button>
         </div>
         {/* Body */}
-        <div className="px-md py-sm">{children}</div>
+        <div className="flex-1 overflow-y-auto px-md py-md content-scrollbar">
+          {children}
+        </div>
       </div>
     </div>
   );
