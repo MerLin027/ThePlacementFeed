@@ -373,3 +373,4 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 ## July 27, 2026 — Security Audit and API Hardening
 - **Auth Timing Attack Fix**: Fixed a timing attack vulnerability in \POST /api/auth/login\ by running a dummy \crypt.compare()\ when an unknown username is provided, equalizing response times.
 - **Changes Endpoint DoS Fix**: Implemented a strict 7-day maximum lookback window on \GET /api/placements/changes\ to prevent malicious clients from loading the entire database into memory by passing an excessively old \since\ timestamp.
+- **Dynamic Verification**: Verified the API timing attack fix, DELETE placement cleanup, and 7-day changes cap via automated dynamic testing scripts against the live environment.
