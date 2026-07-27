@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationContext';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 const NotificationBell = () => {
   const { notifications, unreadCount, markAllAsRead, clearAll, dismissNotification } = useNotifications();

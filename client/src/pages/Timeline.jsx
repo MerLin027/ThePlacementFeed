@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import ColdStartLoader from '../components/ColdStartLoader';

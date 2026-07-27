@@ -1,5 +1,20 @@
 # Project History
 
+## July 27, 2026 — Project Audit: Checkpoint 2 (Frontend) Finalized
+
+### Dependency Upgrades
+- **React Router**: Upgraded `react-router` to v7 (7.18.1). Migrated all `react-router-dom` imports to `react-router` across the client codebase for consistency, as `react-router-dom` is a deprecated re-export in v7. Verified 0 vulnerabilities via `npm audit`.
+
+### Frontend Component Audit (3-Loop Pass: Bugs, Redundancy, Consistency)
+- **`Navbar.jsx` & `Footer.jsx`**: Audited and confirmed bug-free auth-aware link toggling (`isAdmin ? '/admin/dashboard' : '/admin/login'`), removed unused imports, and confirmed MD3 design consistency. Mobile hamburger menu perfectly mirrors desktop navigation. Footer logo dimensions correctly applied.
+- **`AdminDashboard.jsx`**: Validated table row action payloads (`PATCH /postpone`, `PUT` status changes) dynamically. Confirmed UI strictly relies on server response (`res.data.data`) to update, preventing optimistic rendering bugs.
+- **`PlacementForm.jsx`**: Validated `statusManuallySet` logic. Changing the status dropdown explicitly appends `statusManuallySet: true` to the payload, whereas leaving it unchanged correctly omits the flag to allow Mongoose `$set` preservation. Confirmed Selection Rounds addition/removal triggers no overflow issues within the Modal.
+- **`NotificationContext.jsx`**: Verified existence and styling of the `react-hot-toast` integration specifically targeting `postponed` drive alerts (red accent `#ef4444`).
+
+### Dynamic Testing & Cleanup
+- Written and executed custom, real headless Playwright scripts (`test_frontend.cjs`, etc.) to intercept and verify network requests dispatched by the frontend without relying on backend database state.
+- Purged all scratch testing scripts and verified pristine Git history cleanly untouched by test files or secrets.
+
 ## July 26, 2026 — UI Fix: Notification Panel Controls
 
 - **Notification Panel Header**: Added a visible close ("X") button next to the "Clear all" action to explicitly close the panel without clearing notifications.

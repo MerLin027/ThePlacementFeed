@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 
 
@@ -238,6 +240,7 @@ const PlacementDetail = () => {
               <div className="markdown-body">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
                   components={{
                     a: ({ node: _node, ...props }) => (
                       <a {...props} target="_blank" rel="noopener noreferrer" />
