@@ -46,16 +46,17 @@ router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
 
     // Find admin by username
     const admin = await Admin.findOne({ username: username.toLowerCase() });
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
+    
+    let isMatch = false;
+    if (admin) {
+      // Compare password
+      isMatch = await bcrypt.compare(password, admin.passwordHash);
+    } else {
+      // Dummy compare to mitigate timing attacks (cost factor 12)
+      await bcrypt.compare(password, '$2a$12$GKh7blGTmDJaRLvz9YzfR.mNa5ByAsSvWCpRnGbSpYlJG1.9g0x1u');
     }
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, admin.passwordHash);
-    if (!isMatch) {
+    if (!admin || !isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',

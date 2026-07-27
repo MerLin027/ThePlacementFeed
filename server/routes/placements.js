@@ -147,15 +147,19 @@ router.get('/changes', apiLimiter, async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid since timestamp' });
     }
 
+    // Security: Enforce a maximum lookback window of 7 days to prevent memory exhaustion DoS
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const effectiveSinceDate = sinceDate < sevenDaysAgo ? sevenDaysAgo : sinceDate;
+
     const placements = await Placement.find({
-      'recentChanges.changedAt': { $gt: sinceDate },
+      'recentChanges.changedAt': { $gt: effectiveSinceDate },
     }).lean();
 
     // Flatten recent changes
     let changes = [];
     placements.forEach((placement) => {
       placement.recentChanges.forEach((change) => {
-        if (change.changedAt > sinceDate) {
+        if (change.changedAt > effectiveSinceDate) {
           changes.push({
             id: `${placement._id}-${change.type}-${change.changedAt.getTime()}`,
             placementId: placement._id,
