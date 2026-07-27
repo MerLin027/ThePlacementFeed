@@ -7,6 +7,7 @@
      never appears. The only scrollable region is <main> in App.jsx. */
   html {
     @apply h-full overflow-hidden;
+    font-size: 90%;
   }
 
   body {

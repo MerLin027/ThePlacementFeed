@@ -374,3 +374,7 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 - **Auth Timing Attack Fix**: Fixed a timing attack vulnerability in \POST /api/auth/login\ by running a dummy \crypt.compare()\ when an unknown username is provided, equalizing response times.
 - **Changes Endpoint DoS Fix**: Implemented a strict 7-day maximum lookback window on \GET /api/placements/changes\ to prevent malicious clients from loading the entire database into memory by passing an excessively old \since\ timestamp.
 - **Dynamic Verification**: Verified the API timing attack fix, DELETE placement cleanup, and 7-day changes cap via automated dynamic testing scripts against the live environment.
+
+## [2026-07-27] UI Sizing Fix
+- Converted all pixel-based spacing and ontSize custom values in 	ailwind.config.js to em to allow them to scale relative to the root font size.
+- Set html { font-size: 90%; } in client/src/index.css to globally reduce the UI scale by ~10%, effectively making 100% browser zoom look like the previous 90% zoom, ensuring better proportions for headings, cards, and spacing without hand-adjusting individual components.
