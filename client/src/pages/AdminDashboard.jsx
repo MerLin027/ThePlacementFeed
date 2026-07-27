@@ -41,10 +41,12 @@ const AdminDashboard = () => {
       });
       setPlacements(res.data.data);
       setPagination(res.data.pagination);
+      if (abortControllerRef.current === abortController) {
+        setLoading(false);
+      }
     } catch (err) {
       if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
       console.error('Failed to fetch:', err);
-    } finally {
       if (abortControllerRef.current === abortController) {
         setLoading(false);
       }

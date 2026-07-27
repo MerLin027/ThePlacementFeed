@@ -25,10 +25,10 @@ const PlacementDetail = () => {
           signal: abortController.signal
         });
         setPlacement(res.data.data);
+        setLoading(false);
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         setError(err.response?.data?.message || 'Failed to load placement');
-      } finally {
         setLoading(false);
       }
     };

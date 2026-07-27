@@ -366,3 +366,6 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 
  
  
+
+## July 27, 2026 — React 18 StrictMode Race Condition Fixes
+- **PlacementDetail.jsx, Timeline.jsx, Home.jsx, AdminDashboard.jsx**: Fixed a critical race condition where \setLoading(false)\ was being called unconditionally in a \inally\ block after an aborted fetch. In React 18 StrictMode, this caused the component to crash or briefly display an empty state on the second mount. The fix involved moving the state update out of the \inally\ block and handling it appropriately within the \	ry\ block (on success) and the \catch\ block (on non-canceled errors).

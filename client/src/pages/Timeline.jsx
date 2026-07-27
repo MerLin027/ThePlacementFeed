@@ -36,10 +36,12 @@ const Timeline = () => {
         });
 
         setGrouped(groups);
+        clearTimeout(coldStartTimer.current);
+        setLoading(false);
+        setIsColdStart(false);
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error('Failed to fetch placements:', err);
-      } finally {
         clearTimeout(coldStartTimer.current);
         setLoading(false);
         setIsColdStart(false);
