@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="bg-surface-container-low border-t border-outline-variant flex-shrink-0">
       <div className="flex flex-col md:flex-row justify-between items-center w-full px-sm md:px-lg py-sm max-w-container-max mx-auto gap-sm">
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          © {new Date().getFullYear()} The Placement Feed. All rights reserved.
+          © {new Date().getFullYear()} <span className="text-brand-navy">The </span><span className="text-brand-blue">Placement</span><span className="text-brand-navy"> Feed</span>. All rights reserved.
         </p>
         {/* Both logos share the same height so they sit as visual peers.
             max-w caps prevent CHARUSAT's extreme aspect ratio from dominating. */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import PlacementForm from '../components/PlacementForm';
@@ -6,12 +6,13 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
+import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [loading, setLoading] = useState(true);
+  const { loading, fetchPlacements } = usePlacementsFetch();
 
   // Modal state
   const [showForm, setShowForm] = useState(false);
@@ -22,69 +23,42 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [toggling, setToggling] = useState({});
   const [toggleError, setToggleError] = useState({});
-  const abortControllerRef = useRef(null);
 
-  const fetchPlacements = useCallback(async (page = 1) => {
-    setLoading(true);
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const loadPlacements = useCallback(async (page = 1) => {
+    const params = { page, limit: 15, sort: 'newest' };
+    if (search) params.search = search;
+    const res = await fetchPlacements(params);
+    if (res && res.data) {
+      setPlacements(res.data);
+      setPagination(res.pagination);
     }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    try {
-      const params = { page, limit: 15, sort: 'newest' };
-      if (search) params.search = search;
-      const res = await api.get('/api/placements', { 
-        params,
-        signal: abortController.signal
-      });
-      setPlacements(res.data.data);
-      setPagination(res.data.pagination);
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-      }
-    } catch (err) {
-      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-      console.error('Failed to fetch:', err);
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-      }
-    }
-  }, [search]);
-
-  // Clean up abort controller on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
+  }, [search, fetchPlacements]);
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchPlacements(1), 300);
+    const timer = setTimeout(() => {
+      loadPlacements(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [fetchPlacements]);
+  }, [loadPlacements]);
 
   const handleAdd = async (data) => {
     await api.post('/api/placements', data);
     setShowForm(false);
-    fetchPlacements(1);
+    loadPlacements(1);
   };
 
   const handleEdit = async (data) => {
     await api.put(`/api/placements/${editingPlacement._id}`, data);
     setEditingPlacement(null);
     setShowForm(false);
-    fetchPlacements(pagination.page);
+    loadPlacements(pagination.page);
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
       await api.delete(`/api/placements/${deleteTarget._id}`);
-      fetchPlacements(pagination.page);
+      loadPlacements(pagination.page);
     } catch (err) {
       console.error('Delete failed:', err);
     }
@@ -320,7 +294,12 @@ const AdminDashboard = () => {
       <Pagination
         page={pagination.page}
         totalPages={pagination.totalPages}
-        onPageChange={(page) => fetchPlacements(page)}
+        onPageChange={(newPage) => {
+          if (newPage >= 1 && newPage <= pagination.totalPages) {
+            loadPlacements(newPage);
+            document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
       />
 
       {/* Add/Edit Modal */}

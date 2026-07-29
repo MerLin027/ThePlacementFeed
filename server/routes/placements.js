@@ -266,6 +266,22 @@ router.put(
   }
 );
 
+const updatePlacementWithLog = async (id, setFields, changeType) => {
+  return await Placement.findByIdAndUpdate(
+    id,
+    {
+      $set: setFields,
+      $push: {
+        recentChanges: {
+          $each: [{ type: changeType, changedAt: new Date() }],
+          $slice: -10,
+        },
+      },
+    },
+    { new: true, runValidators: true }
+  );
+};
+
 // PATCH /api/placements/:id/postpone — lightweight toggle, auth required
 router.patch(
   '/:id/postpone',
@@ -275,24 +291,9 @@ router.patch(
   validate,
   async (req, res, next) => {
     try {
-      const placement = await Placement.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: { isPostponed: req.body.isPostponed },
-          $push: {
-            recentChanges: {
-              $each: [
-                {
-                  type: req.body.isPostponed ? 'postponed' : 'unpostponed',
-                  changedAt: new Date(),
-                },
-              ],
-              $slice: -10,
-            },
-          },
-        },
-        { new: true, runValidators: true }
-      );
+      const changeType = req.body.isPostponed ? 'postponed' : 'unpostponed';
+      const placement = await updatePlacementWithLog(req.params.id, { isPostponed: req.body.isPostponed }, changeType);
+      
       if (!placement) {
         return res.status(404).json({
           success: false,
@@ -315,19 +316,8 @@ router.patch(
   validate,
   async (req, res, next) => {
     try {
-      const placement = await Placement.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: { statusManuallySet: req.body.statusManuallySet },
-          $push: {
-            recentChanges: {
-              $each: [{ type: 'statusChange', changedAt: new Date() }],
-              $slice: -10,
-            },
-          },
-        },
-        { new: true, runValidators: true }
-      );
+      const placement = await updatePlacementWithLog(req.params.id, { statusManuallySet: req.body.statusManuallySet }, 'automationReset');
+      
       if (!placement) {
         return res.status(404).json({
           success: false,

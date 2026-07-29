@@ -7,6 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
+        "brand-navy": "#031536",
+        "brand-blue": "#005afd",
         // Existing brand scale (backward compat)
         brand: {
           50: '#eff6ff',

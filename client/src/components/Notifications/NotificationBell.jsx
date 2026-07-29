@@ -37,6 +37,8 @@ const NotificationBell = () => {
         return `${notif.company} is no longer postponed`;
       case 'edit':
         return `${notif.company} details updated`;
+      case 'automationReset':
+        return `${notif.company} status automation reset`;
       default:
         return `${notif.company} updated`;
     }

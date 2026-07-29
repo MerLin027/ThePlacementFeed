@@ -105,7 +105,7 @@ const placementSchema = new mongoose.Schema(
     recentChanges: [{
       type: {
         type: String,
-        enum: ['new', 'statusChange', 'postponed', 'unpostponed', 'edit'],
+        enum: ['new', 'statusChange', 'postponed', 'unpostponed', 'edit', 'automationReset'],
       },
       changedAt: {
         type: Date,

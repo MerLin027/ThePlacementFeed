@@ -1,6 +1,6 @@
 # Project History
 
-## July 27, 2026 — Project Audit: Checkpoint 2 (Frontend) Finalized
+## July 27, 2026 â€” Project Audit: Checkpoint 2 (Frontend) Finalized
 
 ### Dependency Upgrades
 - **React Router**: Upgraded `react-router` to v7 (7.18.1). Migrated all `react-router-dom` imports to `react-router` across the client codebase for consistency, as `react-router-dom` is a deprecated re-export in v7. Verified 0 vulnerabilities via `npm audit`.
@@ -15,13 +15,13 @@
 - Written and executed custom, real headless Playwright scripts (`test_frontend.cjs`, etc.) to intercept and verify network requests dispatched by the frontend without relying on backend database state.
 - Purged all scratch testing scripts and verified pristine Git history cleanly untouched by test files or secrets.
 
-## July 26, 2026 — UI Fix: Notification Panel Controls
+## July 26, 2026 â€” UI Fix: Notification Panel Controls
 
 - **Notification Panel Header**: Added a visible close ("X") button next to the "Clear all" action to explicitly close the panel without clearing notifications.
 - **Dismiss Button Shape**: Fixed the individual notification dismiss button to render as a perfect circle regardless of content by replacing padding-based sizing with explicit width/height and flexbox centering.
 
 ---
-## July 26, 2026 — Notification System for Placement Drives
+## July 26, 2026 â€” Notification System for Placement Drives
 
 ### Backend Updates
 - Added a capped `recentChanges` array to the `Placement` schema to log `new`, `edit`, `postponed`, `unpostponed`, and `statusChange` mutations for notifications.
@@ -36,11 +36,11 @@
 
 ---
 
-## July 26, 2026 — Automate Placement Status Transitions
+## July 26, 2026 â€” Automate Placement Status Transitions
 
 ### Automation & Background Jobs
 - **Backend:** Added `statusManuallySet` (Boolean, default `false`) to the `Placement` schema to control whether the automation script is allowed to alter the placement status.
-- **Backend:** Installed `node-cron` and created `server/jobs/statusCron.js`, which runs daily at 00:05 IST to auto-transition statuses (`Upcoming` → `Ongoing` via `deadline`/`driveDate`, and `Ongoing` → `Completed` via `driveDate`). 
+- **Backend:** Installed `node-cron` and created `server/jobs/statusCron.js`, which runs daily at 00:05 IST to auto-transition statuses (`Upcoming` â†’ `Ongoing` via `deadline`/`driveDate`, and `Ongoing` â†’ `Completed` via `driveDate`). 
 - **Backend:** Built timezone-aware logic (`Asia/Kolkata`) that executes strictly via UTC midnight cutoff comparisons directly matching `<input type="date">` MongoDB serialization to prevent drift.
 
 ### Manual Overrides & UI
@@ -50,7 +50,7 @@
 
 ---
 
-## July 26, 2026 — Feature: "Postponed" Status Override
+## July 26, 2026 â€” Feature: "Postponed" Status Override
 
 ### Added `isPostponed` Display Override
 - **Backend:** Added `isPostponed` (Boolean, default `false`) to the `Placement` schema.
@@ -64,7 +64,7 @@
 
 ---
 
-## July 25, 2026 — Selection Process Step Indicator Color Fix
+## July 25, 2026 â€” Selection Process Step Indicator Color Fix
 
 ### Bug Fix: Consistent Step Circle Colors (`PlacementDetail.jsx`)
 - Removed the `index === 0` conditional that gave the first selection round circle a different color (`bg-primary-container`) than all subsequent ones (`bg-surface-container-high`).
@@ -72,25 +72,25 @@
 - Connecting line (`bg-surface-variant`), round name, and description text styling are unchanged.
 
 ### UI: Timestamp Relocated into Company Info Card (`PlacementDetail.jsx`)
-- The "Added [date] · Updated [date]" line was previously a standalone element at the very bottom of the page grid (full-width, right-aligned).
+- The "Added [date] Â· Updated [date]" line was previously a standalone element at the very bottom of the page grid (full-width, right-aligned).
 - Moved it inside the Company Info Card, below the Apply Now button, as a quiet footnote.
 - Uses the same `border-t border-surface-variant mt-xs pt-xs` divider pattern already used above the Apply Now button in the same card.
-- Styled with `text-outline` (muted, non-competing) and `font-label-sm` — matching the rest of the card's secondary text scale.
+- Styled with `text-outline` (muted, non-competing) and `font-label-sm` â€” matching the rest of the card's secondary text scale.
 - Removed the standalone bottom-of-page timestamp block entirely; timestamp now appears in exactly one place.
 
 ---
 
-## July 24, 2026 — Phase 6: Security Hardening Pass
+## July 24, 2026 â€” Phase 6: Security Hardening Pass
 
 ### Schema Bounds Tightened (Task 3)
-- `jdDescription` maxlength reduced from 50000 → 10000 in both Mongoose schema and express-validator.
+- `jdDescription` maxlength reduced from 50000 â†’ 10000 in both Mongoose schema and express-validator.
 - `formUrl` now enforces HTTPS-only via `new URL()` protocol check in schema and `isURL({ protocols: ['https'], require_protocol: true })` in validator. Maxlength 500 added.
 
 ### API Rate Limiting (Task 5)
 - Added `apiLimiter` (100 req/15min/IP) to both `GET /api/placements` and `GET /api/placements/:id` to prevent scraping/abuse.
 
 ### XSS Sanitizer Fix (Task 10)
-- Removed fragile regex-based `stripRawHtml` function from `PlacementDetail.jsx`. `react-markdown` without `rehype-raw` already safely ignores raw HTML — the regex was cosmetic and bypassable.
+- Removed fragile regex-based `stripRawHtml` function from `PlacementDetail.jsx`. `react-markdown` without `rehype-raw` already safely ignores raw HTML â€” the regex was cosmetic and bypassable.
 
 ### Dependency Audit (Task 11)
 - `npm audit` returned 0 vulnerabilities in both `client/` and `server/`.
@@ -104,28 +104,28 @@
 - Error handler: never leaks stack traces.
 - Access control: `auth` middleware on all mutating routes.
 
-## July 23, 2026 — Full Functional QA Pass Across Entire Site
+## July 23, 2026 â€” Full Functional QA Pass Across Entire Site
 
 - Conducted a comprehensive code-level QA pass across all main site workflows (Navigation, Home page, Placement Detail page, Timeline page, Admin Login, Admin Dashboard).
 - Verified filter debouncing, form state logic, empty state handling, pagination, dynamic route rendering, markdown parsing, and admin interactions.
 - **Bug Fix**: Fixed the "Back to Drives" link in `PlacementDetail.jsx`. It was incorrectly using `navigate(-1)` (which would return the user to their previous history state, which could be the Timeline or an external site). Updated to `navigate('/')` to explicitly route back to the Home page as per the requirements.
 - **Bug Fix**: Fixed a bug in `PlacementForm.jsx` where clearing an optional field (like `formUrl`, `driveDate`, or `cgpa`) and saving would not actually remove the data from the database. The form was sending `undefined` for empty fields, which gets stripped out during JSON serialization, causing Mongoose's `$set` logic to ignore the field. Updated to explicitly send `""` (for strings) or `null` (for dates/numbers) so the database properly unsets them.
 
-## July 23, 2026 — Fix Broken Markdown Rendering on Job Description
+## July 23, 2026 â€” Fix Broken Markdown Rendering on Job Description
 
 ### Root Cause Analysis
 Three compounding bugs were causing the Job Description section to render as unstyled, raw text:
 1. **Wrong CSS class**: The container used `prose prose-sm max-w-none` (Tailwind Typography plugin classes), but `@tailwindcss/typography` was **not installed** (`plugins: []` in `tailwind.config.js`). The correct typography styles were already fully written in `index.css` under `.markdown-body`, but pointed at the wrong class name.
 2. **Raw HTML showing as visible text**: `react-markdown` v9 does not render raw HTML by default (no `rehype-raw` plugin). Tags like `<div align="center">` were being passed through as text nodes and rendered verbatim. Required a pre-processing step to strip them.
-3. **`remark-gfm` was already wired correctly** — the import and plugin array were correct; this was not the issue.
+3. **`remark-gfm` was already wired correctly** â€” the import and plugin array were correct; this was not the issue.
 
-### Changes — `PlacementDetail.jsx`
+### Changes â€” `PlacementDetail.jsx`
 - Added `stripRawHtml()` helper function (top-level, outside the component) that uses a regex to remove all raw HTML tags from the markdown source string before passing it to `ReactMarkdown`. This ensures tags like `<div align="center">` are silently dropped rather than displayed as visible characters.
-- Changed the markdown container class from `prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant` → `markdown-body`. This wires up the complete typography stylesheet already defined in `index.css` covering: headings (h1–h4 with size hierarchy), paragraphs, unordered/ordered lists with indentation and markers, tables with borders and header row, bold/strong, links (primary color, new tab target), blockquotes, inline code, code blocks, images, and horizontal rules.
-- No new packages were installed — `remark-gfm` (already a dependency) provides GFM table, strikethrough, and task list support.
+- Changed the markdown container class from `prose prose-sm max-w-none font-body-md text-body-md text-on-surface-variant` â†’ `markdown-body`. This wires up the complete typography stylesheet already defined in `index.css` covering: headings (h1â€“h4 with size hierarchy), paragraphs, unordered/ordered lists with indentation and markers, tables with borders and header row, bold/strong, links (primary color, new tab target), blockquotes, inline code, code blocks, images, and horizontal rules.
+- No new packages were installed â€” `remark-gfm` (already a dependency) provides GFM table, strikethrough, and task list support.
 
 ### Verified element types
-- **Headings**: h1 (2xl bold), h2 (xl bold), h3 (lg semibold), h4 (label-md) — clear size hierarchy
+- **Headings**: h1 (2xl bold), h2 (xl bold), h3 (lg semibold), h4 (label-md) â€” clear size hierarchy
 - **Tables**: bordered via `border-collapse`, header row has `bg-surface-container-low` + `font-semibold`, rows separated by `border-b border-surface-variant`
 - **Bullet lists**: `list-disc list-outside ml-5 space-y-1.5`
 - **Bold**: `font-bold text-on-surface`
@@ -135,36 +135,36 @@ Three compounding bugs were causing the Job Description section to render as uns
 
 ---
 
-## July 23, 2026 — Compact Placement Detail Layout (Eliminate Scroll on Short Entries)
+## July 23, 2026 â€” Compact Placement Detail Layout (Eliminate Scroll on Short Entries)
 
 
 - **`PlacementDetail.jsx`**: Surgical compaction to ensure short entries require zero scrolling, without sacrificing readability of primary content.
-  - **Page wrapper**: `py-lg` (40px × 2) → `py-sm` (16px × 2). Saves 48px of vertical whitespace.
-  - **Outer grid gap**: `gap-md md:gap-lg` → `gap-xs md:gap-sm`. Tighter row gap between breadcrumb and columns, and column gap between left/right.
-  - **Column card gap**: `gap-md` → `gap-xs` in both left and right columns. Cards sit closer together.
+  - **Page wrapper**: `py-lg` (40px Ã— 2) â†’ `py-sm` (16px Ã— 2). Saves 48px of vertical whitespace.
+  - **Outer grid gap**: `gap-md md:gap-lg` â†’ `gap-xs md:gap-sm`. Tighter row gap between breadcrumb and columns, and column gap between left/right.
+  - **Column card gap**: `gap-md` â†’ `gap-xs` in both left and right columns. Cards sit closer together.
   - **Card internal padding**: All cards changed from `p-md` (24px) to `p-sm` (16px). Consistent inset reduction across Company Info, Important Dates, and Eligibility cards.
-  - **Eligibility sub-cards**: Internal padding from `p-sm` (16px) → `p-xs` (8px); label margin from `mb-base` → `mb-[3px]`.
-  - **Row padding in Important Dates**: `py-xs` (8px) → `py-[6px]` for a tighter date row height.
-  - **Section header margin**: `mb-sm` → `mb-xs` throughout all section headings.
+  - **Eligibility sub-cards**: Internal padding from `p-sm` (16px) â†’ `p-xs` (8px); label margin from `mb-base` â†’ `mb-[3px]`.
+  - **Row padding in Important Dates**: `py-xs` (8px) â†’ `py-[6px]` for a tighter date row height.
+  - **Section header margin**: `mb-sm` â†’ `mb-xs` throughout all section headings.
   - **Secondary labels** (`ACADEMIC REQUIREMENT`, `ELIGIBLE BRANCHES`, `IMPORTANT DATES`): downgraded from `font-label-md text-label-md` (14px) to `font-label-sm text-label-sm` (12px). Primary content values unchanged.
   - **Timestamps line**: downgraded from `font-body-sm text-body-sm` (14px) to `font-label-sm text-label-sm` (12px) with `font-normal tracking-normal` override to maintain readability.
-  - **Logo icon**: 48×48 → 40×40, icon size 28px → 24px.
+  - **Logo icon**: 48Ã—48 â†’ 40Ã—40, icon size 28px â†’ 24px.
   - **Primary content unchanged**: company name (`display-lg`), role (`headline-sm`), CTC (`headline-md`), eligibility values (`body-md`), section headings (`headline-sm`).
-  - Long entries with Job Descriptions / Selection Process steps still scroll normally — `<main>` scroll container in `App.jsx` is untouched.
+  - Long entries with Job Descriptions / Selection Process steps still scroll normally â€” `<main>` scroll container in `App.jsx` is untouched.
 
 ---
 
-## July 23, 2026 — Eliminate Native Window Scrollbar
+## July 23, 2026 â€” Eliminate Native Window Scrollbar
 - **`index.css`**: Added `html { height: 100%; overflow: hidden; }` and `overflow: hidden` to `body`. The React root `<div>` already had `h-screen overflow-hidden`, but `<html>` and `<body>` were unconstrained, allowing the browser to still render a native window-level scrollbar. Locking both to `h-full overflow-hidden` ensures the ONLY scrollable element is `<main id="main-content">` with its custom thin styled scrollbar.
 
-## July 23, 2026 — Font Loading & Image Compression (Performance)
+## July 23, 2026 â€” Font Loading & Image Compression (Performance)
 
-### Task 1 — Move Google Fonts from CSS @import to HTML link tags
+### Task 1 â€” Move Google Fonts from CSS @import to HTML link tags
 - **`index.html`**: Added `<link rel="preconnect">` hints for `fonts.googleapis.com` and `fonts.gstatic.com` (with `crossorigin`), then declared all three font stylesheets (Inter, Geist, Material Symbols) as `<link rel="stylesheet">` tags directly in `<head>`. This eliminates the cascading delay where the browser had to parse `index.css` before it could even discover the font URLs.
-- **`index.css`**: Removed all three `@import url(...)` font declarations — fonts are now loaded via HTML, not CSS.
+- **`index.css`**: Removed all three `@import url(...)` font declarations â€” fonts are now loaded via HTML, not CSS.
 - All font URLs retain `&display=swap` so text renders immediately in a system fallback font and swaps in once the custom font arrives (no invisible text while loading).
 
-### Task 2 — Logo Image Compression (Sharp)
+### Task 2 â€” Logo Image Compression (Sharp)
 Compressed all logo PNG assets using `sharp` (max PNG compression + palette quantization + resize to max display width):
 
 | File | Before | After | Reduction |
@@ -174,143 +174,143 @@ Compressed all logo PNG assets using `sharp` (max PNG compression + palette quan
 | `src/assets/logo.png` | 80 KB | 24 KB | **-70%** |
 | `public/logo.png` | 597 KB | 25 KB | **-96%** |
 
-The CDPC logo was the most egregious — a 2752×1536 px source image for a 36px-tall footer logo. Resized to 300px wide (still 8× retina), saving 3.8 MB per page load.
+The CDPC logo was the most egregious â€” a 2752Ã—1536 px source image for a 36px-tall footer logo. Resized to 300px wide (still 8Ã— retina), saving 3.8 MB per page load.
 
 ### Note on Render Cold Starts
 Backend API cold-start delay (Render free tier sleeping) is a known, separate issue and not addressed here. Asset loading and API latency are independent.
 
-## July 23, 2026 — Fixed Navbar/Footer Layout + Custom Scrollbar
+## July 23, 2026 â€” Fixed Navbar/Footer Layout + Custom Scrollbar
 
-### Task 1 — Fixed Navbar/Footer with Scrollable Content Area
-- **`App.jsx`**: Changed the root wrapper from `flex flex-col min-h-screen` to `h-screen overflow-hidden flex flex-col`. The `<main>` element is now `flex-1 min-h-0 overflow-y-auto content-scrollbar` — the only scrollable region on every page. Added `id="main-content"` to `<main>` so pages can programmatically scroll it.
+### Task 1 â€” Fixed Navbar/Footer with Scrollable Content Area
+- **`App.jsx`**: Changed the root wrapper from `flex flex-col min-h-screen` to `h-screen overflow-hidden flex flex-col`. The `<main>` element is now `flex-1 min-h-0 overflow-y-auto content-scrollbar` â€” the only scrollable region on every page. Added `id="main-content"` to `<main>` so pages can programmatically scroll it.
 - **`Footer.jsx`**: Removed `mt-auto` (no longer needed since footer is the last flex child of the fixed-height container) and added `flex-shrink-0` to ensure it never collapses.
 - **`Home.jsx`**: Updated `handlePageChange` to call `document.getElementById('main-content')?.scrollTo(...)` instead of `window.scrollTo(...)`, since the window is no longer the scroll source.
 - **`AdminLogin.jsx`**: Changed the page wrapper from `flex-1 flex items-center` to `min-h-full flex items-center` so the login card remains vertically centered inside the new `overflow-y-auto` main container.
 
-### Task 2 — Custom Scrollbar Styling
+### Task 2 â€” Custom Scrollbar Styling
 - **`index.css`**: Added `.content-scrollbar` component class with cross-browser custom scrollbar styling:
   - Firefox: `scrollbar-width: thin` + `scrollbar-color` with muted slate thumb on transparent track.
   - Chromium/WebKit: 6px wide scrollbar, transparent track, rounded-full slate thumb (`rgba(100,116,139,0.35)`), darker on hover (`rgba(100,116,139,0.6)`). Uses `background-clip: content-box` with a 2px transparent border for visual breathing room.
 
-## July 22, 2026 — Minor UI Label Update
+## July 22, 2026 â€” Minor UI Label Update
 
-### Task 1 — Rename "View Results" Button Label
+### Task 1 â€” Rename "View Results" Button Label
 - Renamed the "View Results" button label to "View Details" on placement cards with a "Completed" status in `PlacementCard.jsx` to improve clarity.
 
-### Task 2 — Fix "Apply Now" Fallback Logic
+### Task 2 â€” Fix "Apply Now" Fallback Logic
 - Updated `PlacementCard.jsx` to show "Apply Now" (with primary styling) only if `formUrl` exists, regardless of status.
 - If `formUrl` is missing, the card now falls back to "View Details" (with secondary styling appropriate for the status) even for "Upcoming" drives.
 
-### Task 3 — Placement Detail Layout Fix
+### Task 3 â€” Placement Detail Layout Fix
 - Fixed an issue in `PlacementDetail.jsx` where the footer was pushed off-screen and content failed to center properly.
 - Removed `flex-grow` from the page wrapper and nested the grid inside a standard block container. This allows the parent `<main className="flex-1">` in `App.jsx` to correctly handle pushing the footer to the bottom of the viewport for short content, while preventing the grid rows from stretching vertically.
 
-### Task 4 — Placement Detail Scrollbar Fix
+### Task 4 â€” Placement Detail Scrollbar Fix
 - Added `items-start` to the main grid container (`grid-cols-1 md:grid-cols-12`) in `PlacementDetail.jsx` to override the default CSS Grid behavior (`align-items: stretch`). 
 - This prevents the right column (Eligibility Criteria, etc.) from artificially stretching to match the height of the left column (Company Info) when its actual content is short.
 - Confirmed there are no stray `min-h-screen` or fixed heights applied to the main content area or its columns.
 
-## July 22, 2026 — Design Polish Batch 1: Accessibility & Quick Fixes
+## July 22, 2026 â€” Design Polish Batch 1: Accessibility & Quick Fixes
 
-### Task 1 — Navbar Logo Alignment (`Navbar.jsx`)
+### Task 1 â€” Navbar Logo Alignment (`Navbar.jsx`)
 - Removed `max-w-container-max mx-auto` from the Navbar's inner container. The header now spans the full width of the screen, ensuring the logo sits flush against the extreme left edge of the viewport (while still respecting the standard `px-sm md:px-lg` padding), rather than being artificially centered on wide displays.
 
-### Task 2 — Footer Logo Sizing (`Footer.jsx`)
+### Task 2 â€” Footer Logo Sizing (`Footer.jsx`)
 - Restructured the footer logo display by giving both the CHARUSAT and CDPC logos consistent fixed-width container slots (`w-32`).
 - Adjusted heights independently: scaled CHARUSAT down to `h-6` (as its wordmark is horizontally long) and scaled CDPC up to `h-9` (as it is more square).
 - Added a subtle vertical divider (`h-6 w-px bg-outline-variant mx-md`) between the two logos so they are visually anchored and read as peers.
 
-### Task 4 — Home page vertical rhythm adjustments (`Home.jsx`)
+### Task 4 â€” Home page vertical rhythm adjustments (`Home.jsx`)
 - Reduced the top padding of the main container from `md:py-xl` to `md:pt-lg md:pb-xl` to tighten the gap between the Navbar and the "Active Drives" heading.
 - Adjusted vertical spacing between stacked elements for a consistent rhythm:
-  - Heading → Subtitle: `mb-sm` (16px) → `mb-xs` (8px) for tighter grouping.
-  - Subtitle → FilterBar: `mb-lg` (40px) → `mb-md` (24px) to match other gaps.
-  - Results Summary text: `mb-sm` (16px) → `mb-md` (24px).
-  - Empty State card: `py-xl` (64px) → `py-lg` (40px) to prevent it from feeling disproportionately large.
+  - Heading â†’ Subtitle: `mb-sm` (16px) â†’ `mb-xs` (8px) for tighter grouping.
+  - Subtitle â†’ FilterBar: `mb-lg` (40px) â†’ `mb-md` (24px) to match other gaps.
+  - Results Summary text: `mb-sm` (16px) â†’ `mb-md` (24px).
+  - Empty State card: `py-xl` (64px) â†’ `py-lg` (40px) to prevent it from feeling disproportionately large.
 - Overall vertical flow is now tightly coupled for related elements (8px) and evenly spaced for distinct sections (24px/40px).
 
-### Task 5 — Focus-visible states on nav links (`Navbar.jsx`)
+### Task 5 â€” Focus-visible states on nav links (`Navbar.jsx`)
 - Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm` to all desktop nav `<Link>` elements (Home, Timeline, Login/Dashboard)
 - Added same ring with `ring-offset-1` to all mobile menu `<Link>` elements
 - Keyboard users tabbing through the Navbar now see a clear blue focus ring on every link
 
-### Task 2 — Secondary text contrast fix (all files)
+### Task 2 â€” Secondary text contrast fix (all files)
 - Replaced `text-secondary` (#505f76) with `text-on-surface-variant` (#434655) on all footnote, subtitle, role, and supporting body text throughout the app
 - Files changed: `Navbar.jsx`, `Footer.jsx`, `Home.jsx`, `Timeline.jsx`, `PlacementDetail.jsx`, `PlacementCard.jsx`, `AdminLogin.jsx`, `AdminDashboard.jsx`, `ColdStartLoader.jsx`, `ConfirmDialog.jsx`
 - Did **not** change primary headings, interactive element text colors, or decorative icon colors (`material-symbols-outlined text-secondary` icon tints were left intentionally)
 
-### Task 3 — Navbar logo/text weight balance (`Navbar.jsx`)
+### Task 3 â€” Navbar logo/text weight balance (`Navbar.jsx`)
 - Changed site name `font-bold` (700) to `font-semibold` (600) to match the `font-headline-md` token weight declaration, balancing visual weight against the logo icon
 
-### Task 4 — CTC/Apply button divider on Placement Detail (`PlacementDetail.jsx`)
+### Task 4 â€” CTC/Apply button divider on Placement Detail (`PlacementDetail.jsx`)
 - Wrapped the `Apply Now` `<a>` button in a `<div className="border-t border-surface-variant mt-sm pt-sm">` container
-- Divider is conditional (only renders when `placement.formUrl` exists) — no orphan border when Apply Now is absent
+- Divider is conditional (only renders when `placement.formUrl` exists) â€” no orphan border when Apply Now is absent
 
-### Task 5 — Status badge contrast: Upcoming (`StatusBadge.jsx`)
+### Task 5 â€” Status badge contrast: Upcoming (`StatusBadge.jsx`)
 - Replaced `bg-primary/10 text-primary` (very faint blue, ~1.1:1 tint) with `bg-primary-fixed text-on-primary-fixed` (#dbe1ff / #00174b) for a clearly legible badge
 - Applied consistently across all components that use `<StatusBadge>`: `PlacementCard`, `Timeline`, `PlacementDetail`, `AdminDashboard`
 
-### Task 6 — Back navigation on Placement Detail (`PlacementDetail.jsx`)
-- Added a "← Back to Drives" button at the top-left of the page content using `navigate(-1)` (browser history back)
+### Task 6 â€” Back navigation on Placement Detail (`PlacementDetail.jsx`)
+- Added a "â†� Back to Drives" button at the top-left of the page content using `navigate(-1)` (browser history back)
 - Styled with `text-on-surface-variant hover:text-primary` and a focus-visible ring, matching the rest of the page's styling
 - Uses `arrow_back` Material Symbol icon for clear affordance
 
-### Task 7 — Footer mobile spacing (`Footer.jsx`)
+### Task 7 â€” Footer mobile spacing (`Footer.jsx`)
 - Added `mt-xs md:mt-0` to the logo container `<div>`, adding 8px top margin when stacked on mobile
 - On `md+` (side-by-side flex row), `md:mt-0` resets the margin so the existing `gap-sm` spacing handles the layout
 
 ---
 
-## July 22, 2026 — Navbar Login Link Cleanup
+## July 22, 2026 â€” Navbar Login Link Cleanup
 
 - Removed the blue "Login"/"Dashboard" button from the right side of the Navbar entirely
-- Restored the auth-aware admin link back into the desktop nav link group: shows **"Login"** (→ `/admin/login`) when logged out, **"Dashboard"** (→ `/admin/dashboard`) when admin is authenticated
+- Restored the auth-aware admin link back into the desktop nav link group: shows **"Login"** (â†’ `/admin/login`) when logged out, **"Dashboard"** (â†’ `/admin/dashboard`) when admin is authenticated
 - Renamed label from "Admin Login" to just **"Login"** for brevity
-- Fixed nav centering: restructured the header from a 2-zone `justify-between` layout to a **3-zone flex layout** — left zone (`flex-1`, logo), center zone (nav links, auto-width), right zone (`flex-1 justify-end`, hamburger) — so the nav links are always geometrically centered in the header regardless of viewport width
-- Mobile hamburger menu mirrors desktop exactly: Home → Timeline → Login/Dashboard, no separate button element
+- Fixed nav centering: restructured the header from a 2-zone `justify-between` layout to a **3-zone flex layout** â€” left zone (`flex-1`, logo), center zone (nav links, auto-width), right zone (`flex-1 justify-end`, hamburger) â€” so the nav links are always geometrically centered in the header regardless of viewport width
+- Mobile hamburger menu mirrors desktop exactly: Home â†’ Timeline â†’ Login/Dashboard, no separate button element
 - Extracted `adminTo` / `adminLabel` variables to eliminate duplicate conditional logic
 
 ---
 
-## July 22, 2026 — Logo Integration, Footer/Header Consistency, Scrollbar Fixes, Navbar Cleanup & Design Audit
+## July 22, 2026 â€” Logo Integration, Footer/Header Consistency, Scrollbar Fixes, Navbar Cleanup & Design Audit
 
-### Task 1 — Main site logo
+### Task 1 â€” Main site logo
 - Cropped `logo/screen.png` programmatically (Python/Pillow) to extract just the blue icon mark with transparent background padding removed
 - Saved as `client/src/assets/logo.png`
-- Replaced the `material-symbols-outlined` briefcase/work icon in `Navbar.jsx` with `<img src={logo} className="h-9 w-auto object-contain" />` — renders sharply at navbar icon size, background-agnostic (no fragile color dependency)
+- Replaced the `material-symbols-outlined` briefcase/work icon in `Navbar.jsx` with `<img src={logo} className="h-9 w-auto object-contain" />` â€” renders sharply at navbar icon size, background-agnostic (no fragile color dependency)
 
-### Task 2 — CHARUSAT and CDPC footer logos
+### Task 2 â€” CHARUSAT and CDPC footer logos
 - Copied `logo/charusat logo.png` to `client/src/assets/charusat-logo.png` (wide/landscape, already clean)
 - Cropped the orange decorative border from `logo/cdpc logo.jpg` using row/column edge detection, saved as `client/src/assets/cdpc-logo.png` (square, border-free)
 - Replaced both dashed-border text placeholders in `Footer.jsx` with actual `<img>` tags
 - Both logos sized to `h-10` (40px height) with `w-auto object-contain` so they sit as visual peers regardless of aspect ratio
 - Reduced footer horizontal gap between logos from `gap-md` to `gap-sm` for tighter visual composition
 
-### Task 3 — Header and footer sizing consistency
-- Reduced `Footer.jsx` vertical padding from `py-lg` (40px each side = 80px total) to `py-sm` (16px each side = 32px total + ~20px content ≈ ~52px total height), much closer to the navbar's 64px
+### Task 3 â€” Header and footer sizing consistency
+- Reduced `Footer.jsx` vertical padding from `py-lg` (40px each side = 80px total) to `py-sm` (16px each side = 32px total + ~20px content â‰ˆ ~52px total height), much closer to the navbar's 64px
 - Footer now feels proportionally balanced with the header across all pages
 
-### Task 4 — Removed duplicate Admin Login entry in Navbar
+### Task 4 â€” Removed duplicate Admin Login entry in Navbar
 - Removed the `{isAdmin ? <Dashboard link> : <Admin Login link>}` block from the desktop nav link group
 - Nav link group now only contains: Home, Timeline (+ Dashboard when admin is logged in)
-- Kept the right-side blue Login/Dashboard button as the sole entry point — no changes to its auth-state toggle logic
+- Kept the right-side blue Login/Dashboard button as the sole entry point â€” no changes to its auth-state toggle logic
 - Updated mobile hamburger menu to mirror desktop exactly: Home, Timeline, then Login/Dashboard as a styled link (no separate "Admin Login" entry)
 
-### Task 5 — Removed scrollbar on Admin Login page
+### Task 5 â€” Removed scrollbar on Admin Login page
 - Changed `AdminLogin.jsx` root wrapper from `min-h-[80vh]` to `flex-1 flex items-center justify-center py-lg px-sm`
 - Changed `App.jsx` `<main>` from `flex-1` to `flex-1 flex flex-col` so pages can correctly use `flex-1` to fill available viewport space without overflowing
 
-### Task 6 — Scrollbar behavior on Placement Detail page
-- Confirmed no artificial scroll issue — the `flex-grow` on PlacementDetail's root correctly fills the flex column without setting a fixed height
+### Task 6 â€” Scrollbar behavior on Placement Detail page
+- Confirmed no artificial scroll issue â€” the `flex-grow` on PlacementDetail's root correctly fills the flex column without setting a fixed height
 - The `flex flex-col` change to `<main>` in App.jsx makes flex-grow work correctly: page scrolls only when actual content overflows
 
-### Task 7 — Design consistency audit & fixes
-- **PlacementDetail.jsx**: Fixed outer padding from `px-md` → `px-sm md:px-lg` (matching Home, Timeline, AdminDashboard); `Apply Now` button changed from raw inline Tailwind to `btn-primary` class
-- **AdminLogin.jsx**: Changed restricted-area footnote from `text-outline` → `text-secondary` (correct token for supporting body text)
+### Task 7 â€” Design consistency audit & fixes
+- **PlacementDetail.jsx**: Fixed outer padding from `px-md` â†’ `px-sm md:px-lg` (matching Home, Timeline, AdminDashboard); `Apply Now` button changed from raw inline Tailwind to `btn-primary` class
+- **AdminLogin.jsx**: Changed restricted-area footnote from `text-outline` â†’ `text-secondary` (correct token for supporting body text)
 - **Timeline.jsx**: Added `w-full` to both the loading-state wrapper and main page wrapper (matching other pages)
 - **PlacementCard.jsx**: Replaced raw inline Tailwind button class strings with `btn-primary` (Upcoming) and `btn-secondary` (Ongoing/Completed) for full button consistency; removed redundant `+ ' text-center'` concatenation
 
-## July 22, 2026 — Full App-Wide Visual Redesign (Material Design 3)
+## July 22, 2026 â€” Full App-Wide Visual Redesign (Material Design 3)
 
 ### Design System (`tailwind.config.js`)
 - Added ~40 MD3 color tokens as the default theme (`primary`, `on-surface`, `surface-container-lowest`, `outline-variant`, etc.)
@@ -325,15 +325,15 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 - Updated base body styles to use `bg-background text-on-background`
 
 ### Page Components
-- **Home.jsx**: Full JSX replacement — MD3 hero section ("Active Drives"), restyled empty/loading states with Material Symbols icons
-- **PlacementDetail.jsx**: Full JSX replacement — 2-column layout (4/8 grid), company info card, eligibility criteria with `verified_user` icon, markdown JD rendering, selection process timeline, conditional "Apply Now" button
+- **Home.jsx**: Full JSX replacement â€” MD3 hero section ("Active Drives"), restyled empty/loading states with Material Symbols icons
+- **PlacementDetail.jsx**: Full JSX replacement â€” 2-column layout (4/8 grid), company info card, eligibility criteria with `verified_user` icon, markdown JD rendering, selection process timeline, conditional "Apply Now" button
 - **Timeline.jsx**: Restyled with MD3 tokens, primary-container month badges, surface-container-lowest cards
 - **AdminDashboard.jsx**: Full table/search/action button restyle, Material Symbols icons for edit/delete
-- **AdminLogin.jsx**: Consistency pass — MD3 card styling, Material Symbols lock icon, error-container alerts
+- **AdminLogin.jsx**: Consistency pass â€” MD3 card styling, Material Symbols lock icon, error-container alerts
 
 ### Shared Components (all restyled app-wide)
 - **StatusBadge.jsx**: Pill-shaped badges with `primary/10` (Upcoming), `amber-100` (Ongoing), `emerald-100` (Completed), removed dot indicator
-- **PlacementCard.jsx**: MD3 card design — logo placeholder, Material Symbols icons (payments, event, engineering, group), status-dependent action buttons
+- **PlacementCard.jsx**: MD3 card design â€” logo placeholder, Material Symbols icons (payments, event, engineering, group), status-dependent action buttons
 - **FilterBar.jsx**: Kept full functionality (search, status, branch, CTC range, sort), restyled with MD3 tokens and Material Symbols icons
 - **Pagination.jsx**: Rounded-lg buttons with Material Symbols chevron icons, primary-container active state
 - **ColdStartLoader.jsx**: MD3 spinner colors and typography
@@ -367,10 +367,10 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
  
  
 
-## July 27, 2026 � React 18 StrictMode Race Condition Fixes
+## July 27, 2026 — React 18 StrictMode Race Condition Fixes
 - **PlacementDetail.jsx, Timeline.jsx, Home.jsx, AdminDashboard.jsx**: Fixed a critical race condition where \setLoading(false)\ was being called unconditionally in a \inally\ block after an aborted fetch. In React 18 StrictMode, this caused the component to crash or briefly display an empty state on the second mount. The fix involved moving the state update out of the \inally\ block and handling it appropriately within the \	ry\ block (on success) and the \catch\ block (on non-canceled errors).
 
-## July 27, 2026 � Security Audit and API Hardening
+## July 27, 2026 — Security Audit and API Hardening
 - **Auth Timing Attack Fix**: Fixed a timing attack vulnerability in \POST /api/auth/login\ by running a dummy \crypt.compare()\ when an unknown username is provided, equalizing response times.
 - **Changes Endpoint DoS Fix**: Implemented a strict 7-day maximum lookback window on \GET /api/placements/changes\ to prevent malicious clients from loading the entire database into memory by passing an excessively old \since\ timestamp.
 - **Dynamic Verification**: Verified the API timing attack fix, DELETE placement cleanup, and 7-day changes cap via automated dynamic testing scripts against the live environment.
@@ -378,3 +378,32 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 ## [2026-07-27] UI Sizing Fix
 - Converted all pixel-based spacing and ontSize custom values in 	ailwind.config.js to em to allow them to scale relative to the root font size.
 - Set html { font-size: 90%; } in client/src/index.css to globally reduce the UI scale by ~10%, effectively making 100% browser zoom look like the previous 90% zoom, ensuring better proportions for headings, cards, and spacing without hand-adjusting individual components.
+
+## [2026-07-27] Auth API Hardening
+- Added csrfCheck middleware to POST /api/auth/logout endpoint to prevent Logout CSRF attacks, ensuring parity with other state-mutating endpoints.
+
+## [2026-07-27] Refactored Placements Fetch Logic & Dead Code Cleanup
+- Deleted unused script \server/get_id.js\ 
+- Removed redundant export for \unStatusTransitionJob\ from \server/jobs/statusCron.js\`n- Extracted \usePlacementsFetch\ custom hook in client to eliminate duplicate abort controller and cold-start loader logic across Home, Timeline, and AdminDashboard pages.
+
+### Refactored dead code and duplicate logic
+- Removed unused useRef and api imports from Timeline.jsx, Home.jsx, AdminDashboard.jsx.
+- Deleted unused test-hook.cjs file.
+- Refactored server/jobs/statusCron.js to use a shared transitionPlacement helper for Upcoming->Ongoing and Ongoing->Completed transitions.
+- Refactored server/routes/placements.js to use a shared updatePlacementWithLog helper for /postpone and /reset-status-automation PATCH endpoints.
+- Removed unused default export from client/src/context/AuthContext.jsx.
+- Fixed /reset-status-automation to log type=automationReset instead of statusChange.
+- Added explicit display label for automationReset notification type in NotificationBell.jsx.
+
+## [2026-07-28] Verifications and Code Audits
+- Conducted logic audits for the cron automated state machine to verify status transitions and idempotency for past-due placements.
+- Dynamically verified XSS markdown sanitization (`rehype-sanitize`) against real payloads using headless Chromium on the live DOM.
+- Removed all temporary test scripts utilized during verification tasks.
+ 
+ # #   2 0 2 6 - 0 7 - 2 9 :   L o g o   &   B r a n d i n g   U p d a t e  
+ -   E x t r a c t e d   a n d   u p d a t e d   t h e   p r i m a r y   l o g o   i m a g e   f r o m   u s e r - p r o v i d e d   s u i t e   ( s r c / a s s e t s / l o g o . p n g ) .  
+ -   E x t r a c t e d   a n d   g e n e r a t e d   a   c o m p l e t e   s e t   o f   f a v i c o n s   f r o m   t h e   r o u n d e d   s q u a r e   a p p - i c o n   v a r i a n t   ( i n c l u d i n g    a v i c o n . i c o ,   P N G   v a r i a n t s ,   a n d    p p l e - t o u c h - i c o n . p n g ) ,   u p d a t i n g   i n d e x . h t m l   r e f e r e n c e s .  
+ -   S a m p l e d   c o l o r s   f r o m   t h e   n e w   l o g o   a n d   a d d e d   t h e m   t o   	 a i l w i n d . c o n f i g . j s   a s    r a n d - n a v y   ( # 0 3 1 5 3 6 )   a n d    r a n d - b l u e   ( # 0 0 5 a f d ) .  
+ -   A p p l i e d   t h e   n e w   t w o - t o n e   c o l o r i n g   t o   t h e   s i t e   w o r d m a r k   ' T h e   P l a c e m e n t   F e e d '   a c r o s s   N a v b a r . j s x   a n d   F o o t e r . j s x .  
+ -   V e r i f i e d   v i s u a l   i n t e g r a t i o n   d y n a m i c a l l y   v i a   P l a y w r i g h t ,   e n s u r i n g   l a y o u t   d i d n ' t   b r e a k   a n d   m o b i l e   h a m b u r g e r   v i e w s   a n d   f o o t e r   l o g o s   r e n d e r   c o r r e c t l y .  
+ 

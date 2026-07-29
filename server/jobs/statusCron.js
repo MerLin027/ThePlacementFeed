@@ -15,6 +15,18 @@ function getStartOfTodayIST() {
   return new Date(Date.UTC(year, month, date));
 }
 
+async function transitionPlacement(p, newStatus) {
+  const oldStatus = p.status;
+  p.status = newStatus;
+  p.recentChanges = p.recentChanges || [];
+  p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
+  if (p.recentChanges.length > 10) {
+    p.recentChanges.shift();
+  }
+  await p.save();
+  console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to ${newStatus} at ${new Date().toISOString()}`);
+}
+
 async function runStatusTransitionJob() {
   console.log('[Cron] Starting placement status transition job...');
   try {
@@ -57,15 +69,7 @@ async function runStatusTransitionJob() {
     });
 
     for (const p of upcomingToOngoing) {
-      const oldStatus = p.status;
-      p.status = 'Ongoing';
-      p.recentChanges = p.recentChanges || [];
-      p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
-      if (p.recentChanges.length > 10) {
-        p.recentChanges.shift();
-      }
-      await p.save();
-      console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to Ongoing at ${new Date().toISOString()}`);
+      await transitionPlacement(p, 'Ongoing');
     }
 
     // 3. Ongoing -> Completed
@@ -78,15 +82,7 @@ async function runStatusTransitionJob() {
     });
 
     for (const p of ongoingToCompleted) {
-      const oldStatus = p.status;
-      p.status = 'Completed';
-      p.recentChanges = p.recentChanges || [];
-      p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
-      if (p.recentChanges.length > 10) {
-        p.recentChanges.shift();
-      }
-      await p.save();
-      console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to Completed at ${new Date().toISOString()}`);
+      await transitionPlacement(p, 'Completed');
     }
 
     console.log('[Cron] Placement status transition job completed successfully.');

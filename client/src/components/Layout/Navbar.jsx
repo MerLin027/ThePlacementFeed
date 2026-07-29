@@ -32,8 +32,10 @@ const Navbar = () => {
               alt="The Placement Feed"
               className="h-9 w-auto object-contain"
             />
-            <span className="font-headline-md text-headline-md font-semibold text-primary hidden sm:block">
-              The Placement Feed
+            <span className="font-headline-md text-headline-md font-semibold hidden sm:block">
+              <span className="text-brand-navy">The </span>
+              <span className="text-brand-blue">Placement</span>
+              <span className="text-brand-navy"> Feed</span>
             </span>
           </Link>
         </div>

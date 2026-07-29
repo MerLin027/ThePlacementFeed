@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import api from '../api/axios';
+import { useState, useEffect, useCallback } from 'react';
 import PlacementCard from '../components/PlacementCard';
 import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import ColdStartLoader from '../components/ColdStartLoader';
+import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 
 const DEFAULT_FILTERS = {
   search: '',
@@ -18,80 +18,36 @@ const Home = () => {
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [loading, setLoading] = useState(true);
-  const [isColdStart, setIsColdStart] = useState(false);
-  const coldStartTimer = useRef(null);
-  const abortControllerRef = useRef(null);
+  const { loading, isColdStart, fetchPlacements } = usePlacementsFetch();
 
-  const fetchPlacements = useCallback(async (page = 1) => {
-    setLoading(true);
-    setIsColdStart(false);
+  const loadPlacements = useCallback(async (page = 1) => {
+    const params = { page, limit: 12 };
+    if (filters.search) params.search = filters.search;
+    if (filters.status) params.status = filters.status;
+    if (filters.branch) params.branch = filters.branch;
+    if (filters.ctcMin) params.ctcMin = filters.ctcMin;
+    if (filters.ctcMax) params.ctcMax = filters.ctcMax;
+    if (filters.sort) params.sort = filters.sort;
 
-    // Abort previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    const res = await fetchPlacements(params);
+    if (res && res.data) {
+      setPlacements(res.data);
+      setPagination(res.pagination);
     }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
+  }, [filters, fetchPlacements]);
 
-    // Start cold-start timer
-    coldStartTimer.current = setTimeout(() => {
-      setIsColdStart(true);
-    }, 3000);
-
-    try {
-      const params = { page, limit: 12 };
-      if (filters.search) params.search = filters.search;
-      if (filters.status) params.status = filters.status;
-      if (filters.branch) params.branch = filters.branch;
-      if (filters.ctcMin) params.ctcMin = filters.ctcMin;
-      if (filters.ctcMax) params.ctcMax = filters.ctcMax;
-      if (filters.sort) params.sort = filters.sort;
-
-      const res = await api.get('/api/placements', {
-        params,
-        signal: abortController.signal
-      });
-      setPlacements(res.data.data);
-      setPagination(res.data.pagination);
-      
-      clearTimeout(coldStartTimer.current);
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-        setIsColdStart(false);
-      }
-    } catch (err) {
-      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-      console.error('Failed to fetch placements:', err);
-      
-      clearTimeout(coldStartTimer.current);
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-        setIsColdStart(false);
-      }
-    }
-  }, [filters]);
-
-  // Clean up abort controller on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchPlacements(1);
+      loadPlacements(1);
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchPlacements]);
+  }, [loadPlacements]);
 
-  const handlePageChange = (page) => {
-    fetchPlacements(page);
-    document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      loadPlacements(newPage);
+      document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (

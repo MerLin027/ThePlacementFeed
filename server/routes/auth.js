@@ -83,7 +83,7 @@ router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
 });
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', csrfCheck, (req, res) => {
   // Must use same options as set (minus maxAge) for browser to clear
   const isProd = process.env.NODE_ENV === 'production';
   res.clearCookie('token', {

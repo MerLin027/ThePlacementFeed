@@ -1,29 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import ColdStartLoader from '../components/ColdStartLoader';
+import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 
 const Timeline = () => {
   const [grouped, setGrouped] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [isColdStart, setIsColdStart] = useState(false);
-  const coldStartTimer = useRef(null);
+  const { loading, isColdStart, fetchPlacements } = usePlacementsFetch();
 
   useEffect(() => {
-    const abortController = new AbortController();
-
     const fetchAll = async () => {
-      coldStartTimer.current = setTimeout(() => setIsColdStart(true), 3000);
-
-      try {
-        const res = await api.get('/api/placements', {
-          params: { limit: 500, sort: 'date_desc' },
-          signal: abortController.signal
-        });
-        const placements = res.data.data;
-
-        // Group by month/year
+      const res = await fetchPlacements({ limit: 500, sort: 'date_desc' });
+      if (res && res.data) {
+        const placements = res.data;
         const groups = {};
         placements.forEach((p) => {
           const date = p.driveDate ? new Date(p.driveDate) : new Date(p.createdAt);
@@ -34,25 +23,11 @@ const Timeline = () => {
           }
           groups[key].placements.push(p);
         });
-
         setGrouped(groups);
-        clearTimeout(coldStartTimer.current);
-        setLoading(false);
-        setIsColdStart(false);
-      } catch (err) {
-        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-        console.error('Failed to fetch placements:', err);
-        clearTimeout(coldStartTimer.current);
-        setLoading(false);
-        setIsColdStart(false);
       }
     };
     fetchAll();
-    return () => {
-      clearTimeout(coldStartTimer.current);
-      abortController.abort();
-    };
-  }, []);
+  }, [fetchPlacements]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
