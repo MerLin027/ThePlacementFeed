@@ -12,10 +12,12 @@ const rl = readline.createInterface({
 const askQuestion = (query) => new Promise(resolve => rl.question(query, resolve));
 
 const resetAdmin = async () => {
+  let exitCode = 0;
   try {
     if (!process.env.MONGODB_URI) {
       console.error('FATAL: MONGODB_URI is not defined in .env');
-      process.exit(1);
+      exitCode = 1;
+      return;
     }
 
     console.log('\n--- Admin Credential Rotation ---');
@@ -27,7 +29,8 @@ const resetAdmin = async () => {
 
     if (!newUsername || !newPassword) {
       console.error('Error: Username and password cannot be empty.');
-      process.exit(1);
+      exitCode = 1;
+      return;
     }
 
     console.log('\nConnecting to database...');
@@ -50,12 +53,13 @@ const resetAdmin = async () => {
     
   } catch (error) {
     console.error('\nError resetting admin:', error.message);
+    exitCode = 1;
   } finally {
     rl.close();
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState !== 0) {
       await mongoose.connection.close();
     }
-    process.exit(0);
+    process.exit(exitCode);
   }
 };
 
