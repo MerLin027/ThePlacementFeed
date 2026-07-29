@@ -58,6 +58,7 @@ PORT=5000
 ```
 
 The server will automatically create the admin user on first startup using the `ADMIN_USERNAME` and `ADMIN_PASSWORD` values.
+**Note:** Initial setup can use `.env` auto-seed, but ongoing password changes should be done via `node scripts/resetAdmin.js`. The `.env` admin values can be safely removed after the first credential rotation.
 
 ### 3. Frontend setup
 
@@ -82,8 +83,8 @@ VITE_API_URL=http://localhost:5000
 | ---------------- | ------------------------------------------------ | -------- |
 | `MONGODB_URI`    | MongoDB Atlas connection string                  | ✅        |
 | `JWT_SECRET`     | Secret for signing JWT tokens                    | ✅        |
-| `ADMIN_USERNAME` | Admin login username                             | ✅        |
-| `ADMIN_PASSWORD` | Admin login password                             | ✅        |
+| `ADMIN_USERNAME` | Admin login username (initial seed only)         | ❌        |
+| `ADMIN_PASSWORD` | Admin login password (initial seed only)         | ❌        |
 | `COOKIE_SECRET`  | Secret for signed cookies                        | ✅        |
 | `NODE_ENV`       | Must be `production` on Render                   | ✅        |
 | `CLIENT_URL`     | Your Vercel frontend URL (for CORS + CSRF)       | ✅        |

@@ -12,6 +12,12 @@ const seedAdmin = async () => {
     const username = process.env.ADMIN_USERNAME;
     const password = process.env.ADMIN_PASSWORD;
 
+    if (!username || !password) {
+      console.warn('Warning: ADMIN_USERNAME or ADMIN_PASSWORD not set in .env. Skipping initial admin seed.');
+      console.warn('To create an admin, run: node scripts/resetAdmin.js');
+      return;
+    }
+
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -19,7 +25,7 @@ const seedAdmin = async () => {
     console.log(`Admin user "${username}" created successfully.`);
   } catch (error) {
     console.error('Error seeding admin:', error.message);
-    process.exit(1);
+    // Don't crash if seed fails, just log it.
   }
 };
 

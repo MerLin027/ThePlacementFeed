@@ -4,8 +4,6 @@ require('dotenv').config();
 const requiredEnvVars = [
   'MONGODB_URI',
   'JWT_SECRET',
-  'ADMIN_USERNAME',
-  'ADMIN_PASSWORD',
   'COOKIE_SECRET',
   'CLIENT_URL',
 ];

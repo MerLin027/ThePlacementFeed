@@ -404,10 +404,20 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
  -   E x t r a c t e d   a n d   u p d a t e d   t h e   p r i m a r y   l o g o   i m a g e   f r o m   u s e r - p r o v i d e d   s u i t e   ( s r c / a s s e t s / l o g o . p n g ) .  
  -   E x t r a c t e d   a n d   g e n e r a t e d   a   c o m p l e t e   s e t   o f   f a v i c o n s   f r o m   t h e   r o u n d e d   s q u a r e   a p p - i c o n   v a r i a n t   ( i n c l u d i n g    a v i c o n . i c o ,   P N G   v a r i a n t s ,   a n d    p p l e - t o u c h - i c o n . p n g ) ,   u p d a t i n g   i n d e x . h t m l   r e f e r e n c e s .  
  -   S a m p l e d   c o l o r s   f r o m   t h e   n e w   l o g o   a n d   a d d e d   t h e m   t o   	 a i l w i n d . c o n f i g . j s   a s    r a n d - n a v y   ( # 0 3 1 5 3 6 )   a n d    r a n d - b l u e   ( # 0 0 5 a f d ) .  
- -   A p p l i e d   t h e   n e w   t w o - t o n e   c o l o r i n g   t o   t h e   s i t e   w o r d m a r k   ' T h e   P l a c e m e n t   F e e d '   a c r o s s   N a v b a r . j s x   a n d   F o o t e r . j s x .  
- -   V e r i f i e d   v i s u a l   i n t e g r a t i o n   d y n a m i c a l l y   v i a   P l a y w r i g h t ,   e n s u r i n g   l a y o u t   d i d n ' t   b r e a k   a n d   m o b i l e   h a m b u r g e r   v i e w s   a n d   f o o t e r   l o g o s   r e n d e r   c o r r e c t l y .  
-  
- # #   2 0 2 6 - 0 7 - 2 9 :   C l e a n u p   &   R e f i n e m e n t s  
- -   R e m o v e d   t e m p o r a r y   P l a y w r i g h t   t e s t   f i l e s   a n d   l o g o   c r o p   a r t i f a c t s .  
- -   S y n c e d   	 h e m e - c o l o r   m e t a   t a g   i n   i n d e x . h t m l   t o   # 0 0 5 a f d   t o   p e r f e c t l y   m a t c h   t h e   n e w    r a n d - b l u e .  
- 
+- Removed all temporary test scripts utilized during verification tasks.
+ 
+## 2026-07-29: Logo & Branding Update
+- Extracted and updated the primary logo image from user-provided suite (src/assets/logo.png).
+- Extracted and generated a complete set of favicons from the rounded square app-icon variant (including favicon.ico, PNG variants, and apple-touch-icon.png), updating index.html references.
+- Sampled colors from the new logo and added them to tailwind.config.js as brand-navy (#031536) and brand-blue (#005afd).
+- Applied the new two-tone coloring to the site wordmark 'The Placement Feed' across Navbar.jsx and Footer.jsx.
+- Verified visual integration dynamically via Playwright, ensuring layout didn't break and mobile hamburger views and footer logos render correctly.
+ 
+## 2026-07-29: Cleanup & Refinements
+- Removed temporary Playwright test files and logo crop artifacts.
+- Synced theme-color meta tag in index.html to #005afd to perfectly match the new brand-blue.
+ 
+## [2026-07-29] Admin Credential Rotation Script
+- Created `server/scripts/resetAdmin.js` as a standalone CLI script to allow administrators to rotate their credentials without modifying `.env` or relying on the initial seed logic.
+- Updated `server/index.js` and `server/config/seed.js` to make `ADMIN_USERNAME` and `ADMIN_PASSWORD` optional after the initial database seed, preventing crashes if they are removed.
+- Updated `README.md` to document the new `resetAdmin.js` script and clarify that `.env` credentials can be safely removed post-setup.
