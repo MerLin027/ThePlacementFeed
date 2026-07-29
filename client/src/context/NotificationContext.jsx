@@ -99,7 +99,6 @@ export const NotificationProvider = ({ children }) => {
           .map(c => ({ ...c, isRead: false }));
           
         if (newNotifs.length > 0) {
-          // Show toast for postponed/unpostponed items
           newNotifs.forEach(notif => {
             if (notif.type === 'postponed') {
               toast.error(`${notif.company} drive has been postponed!`, {
@@ -118,6 +117,16 @@ export const NotificationProvider = ({ children }) => {
               toast.success(`${notif.company} drive is no longer postponed.`, {
                 duration: 6000,
               });
+            } else if (notif.type === 'statusChange') {
+              toast(`${notif.company} status changed`, { duration: 5000, icon: 'ℹ️' });
+            } else if (notif.type === 'new') {
+              toast.success(`New drive: ${notif.company}`, { duration: 5000 });
+            } else if (notif.type === 'edit') {
+              toast(`${notif.company} details updated`, { duration: 5000, icon: '📝' });
+            } else if (notif.type === 'automationReset') {
+              toast(`${notif.company} status automation reset`, { duration: 5000, icon: '🔄' });
+            } else {
+              toast(`${notif.company} updated`, { duration: 5000, icon: '🔔' });
             }
           });
 

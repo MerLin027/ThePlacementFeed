@@ -421,3 +421,7 @@ Backend API cold-start delay (Render free tier sleeping) is a known, separate is
 - Created `server/scripts/resetAdmin.js` as a standalone CLI script to allow administrators to rotate their credentials without modifying `.env` or relying on the initial seed logic.
 - Updated `server/index.js` and `server/config/seed.js` to make `ADMIN_USERNAME` and `ADMIN_PASSWORD` optional after the initial database seed, preventing crashes if they are removed.
 - Updated `README.md` to document the new `resetAdmin.js` script and clarify that `.env` credentials can be safely removed post-setup.
+
+## [2026-07-29] Notification System UI Polish
+- **Removed Redundant Close Button**: Removed the standalone 'X' close button from the `NotificationBell` dropdown header, as clicking outside the modal handles dismissal cleanly.
+- **Global Notification Toasts**: Updated `NotificationContext` so that *all* incoming events (`statusChange`, `new`, `edit`, `automationReset`) trigger an on-screen toast, rather than just `postponed`/`unpostponed` events. The existing red urgent styling for postponed drives remains unchanged.
