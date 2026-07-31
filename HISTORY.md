@@ -21,6 +21,7 @@
 - Project structure tree corrected: `hooks/`, `context/NotificationContext`, and `components/Notifications/` were all missing from the old tree and are now included.
 - Env var tables verified against actual `process.env.*` grep of the codebase — all 8 server vars and 1 client var confirmed accurate.
 - `resetAdmin.js` reference confirmed real (file exists at `server/scripts/resetAdmin.js`).
+- Modified the logo reference in `README.md` to point to `client/public/logo512.png` since `client/public/logo.png` was deleted.
 
 ## July 27, 2026 — Project Audit: Checkpoint 2 (Frontend) Finalized
 

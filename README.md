@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="client/public/logo.png" alt="The Placement Feed" width="180" />
+  <img src="client/public/logo512.png" alt="The Placement Feed" width="180" />
   <h1>The Placement Feed</h1>
   <p>Placement drive tracker for CHARUSAT CDPC — browse, search, and manage campus drives.</p>
 
