@@ -1,6 +1,28 @@
 # Project History
 
-## July 27, 2026 â€” Project Audit: Checkpoint 2 (Frontend) Finalized
+## July 31, 2026 — Debug Cleanup, Dependency Pruning, README Rewrite
+
+### Debug Instrumentation Removed (`NotificationContext.jsx`)
+- Removed all debug `console.group`, `console.log`, and `console.groupEnd` calls that were left in from a previous debugging session (flagged with `// DEBUG INSTRUMENTATION — remove after investigation` comment at L58).
+- Removed the debug-only `pollTickRef = useRef(0)` which existed solely to number log groups.
+- The logs were printing on every 60 s poll tick and every tab-focus event, including the full API response object (`res.data`) containing company names and drive change data.
+- Kept the one genuine `console.error` on fetch failure; rewrote its message since `tickNum` no longer exists.
+
+### Unused Dependencies Removed (`client/package.json`)
+- **`sharp`** (`^0.35.3`): Confirmed zero imports anywhere in `client/src/`. Was used once to generate favicon variants (`logo192.png`, `logo512.png`) which already exist in `client/public/`. Removed as dead weight.
+- **`playwright`** (`^1.61.1`): Confirmed no test files, no Playwright config, no scripts referencing it anywhere in the repo. All ad-hoc Playwright test scripts from previous audit sessions were already deleted. Removed.
+- Ran `npm install` after removal: 9 packages removed, lockfile updated, dev server verified clean.
+
+### README Rewrite (`README.md`)
+- Replaced the old README entirely with a verified, audited version.
+- Tech stack table now has real version numbers pulled from both `package.json` files; `react-hot-toast` added (was missing); `Node.js` and `Express` split into separate rows (previously conflated with Express's version shown as the Node version).
+- Node.js version note: "no version pinned in repo" — consistent between the stack table and the Local Setup section.
+- Features section updated to include: selection process steps (`selectionRounds`), Apply Now link (`formUrl`), and the notification polling endpoint (`GET /api/placements/changes`) explicitly called out.
+- Project structure tree corrected: `hooks/`, `context/NotificationContext`, and `components/Notifications/` were all missing from the old tree and are now included.
+- Env var tables verified against actual `process.env.*` grep of the codebase — all 8 server vars and 1 client var confirmed accurate.
+- `resetAdmin.js` reference confirmed real (file exists at `server/scripts/resetAdmin.js`).
+
+## July 27, 2026 — Project Audit: Checkpoint 2 (Frontend) Finalized
 
 ### Dependency Upgrades
 - **React Router**: Upgraded `react-router` to v7 (7.18.1). Migrated all `react-router-dom` imports to `react-router` across the client codebase for consistency, as `react-router-dom` is a deprecated re-export in v7. Verified 0 vulnerabilities via `npm audit`.

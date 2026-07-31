@@ -1,185 +1,129 @@
-# The Placement Feed
+<div align="center">
+  <img src="client/public/logo.png" alt="The Placement Feed" width="180" />
+  <h1>The Placement Feed</h1>
+  <p>Placement drive tracker for CHARUSAT CDPC — browse, search, and manage campus drives.</p>
 
-A full-stack MERN application for tracking CHARUSAT CDPC campus placement drives. Public-read (anyone can browse/search/filter placement drives) and admin-write (single authenticated admin can manage entries).
+  [![Deployed on Vercel](https://img.shields.io/badge/deployed-vercel-black?logo=vercel)](https://theplacementfeed.vercel.app)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+</div>
 
-## Tech Stack
+---
 
-| Layer      | Technology                                           |
-| ---------- | ---------------------------------------------------- |
-| Frontend   | React 19, Vite, Tailwind CSS v3, React Router v6     |
-| Backend    | Node.js, Express, Mongoose                           |
-| Database   | MongoDB (local dev) / MongoDB Atlas (production)     |
-| Auth       | JWT in httpOnly cookie, bcrypt                        |
-| Deployment | Frontend → Vercel, Backend → Render                  |
+**[theplacementfeed.vercel.app](https://theplacementfeed.vercel.app)** — Students can browse, filter, and search active/past placement drives. A single authenticated admin manages all drive entries from a protected dashboard.
+
+---
+
+## Stack
+
+| | Technology | Version |
+|---|---|---|
+| **Frontend** | React | 19.2 |
+| | Vite | 8.1 |
+| | Tailwind CSS | 3.4 |
+| | React Router | 7.18 |
+| | Axios | 1.18 |
+| | react-markdown + remark-gfm / rehype-raw / rehype-sanitize | 9.0 / 4.0 / 7.0 / 6.0 |
+| | react-hot-toast | 2.6 |
+| **Backend** | Node.js | no version pinned in repo |
+| | Express | 4.21 |
+| | Mongoose | 8.6 |
+| | node-cron | 4.6 |
+| | JWT + bcryptjs | 9.0 / 2.4 |
+| **Database** | MongoDB (local dev) / MongoDB Atlas (prod) | — |
+| **Deployment** | Frontend → Vercel, Backend → Render | — |
+
+---
 
 ## Features
 
-- **Public Home Page** — Card grid of placements with filters (branch, status, CTC range), search (company/role), sort, and pagination
-- **Detail View** — Full eligibility criteria, JD description, tags
-- **Timeline** — Chronological view grouped by month
-- **Admin Dashboard** — Add / edit / delete placements (protected)
-- **Security** — Helmet, CORS, rate-limiting, CSRF checks, input sanitization, query validation
+- Browse, search, and filter placement drives by branch, status, CTC range, and keyword
+- Drive detail pages with full JD rendered as Markdown (GFM + sanitized HTML)
+- Selection process steps shown per drive (round name + description)
+- Direct **Apply Now** link on drives that have a registration URL (`formUrl`)
+- Timeline view — drives grouped chronologically by month
+- Automatic status transitions (Upcoming → Ongoing → Completed) via daily cron at 00:05 IST; skipped if status was manually overridden
+- Postponed-drive handling — toggle `isPostponed`; status automation resettable per drive
+- Notification polling every 60 s via `GET /api/placements/changes` — toast alerts on new, edited, postponed, or status-changed drives; persisted in `localStorage`, synced across tabs
+- Admin dashboard — create, edit, delete drives; protected by JWT in httpOnly cookie (3 h session)
+- Security hardened: Helmet, CORS, rate-limiting, CSRF origin checks, input sanitization, ReDoS-safe search
 
-## Prerequisites
+---
 
-- Node.js 18+
-- MongoDB (local instance or Atlas connection string)
-- npm or yarn
+## Local Setup
 
-## Local Development Setup
-
-### 1. Clone the repository
+> Requires Node.js (no specific version pinned in the repo; 18+ recommended) and a MongoDB instance (local or Atlas).
 
 ```bash
 git clone https://github.com/MerLin027/ThePlacementFeed.git
 cd ThePlacementFeed
 ```
 
-### 2. Backend setup
-
+**Server**
 ```bash
 cd server
-cp ../.env.example .env    # Copy and edit with your values
+cp ../.env.example .env   # fill in your values
 npm install
-npm run dev                 # Starts on http://localhost:5000
+npm run dev               # → http://localhost:5000
 ```
 
-Create a `.env` file in the project root (or `server/` directory) with:
-
-```
-MONGODB_URI=mongodb://localhost:27017/placement-feed
-JWT_SECRET=a-long-random-secret-string
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your-secure-password
-COOKIE_SECRET=another-random-secret
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-PORT=5000
-```
-
-The server will automatically create the admin user on first startup using the `ADMIN_USERNAME` and `ADMIN_PASSWORD` values.
-**Note:** Initial setup can use `.env` auto-seed, but ongoing password changes should be done via `node scripts/resetAdmin.js`. The `.env` admin values can be safely removed after the first credential rotation.
-
-### 3. Frontend setup
-
+**Client** (separate terminal)
 ```bash
 cd client
-cp .env.example .env       # Copy and edit
 npm install
-npm run dev                 # Starts on http://localhost:5173
+npm run dev               # → http://localhost:5173
 ```
 
-Create a `.env` in `client/`:
+### Environment variables
 
-```
-VITE_API_URL=http://localhost:5000
-```
+**Server** (`server/.env`):
 
-## Environment Variables Reference
+| Variable | Required | Notes |
+|---|---|---|
+| `MONGODB_URI` | ✅ | Atlas connection string (or local) |
+| `JWT_SECRET` | ✅ | Long random string |
+| `COOKIE_SECRET` | ✅ | Long random string |
+| `CLIENT_URL` | ✅ | Vercel URL in prod; `http://localhost:5173` locally |
+| `NODE_ENV` | ✅ | `production` on Render, `development` locally |
+| `ADMIN_USERNAME` | initial seed only | Used once on first boot to create admin |
+| `ADMIN_PASSWORD` | initial seed only | Used once on first boot to create admin |
+| `PORT` | auto-set by Render | Defaults to 5000 |
 
-### Server (Render)
+**Client** (`client/.env`):
 
-| Variable         | Description                                      | Required |
-| ---------------- | ------------------------------------------------ | -------- |
-| `MONGODB_URI`    | MongoDB Atlas connection string                  | ✅        |
-| `JWT_SECRET`     | Secret for signing JWT tokens                    | ✅        |
-| `ADMIN_USERNAME` | Admin login username (initial seed only)         | ❌        |
-| `ADMIN_PASSWORD` | Admin login password (initial seed only)         | ❌        |
-| `COOKIE_SECRET`  | Secret for signed cookies                        | ✅        |
-| `NODE_ENV`       | Must be `production` on Render                   | ✅        |
-| `CLIENT_URL`     | Your Vercel frontend URL (for CORS + CSRF)       | ✅        |
-| `PORT`           | Port to listen on (Render sets this automatically)| ❌       |
+| Variable | Required |
+|---|---|
+| `VITE_API_URL` | ✅ |
 
-### Client (Vercel)
+The server auto-creates the admin account on first boot from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. After rotating credentials with `node scripts/resetAdmin.js`, those two vars can be dropped from the environment.
 
-| Variable       | Description                        | Required |
-| -------------- | ---------------------------------- | -------- |
-| `VITE_API_URL` | Your Render backend URL            | ✅        |
+> **Render cold starts:** The free tier spins down after inactivity — first request may take 30–50 s. The app shows a loading state during this time.
 
-## Deployment
+---
 
-### Backend → Render
-
-1. Create a new **Web Service** on [Render](https://render.com)
-2. Connect your GitHub repository
-3. Set **Root Directory** to `server`
-4. Set **Build Command** to `npm install`
-5. Set **Start Command** to `npm start`
-6. Add all server environment variables listed above
-7. **Important:** Set `CLIENT_URL` to your actual Vercel deployment URL (e.g. `https://theplacementfeed.vercel.app`), **NOT** `http://localhost:5173`. CORS will block all requests otherwise.
-
-### Frontend → Vercel
-
-1. Import project on [Vercel](https://vercel.com)
-2. Set **Root Directory** to `client`
-3. Framework Preset should auto-detect as **Vite**
-4. Add environment variable: `VITE_API_URL` = your Render backend URL (e.g. `https://theplacementfeed-api.onrender.com`)
-
-### ⚠️ Cold Start Warning
-
-Render's free tier spins down after 15 minutes of inactivity. The first request after idle may take **30–50 seconds** to respond while the server boots up. The app shows a friendly loading message during this time.
-
-## Project Structure
+## Structure
 
 ```
 ThePlacementFeed/
-├── .env.example                # Server env template
-├── .gitignore
-├── README.md
-├── server/
-│   ├── package.json
-│   ├── index.js                # Express app entry point
-│   ├── config/
-│   │   ├── db.js               # MongoDB connection
-│   │   └── seed.js             # Admin auto-seeding
-│   ├── middleware/
-│   │   ├── auth.js             # JWT cookie verification
-│   │   ├── csrfCheck.js        # Origin/Referer CSRF check
-│   │   ├── errorHandler.js     # Global error handler
-│   │   └── validate.js         # express-validator rules
-│   ├── models/
-│   │   ├── Admin.js
-│   │   └── Placement.js
-│   └── routes/
-│       ├── auth.js             # Login / logout / check
-│       └── placements.js       # CRUD + filters + pagination
-└── client/
-    ├── .env.example            # Client env template
-    ├── package.json
-    ├── index.html
-    ├── tailwind.config.js
-    ├── vite.config.js
-    └── src/
-        ├── main.jsx
-        ├── index.css
-        ├── App.jsx
-        ├── api/
-        │   └── axios.js        # Axios instance + 401 interceptor
-        ├── context/
-        │   └── AuthContext.jsx
-        ├── components/
-        │   ├── Layout/
-        │   │   ├── Navbar.jsx
-        │   │   └── Footer.jsx
-        │   ├── BranchSelect.jsx
-        │   ├── ColdStartLoader.jsx
-        │   ├── ConfirmDialog.jsx
-        │   ├── FilterBar.jsx
-        │   ├── Modal.jsx
-        │   ├── Pagination.jsx
-        │   ├── PlacementCard.jsx
-        │   ├── PlacementForm.jsx
-        │   ├── ProtectedRoute.jsx
-        │   ├── StatusBadge.jsx
-        │   └── TagInput.jsx
-        └── pages/
-            ├── AdminDashboard.jsx
-            ├── AdminLogin.jsx
-            ├── Home.jsx
-            ├── PlacementDetail.jsx
-            └── Timeline.jsx
+├── client/                  # Vite + React frontend
+│   ├── public/              # Static assets (logo, favicons)
+│   └── src/
+│       ├── api/             # Axios instance + 401 interceptor
+│       ├── context/         # AuthContext, NotificationContext
+│       ├── hooks/           # usePlacementsFetch
+│       ├── components/
+│       │   ├── Layout/      # Navbar, Footer
+│       │   ├── Notifications/ # NotificationBell
+│       │   └── ...          # FilterBar, PlacementCard, PlacementForm, etc.
+│       └── pages/           # Home, PlacementDetail, Timeline, AdminDashboard, AdminLogin
+└── server/                  # Express API
+    ├── config/              # DB connection, admin seed
+    ├── jobs/                # node-cron status transition job
+    ├── middleware/          # Auth, CSRF, validation, error handler
+    ├── models/              # Placement, Admin schemas
+    ├── routes/              # /api/placements, /api/auth
+    └── scripts/             # resetAdmin.js (credential rotation)
 ```
 
-## License
+---
 
-MIT
+*A student project built as a practical tool for CHARUSAT's placement season. MIT licensed.*

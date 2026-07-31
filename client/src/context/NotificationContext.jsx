@@ -55,21 +55,12 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [notifications]);
 
-  // DEBUG INSTRUMENTATION — remove after investigation
-  const pollTickRef = useRef(0);
-
   const pollChanges = useCallback(async () => {
-    const tickNum = ++pollTickRef.current;
-    const tickTime = new Date().toISOString();
     const lastPollTime = localStorage.getItem('lastPollTime');
-
-    console.group(`%c[NotifPoll] Tick #${tickNum} @ ${tickTime}`, 'color: #6366f1; font-weight: bold');
-    console.log('  lastPollTime (from localStorage):', lastPollTime);
 
     try {
       if (!lastPollTime) {
-        console.log('  → First-ever visit path (no lastPollTime)');
-        // First-ever visit behavior
+        // First-ever visit: seed lastPollTime from the most recent drive
         const res = await axios.get('/api/placements?sort=newest&limit=1');
         if (res.data?.success && res.data.data.length > 0) {
           const latest = res.data.data[0];
@@ -85,43 +76,30 @@ export const NotificationProvider = ({ children }) => {
           setNotifications([newNotif]);
           const newLastPollTime = latest.updatedAt || latest.createdAt;
           localStorage.setItem('lastPollTime', newLastPollTime);
-          console.log('  → Set lastPollTime to:', newLastPollTime);
           toast(`Welcome! The latest drive is ${latest.company} - ${latest.role}`, {
             icon: '👋',
             duration: 5000,
           });
         } else {
-          const now = new Date().toISOString();
-          localStorage.setItem('lastPollTime', now);
-          console.log('  → No placements found, set lastPollTime to now:', now);
+          localStorage.setItem('lastPollTime', new Date().toISOString());
         }
-        console.groupEnd();
         return;
       }
 
       // Subsequent visits / polling
-      const url = `/api/placements/changes?since=${lastPollTime}`;
-      console.log('  → Fetching:', url);
-      const res = await axios.get(url);
-      const responseTime = new Date().toISOString();
-      console.log('  → Response received @', responseTime, '| HTTP', res.status);
-      console.log('  → Response data:', res.data);
+      const res = await axios.get(`/api/placements/changes?since=${lastPollTime}`);
       
       if (res.data?.success && res.data.data.length > 0) {
         const changes = res.data.data;
         const prev = notificationsRef.current;
-        console.log('  → Server returned', changes.length, 'change(s):', changes.map(c => `${c.type}@${c.changedAt}`));
         
         // Merge and deduplicate by id
         const existingIds = new Set(prev.map(n => n.id));
         const newNotifs = changes
           .filter(c => !existingIds.has(c.id))
           .map(c => ({ ...c, isRead: false }));
-
-        console.log('  → After dedup:', newNotifs.length, 'genuinely new notif(s)');
           
         if (newNotifs.length > 0) {
-          console.log('%c  ✅ SHOWING TOAST(S) NOW', 'color: green; font-weight: bold');
           newNotifs.forEach(notif => {
             if (notif.type === 'postponed') {
               toast.error(`${notif.company} drive has been postponed!`, {
@@ -158,35 +136,27 @@ export const NotificationProvider = ({ children }) => {
           setNotifications(combined.slice(0, 15));
         }
         
-        // Update lastPollTime to the most recent changedAt from the server to prevent clock-skew race conditions
+        // Update lastPollTime to the most recent changedAt from the server
+        // to prevent clock-skew race conditions
         const latestChangeTime = changes.reduce((latest, current) => {
           return new Date(current.changedAt) > new Date(latest) ? current.changedAt : latest;
         }, lastPollTime);
         
-        console.log('  → Advancing lastPollTime from', lastPollTime, 'to', latestChangeTime);
         localStorage.setItem('lastPollTime', latestChangeTime);
-      } else {
-        console.log('  → No new changes (server returned empty or data.length === 0). lastPollTime NOT advanced.');
       }
     } catch (error) {
-      console.error(`[NotifPoll] Tick #${tickNum} ERROR:`, error);
+      console.error('[NotifPoll] Failed to fetch changes:', error);
     }
-    console.groupEnd();
   }, []);
 
-  // Setup interval and visibility sync
+  // Setup polling interval and visibility-based sync
   useEffect(() => {
-    console.log('[NotifPoll] 🟢 Interval SETUP — polling every 60s');
     pollChanges(); // Initial poll on mount
-    const intervalId = setInterval(() => {
-      console.log(`[NotifPoll] ⏰ setInterval fired @ ${new Date().toISOString()}`);
-      pollChanges();
-    }, 60000); // 60s
+    const intervalId = setInterval(pollChanges, 60000); // 60s
     
     // Instantly sync when user tabs back or wakes device from sleep
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log(`[NotifPoll] 👁 visibilitychange → visible, triggering poll @ ${new Date().toISOString()}`);
         pollChanges();
       }
     };
@@ -194,7 +164,6 @@ export const NotificationProvider = ({ children }) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
-      console.log('[NotifPoll] 🔴 Interval CLEARED (component unmounting)');
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
