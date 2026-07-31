@@ -149,7 +149,11 @@ router.get('/changes', apiLimiter, async (req, res, next) => {
 
     // Security: Enforce a maximum lookback window of 7 days to prevent memory exhaustion DoS
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const effectiveSinceDate = sinceDate < sevenDaysAgo ? sevenDaysAgo : sinceDate;
+    const parsedSince = sinceDate < sevenDaysAgo ? sevenDaysAgo : sinceDate;
+    
+    // Add a 10 second overlap buffer to catch race conditions where a slow DB write 
+    // was committed after a poll but had a timestamp generated before the poll.
+    const effectiveSinceDate = new Date(parsedSince.getTime() - 10000);
 
     const placements = await Placement.find({
       'recentChanges.changedAt': { $gt: effectiveSinceDate },
