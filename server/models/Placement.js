@@ -131,7 +131,6 @@ placementSchema.pre('validate', function(next) {
 // Index for common queries
 placementSchema.index({ 'recentChanges.changedAt': -1 });
 placementSchema.index({ status: 1 });
-placementSchema.index({ company: 'text', role: 'text' });
 placementSchema.index({ driveDate: -1 });
 
 module.exports = mongoose.model('Placement', placementSchema);

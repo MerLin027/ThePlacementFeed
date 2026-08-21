@@ -10,6 +10,7 @@ import PlacementDetail from './pages/PlacementDetail';
 import Timeline from './pages/Timeline';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />

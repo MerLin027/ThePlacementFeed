@@ -42,13 +42,19 @@ const AdminDashboard = () => {
   }, [loadPlacements]);
 
   const handleAdd = async (data) => {
+    // Do NOT wrap in try/catch here — let errors propagate up to
+    // PlacementForm's own catch block, which displays them in the form.
     await api.post('/api/placements', data);
+    // Only close and refresh on success
     setShowForm(false);
     loadPlacements(1);
   };
 
   const handleEdit = async (data) => {
+    // Do NOT wrap in try/catch here — let errors propagate up to
+    // PlacementForm's own catch block, which displays them in the form.
     await api.put(`/api/placements/${editingPlacement._id}`, data);
+    // Only close and refresh on success
     setEditingPlacement(null);
     setShowForm(false);
     loadPlacements(pagination.page);
