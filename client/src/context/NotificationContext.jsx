@@ -35,6 +35,16 @@ export const NotificationProvider = ({ children }) => {
       if (e.key === 'placement_notifications') {
         loadFromStorage();
       }
+      // Another tab cleared/dismissed — remove those IDs from our in-memory list
+      if (e.key === 'dismissedNotifIds') {
+        try {
+          const dismissed = new Set(JSON.parse(e.newValue || '[]'));
+          setNotifications(prev => {
+            const filtered = prev.filter(n => !dismissed.has(n.id));
+            return filtered.length !== prev.length ? filtered : prev;
+          });
+        } catch { /* ignore malformed JSON from another tab */ }
+      }
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -188,10 +198,14 @@ export const NotificationProvider = ({ children }) => {
       const latestClearedAt = current.reduce((latest, n) => {
         return new Date(n.changedAt) > new Date(latest) ? n.changedAt : latest;
       }, current[0].changedAt);
-      // Persist all cleared IDs so the poll loop can filter them even if
-      // lastPollTime hasn't advanced past every one of them yet.
-      const allIds = current.map(n => n.id);
-      localStorage.setItem('dismissedNotifIds', JSON.stringify(allIds));
+      // Merge (not replace) cleared IDs with any previously dismissed IDs.
+      // Replacing would drop individually-dismissed IDs, allowing them to
+      // reappear via the server's 10-second overlap buffer on the next poll.
+      const existing = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
+      const merged = [...new Set([...existing, ...current.map(n => n.id)])];
+      // Cap at 100 entries to prevent unbounded localStorage growth
+      const capped = merged.slice(-100);
+      localStorage.setItem('dismissedNotifIds', JSON.stringify(capped));
       localStorage.setItem('lastPollTime', latestClearedAt);
     }
 
