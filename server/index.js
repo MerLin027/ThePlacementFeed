@@ -23,6 +23,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 const seedAdmin = require('./config/seed');
@@ -65,6 +66,45 @@ app.use('/api/placements', placementRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
+});
+
+// External cron trigger — allows an external scheduler (e.g. cron-job.org, Render cron)
+// to invoke the status-transition job via HTTP.
+// Protected by a shared CRON_SECRET bearer token set in the server environment.
+// This is the recommended approach for Render instances that sleep at midnight and therefore
+// never fire the node-cron schedule. The job is idempotent and safe to call multiple times.
+// Rate limit cron trigger: 10 requests per 15 minutes per IP
+const cronLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    message: 'Too many cron trigger attempts. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.get('/api/cron/trigger', cronLimiter, async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    // If no secret is configured, disable the endpoint entirely
+    return res.status(503).json({ success: false, message: 'Cron endpoint is not configured.' });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { runStatusTransitionJob } = require('./jobs/statusCron');
+    await runStatusTransitionJob();
+    res.json({ success: true, message: 'Status transition job executed successfully.' });
+  } catch (err) {
+    console.error('[CronTrigger] Error executing status transition job:', err);
+    res.status(500).json({ success: false, message: 'Status transition job failed.' });
+  }
 });
 
 // --- Global error handler ---

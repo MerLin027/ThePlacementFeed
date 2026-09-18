@@ -4,12 +4,15 @@ build/
 .env
 .env.local
 .env.*.local
+server/.env
+client/.env
 *.log
 npm-debug.log*
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 

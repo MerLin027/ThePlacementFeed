@@ -16,6 +16,14 @@ const adminSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  toJSON: {
+    transform: function (doc, ret) {
+      delete ret.passwordHash;
+      delete ret.__v;
+      return ret;
+    }
+  }
 });
 
 module.exports = mongoose.model('Admin', adminSchema);

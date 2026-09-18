@@ -26,6 +26,18 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limit mutating endpoints: 50 requests per 15 minutes per IP
+const mutateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: {
+    success: false,
+    message: 'Too many updates. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // GET /api/placements — public, paginated, filterable
 router.get('/', apiLimiter, async (req, res, next) => {
 
@@ -205,6 +217,7 @@ router.get('/:id', apiLimiter, async (req, res, next) => {
 // POST /api/placements — auth required
 router.post(
   '/',
+  mutateLimiter,
   auth,
   csrfCheck,
   placementValidationRules,
@@ -212,6 +225,9 @@ router.post(
   async (req, res, next) => {
     try {
       const placementData = { ...req.body };
+      // statusManuallySet is a server-computed field; strip it from the
+      // create payload so a caller cannot lock automation off at birth.
+      delete placementData.statusManuallySet;
       placementData.recentChanges = [{ type: 'new', changedAt: new Date() }];
       
       const placement = await Placement.create(placementData);
@@ -225,6 +241,7 @@ router.post(
 // PUT /api/placements/:id — auth required
 router.put(
   '/:id',
+  mutateLimiter,
   auth,
   csrfCheck,
   placementValidationRules,
@@ -241,6 +258,10 @@ router.put(
 
       const updateData = { ...req.body };
       delete updateData.recentChanges;
+      delete updateData._id;
+      delete updateData.__v;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
 
       let statusChanged = false;
       if (updateData.status && updateData.status !== existingPlacement.status) {
@@ -289,6 +310,7 @@ const updatePlacementWithLog = async (id, setFields, changeType) => {
 // PATCH /api/placements/:id/postpone — lightweight toggle, auth required
 router.patch(
   '/:id/postpone',
+  mutateLimiter,
   auth,
   csrfCheck,
   postponeValidationRules,
@@ -314,6 +336,7 @@ router.patch(
 // PATCH /api/placements/:id/reset-status-automation — lightweight toggle, auth required
 router.patch(
   '/:id/reset-status-automation',
+  mutateLimiter,
   auth,
   csrfCheck,
   resetStatusValidationRules,
@@ -336,7 +359,7 @@ router.patch(
 );
 
 // DELETE /api/placements/:id — auth required
-router.delete('/:id', auth, csrfCheck, async (req, res, next) => {
+router.delete('/:id', mutateLimiter, auth, csrfCheck, async (req, res, next) => {
   try {
     const placement = await Placement.findByIdAndDelete(req.params.id);
     if (!placement) {

@@ -101,8 +101,17 @@ function initCronJobs() {
     timezone: 'Asia/Kolkata'
   });
   
-  // Optionally run once on startup to catch up immediately if missed
-  runStatusTransitionJob();
+  // Run immediately on startup to catch up on any missed transitions.
+  // On Render, the server may be sleeping at midnight, so the scheduled cron above may
+  // never fire. This startup run acts as the primary catch-up mechanism.
+  // The /api/cron/trigger HTTP endpoint handles subsequent daily triggers via an external
+  // scheduler (e.g. cron-job.org, Render cron, UptimeRobot).
+  console.log('[Cron] Running startup catch-up job...');
+  runStatusTransitionJob().then(() => {
+    console.log('[Cron] Startup catch-up job finished.');
+  }).catch((err) => {
+    console.error('[Cron] Startup catch-up job failed:', err);
+  });
 }
 
 module.exports = { initCronJobs, runStatusTransitionJob };

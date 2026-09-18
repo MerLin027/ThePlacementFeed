@@ -13,9 +13,10 @@ const PlacementCard = ({ placement }) => {
     });
   };
 
-  // Determine the bottom button style & text based on formUrl and status
+  // Determine the bottom button style & text based on formUrl and status.
+  // Completed drives ALWAYS show View Details — never Apply Now — even if a formUrl exists.
   const getButtonConfig = () => {
-    if (formUrl) {
+    if (formUrl && status !== 'Completed') {
       return {
         className: 'btn-primary w-full py-3 justify-center',
         label: 'Apply Now',

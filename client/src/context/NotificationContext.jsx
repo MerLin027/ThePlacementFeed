@@ -88,15 +88,21 @@ export const NotificationProvider = ({ children }) => {
 
       // Subsequent visits / polling
       const res = await axios.get(`/api/placements/changes?since=${lastPollTime}`);
-      
-      if (res.data?.success && res.data.data.length > 0) {
+
+      const changeCount = res.data?.data?.length ?? 0;
+
+      if (res.data?.success && changeCount > 0) {
         const changes = res.data.data;
         const prev = notificationsRef.current;
-        
+
+        // Filter out any IDs the user has already explicitly dismissed
+        const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
+        const dismissedSet = new Set(dismissedIds);
+
         // Merge and deduplicate by id
         const existingIds = new Set(prev.map(n => n.id));
         const newNotifs = changes
-          .filter(c => !existingIds.has(c.id))
+          .filter(c => !existingIds.has(c.id) && !dismissedSet.has(c.id))
           .map(c => ({ ...c, isRead: false }));
           
         if (newNotifs.length > 0) {
@@ -152,7 +158,7 @@ export const NotificationProvider = ({ children }) => {
   // Setup polling interval and visibility-based sync
   useEffect(() => {
     pollChanges(); // Initial poll on mount
-    const intervalId = setInterval(pollChanges, 60000); // 60s
+    const intervalId = setInterval(pollChanges, 20000); // 20s — reduced from 60s for time-sensitive updates
     
     // Instantly sync when user tabs back or wakes device from sleep
     const handleVisibilityChange = () => {
@@ -174,10 +180,39 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const clearAll = () => {
+    const current = notificationsRef.current;
+
+    // Advance lastPollTime past every cleared notification so they are never
+    // re-fetched from the server after a refresh (Bug 1 fix).
+    if (current.length > 0) {
+      const latestClearedAt = current.reduce((latest, n) => {
+        return new Date(n.changedAt) > new Date(latest) ? n.changedAt : latest;
+      }, current[0].changedAt);
+      // Persist all cleared IDs so the poll loop can filter them even if
+      // lastPollTime hasn't advanced past every one of them yet.
+      const allIds = current.map(n => n.id);
+      localStorage.setItem('dismissedNotifIds', JSON.stringify(allIds));
+      localStorage.setItem('lastPollTime', latestClearedAt);
+    }
+
     setNotifications([]);
   };
 
   const dismissNotification = (id) => {
+    const target = notificationsRef.current.find(n => n.id === id);
+
+    // Persist the dismissed ID so this specific notification is never
+    // re-fetched even if lastPollTime hasn't advanced past it (Bug 1 fix).
+    if (target) {
+      const existing = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
+      if (!existing.includes(id)) {
+        existing.push(id);
+        // Cap at 100 entries to prevent unbounded localStorage growth
+        const capped = existing.slice(-100);
+        localStorage.setItem('dismissedNotifIds', JSON.stringify(capped));
+      }
+    }
+
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 

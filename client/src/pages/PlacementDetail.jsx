@@ -127,7 +127,7 @@ const PlacementDetail = () => {
               )}
               <StatusBadge status={placement.status} isPostponed={placement.isPostponed} />
             </div>
-            {placement.formUrl && (
+            {placement.formUrl && placement.status !== 'Completed' && (
               <div className="border-t border-surface-variant mt-xs pt-xs">
                 <a
                   href={placement.formUrl}

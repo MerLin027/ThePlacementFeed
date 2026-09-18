@@ -96,7 +96,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     if (!form.company.trim()) return setError('Company name is required');
     if (!form.role.trim()) return setError('Role is required');
     if (form.ctc === '' || form.ctc < 0) return setError('CTC must be a non-negative number');
-    if (form.formUrl && !/^https?:\/\//i.test(form.formUrl.trim())) return setError('Google Form URL must start with http:// or https://');
+    if (form.formUrl && !/^https:\/\//i.test(form.formUrl.trim())) return setError('Application Form URL must start with https://');
 
     setIsSubmitting(true);
     try {
@@ -322,12 +322,12 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           onChange={(e) => handleChange('jdDescription', e.target.value)}
           className="input-field min-h-[200px] resize-y font-mono text-sm leading-relaxed"
           placeholder={"# Job Title\n\n## Requirements\n- Requirement 1\n- Requirement 2"}
-          maxLength={50000}
+          maxLength={10000}
           rows={10}
         />
         <div className="flex justify-end mt-1.5">
           <p className="font-label-sm text-label-sm text-outline">
-            {form.jdDescription.length.toLocaleString()} / 50,000 characters
+            {form.jdDescription.length.toLocaleString()} / 10,000 characters
           </p>
         </div>
       </div>

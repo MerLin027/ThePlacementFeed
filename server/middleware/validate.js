@@ -35,8 +35,8 @@ const placementValidationRules = [
 
   body('eligibility.branches')
     .optional()
-    .isArray()
-    .withMessage('Branches must be an array'),
+    .isArray({ max: 20 })
+    .withMessage('Branches must be an array with at most 20 items'),
 
   body('eligibility.branches.*')
     .optional()
@@ -77,8 +77,8 @@ const placementValidationRules = [
 
   body('tags')
     .optional()
-    .isArray()
-    .withMessage('Tags must be an array'),
+    .isArray({ max: 20 })
+    .withMessage('Tags must be an array with at most 20 items'),
 
   body('tags.*')
     .optional()
@@ -94,8 +94,8 @@ const placementValidationRules = [
 
   body('selectionRounds')
     .optional()
-    .isArray()
-    .withMessage('selectionRounds must be an array'),
+    .isArray({ max: 10 })
+    .withMessage('selectionRounds must be an array with at most 10 items'),
 
   body('selectionRounds.*.roundName')
     .trim()

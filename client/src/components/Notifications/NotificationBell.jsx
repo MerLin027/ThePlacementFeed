@@ -61,12 +61,12 @@ const NotificationBell = () => {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh]">
-          <div className="flex items-center justify-between p-4 border-b border-outline-variant">
+          <div className="relative flex items-center justify-center p-4 border-b border-outline-variant">
             <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Notifications</h3>
             {notifications.length > 0 && (
               <button
                 onClick={clearAll}
-                className="text-primary hover:text-primary-focus text-label-md font-label-md transition-colors"
+                className="absolute right-4 text-primary hover:text-primary-focus text-label-md font-label-md transition-colors"
               >
                 Clear all
               </button>
