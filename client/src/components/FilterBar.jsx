@@ -18,7 +18,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
   ].filter(Boolean).length;
 
   return (
-    <div className="w-full md:max-w-xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
+    <div className="w-full md:max-w-2xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
         <div className="flex-1 flex items-center gap-2 h-11 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
