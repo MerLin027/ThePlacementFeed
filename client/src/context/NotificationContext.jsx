@@ -67,6 +67,10 @@ export const NotificationProvider = ({ children }) => {
 
   const pollChanges = useCallback(async () => {
     const lastPollTime = localStorage.getItem('lastPollTime');
+    // [DIAG] Bug 2 — confirm interval fires continuously
+    console.log(
+      `[NotifPoll] tick at ${new Date().toISOString()} | lastPollTime=${lastPollTime ?? '(none — first visit)'}`
+    );
 
     try {
       if (!lastPollTime) {
@@ -98,8 +102,8 @@ export const NotificationProvider = ({ children }) => {
 
       // Subsequent visits / polling
       const res = await axios.get(`/api/placements/changes?since=${lastPollTime}`);
-
       const changeCount = res.data?.data?.length ?? 0;
+      console.log(`[NotifPoll] server returned ${changeCount} change(s)`);
 
       if (res.data?.success && changeCount > 0) {
         const changes = res.data.data;
@@ -167,12 +171,14 @@ export const NotificationProvider = ({ children }) => {
 
   // Setup polling interval and visibility-based sync
   useEffect(() => {
+    console.log('[NotifPoll] interval REGISTERED — will fire every 20s');
     pollChanges(); // Initial poll on mount
     const intervalId = setInterval(pollChanges, 20000); // 20s — reduced from 60s for time-sensitive updates
     
     // Instantly sync when user tabs back or wakes device from sleep
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        console.log('[NotifPoll] visibility tick (tab focus/wake)');
         pollChanges();
       }
     };
@@ -180,6 +186,7 @@ export const NotificationProvider = ({ children }) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
+      console.log('[NotifPoll] interval TORN DOWN (unmount)');
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
