@@ -21,7 +21,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
     <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
-        <div className="relative flex-1">
+        <div className="relative w-full md:w-[55%]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
             search
           </span>
