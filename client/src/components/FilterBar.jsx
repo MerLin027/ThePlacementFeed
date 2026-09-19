@@ -21,8 +21,8 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
     <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
-        <div className="relative flex-1 md:flex-none md:w-[55%]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">
+        <div className="flex-1 md:flex-none md:w-1/2 flex items-center gap-2 h-11 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
+          <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]">
             search
           </span>
           <input
@@ -30,7 +30,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
             placeholder="Search by company or role..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary transition-colors"
+            className="flex-1 min-w-0 h-full bg-transparent font-body-md text-body-md text-on-surface placeholder-outline focus:outline-none text-center placeholder:text-center"
           />
         </div>
         <button
