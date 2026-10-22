@@ -11,6 +11,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+import { DetailSkeleton } from '../components/Skeleton';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 
 
@@ -24,6 +26,7 @@ const PlacementDetail = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  usePageTitle(placement ? `${placement.company} — ${placement.role}` : 'Drive details');
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -85,16 +88,7 @@ const PlacementDetail = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-12 h-12 rounded-full border-4 border-outline-variant" />
-          <div className="w-12 h-12 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <DetailSkeleton />;
 
   if (notFound || error) {
     return (
@@ -142,10 +136,10 @@ const PlacementDetail = () => {
         <div className="md:col-span-12">
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+            className="inline-flex items-center gap-xs min-h-[44px] pr-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            Back to Drives
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+            Back to drives
           </button>
         </div>
 
@@ -190,21 +184,21 @@ const PlacementDetail = () => {
             </h3>
             {placement.deadline && (
               <div className="flex justify-between items-center py-[6px]">
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Application Deadline</span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">Application deadline</span>
                 <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.deadline)}</span>
               </div>
             )}
             <div className="flex justify-between items-center py-[6px]">
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Drive Date</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">Drive date</span>
               <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.driveDate)}</span>
             </div>
           </div>
 
-          {/* 3. Selection Process Card */}
+          {/* 3. Selection process Card */}
           {placement.selectionRounds?.length > 0 && (
             <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
-                Selection Process
+                Selection process
               </h2>
               <div className="flex flex-col gap-xs relative">
                 <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block" />
@@ -238,7 +232,7 @@ const PlacementDetail = () => {
           <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
             <div className="flex items-center gap-xs mb-xs">
               <span className="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
-              <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility Criteria</h2>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility criteria</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
               <div className="flex flex-col bg-surface-container-low p-xs rounded-lg">
@@ -268,7 +262,7 @@ const PlacementDetail = () => {
           {placement.jdDescription && (
             <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
-                Job Description &amp; Responsibilities
+                Job description
               </h2>
               <div className="markdown-body">
                 <ReactMarkdown

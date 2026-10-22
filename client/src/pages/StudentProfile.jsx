@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -10,6 +10,8 @@ import { PageSpinner } from '../components/RequireRole';
 import { BRANCHES, branchLabel } from '../constants/branches';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
+import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const EMPTY_FORM = {
   firstName: '',
@@ -59,6 +61,7 @@ const ReadOnlyRow = ({ label, value }) => (
 );
 
 const StudentProfile = () => {
+  usePageTitle('My profile');
   const { refreshStudent } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -69,6 +72,8 @@ const StudentProfile = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loadError, setLoadError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const formRef = useRef(null);
+  useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -127,7 +132,7 @@ const StudentProfile = () => {
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
       <div className="mb-md">
-        <h1 className="font-headline-md text-headline-md text-on-surface">My Profile</h1>
+        <h1 className="font-headline-md text-headline-md text-on-surface">My profile</h1>
         <p className="font-body-md text-body-md text-on-surface-variant mt-base">
           These details are shared with the CDPC when you apply to a drive.
         </p>
@@ -158,6 +163,7 @@ const StudentProfile = () => {
 
         {/* Editable details */}
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           noValidate
           className="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm md:p-md space-y-sm"

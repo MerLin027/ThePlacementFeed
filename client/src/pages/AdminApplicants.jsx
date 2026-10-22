@@ -9,6 +9,7 @@ import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { APPLICATION_STATUSES } from '../constants/applications';
 import { parseApiError } from '../utils/formErrors';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const PAGE_SIZE = 25;
 const EMPTY_FILTERS = { search: '', status: '', branch: '', cgpaMin: '', cgpaMax: '', sort: 'newest' };
@@ -45,6 +46,7 @@ const AdminApplicants = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [viewing, setViewing] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  usePageTitle(drive ? `Applicants · ${drive.company}` : 'Applicants');
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300);

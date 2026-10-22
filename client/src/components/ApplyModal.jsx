@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -9,6 +9,7 @@ import { FormAlert } from './AuthCard';
 import FormField from './FormField';
 import { parseApiError } from '../utils/formErrors';
 import { branchLabel } from '../constants/branches';
+import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
 
 const SummaryRow = ({ label, value }) => (
   <div className="flex justify-between gap-sm py-[6px] border-b border-surface-variant last:border-b-0">
@@ -33,6 +34,8 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
   const [answers, setAnswers] = useState({});
   const [consent, setConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const formRef = useRef(null);
+  useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -117,7 +120,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={`Apply to ${drive.company}`}>
-      <form onSubmit={handleSubmit} noValidate className="space-y-sm">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-sm">
         <p className="font-body-md text-body-md text-on-surface-variant">{drive.role}</p>
 
         {error && <FormAlert>{error}</FormAlert>}

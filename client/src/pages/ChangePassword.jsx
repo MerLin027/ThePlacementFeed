@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -7,12 +7,17 @@ import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
 import { parseApiError } from '../utils/formErrors';
+import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const ChangePassword = () => {
+  usePageTitle('Change password');
   const { student, refreshStudent, logoutStudent } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [fieldErrors, setFieldErrors] = useState({});
+  const formRef = useRef(null);
+  useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,7 +75,7 @@ const ChangePassword = () => {
         ) : null
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {isReset && (
           <FormAlert tone="warning" icon="lock_reset">
             <p className="font-semibold">Your password was reset by the CDPC admin.</p>
@@ -119,7 +124,7 @@ const ChangePassword = () => {
         />
 
         <SubmitButton isLoading={isLoading} loadingText="Saving...">
-          Update Password
+          Update password
         </SubmitButton>
       </form>
     </AuthCard>

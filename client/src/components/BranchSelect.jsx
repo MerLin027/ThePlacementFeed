@@ -20,7 +20,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
           onClick={selectAll}
           className="font-label-sm text-label-sm text-primary hover:text-primary-container"
         >
-          Select All
+          Select all
         </button>
         <span className="text-outline-variant">|</span>
         <button

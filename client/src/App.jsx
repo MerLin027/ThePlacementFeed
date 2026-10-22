@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import RequireRole from './components/RequireRole';
+import RouteEffects from './components/RouteEffects';
 import Home from './pages/Home';
 import PlacementDetail from './pages/PlacementDetail';
 import Timeline from './pages/Timeline';
@@ -26,11 +27,18 @@ function App() {
       <AuthProvider>
         <MyApplicationsProvider>
         <NotificationProvider>
-          <div className="h-screen overflow-hidden flex flex-col">
+          <div className="h-dvh overflow-hidden flex flex-col">
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:px-4 focus:py-3 focus:rounded-lg focus:bg-primary-container focus:text-on-primary focus:font-label-md"
+            >
+              Skip to main content
+            </a>
+            <RouteEffects />
             {/* Bottom-centre: never covers the header, the bell or its open panel (desktop or phone) */}
             <Toaster position="bottom-center" containerStyle={{ bottom: 16 }} />
             <Navbar />
-          <main id="main-content" className="flex-1 min-h-0 overflow-y-auto content-scrollbar">
+          <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto content-scrollbar focus:outline-none">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/placement/:id" element={<PlacementDetail />} />

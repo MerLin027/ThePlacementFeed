@@ -47,13 +47,13 @@ export const CardApplyButton = ({ drive }) => {
           }}
           className={`btn-primary ${BASE}`}
         >
-          Apply Now
+          Apply now
         </button>
       );
     case 'apply':
       return (
         <button type="button" onClick={go(`${detailPath}?apply=1`)} className={`btn-primary ${BASE}`}>
-          Apply Now
+          Apply now
         </button>
       );
     case 'login':
@@ -104,7 +104,7 @@ export const CardApplyButton = ({ drive }) => {
                 : 'text-primary'
           }`}
         >
-          View Details
+          View details
         </div>
       );
   }
@@ -127,14 +127,14 @@ export const DetailApplyPanel = ({ drive, onApply }) => {
     case 'external':
       primary = (
         <a href={drive.formUrl} target="_blank" rel="noopener noreferrer" className={`btn-primary ${BASE}`}>
-          Apply Now
+          Apply now
         </a>
       );
       break;
     case 'apply':
       primary = (
         <button type="button" onClick={onApply} className={`btn-primary ${BASE}`}>
-          Apply Now
+          Apply now
         </button>
       );
       break;

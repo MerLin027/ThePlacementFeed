@@ -6,6 +6,7 @@ import { FormAlert } from '../components/AuthCard';
 import Pagination from '../components/Pagination';
 import { PageSpinner } from '../components/RequireRole';
 import { parseApiError } from '../utils/formErrors';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const PAGE_SIZE = 20;
 
@@ -14,6 +15,7 @@ const formatDate = (d) =>
 
 // Every in-app application the student has made, newest first, with its current status
 const MyApplications = () => {
+  usePageTitle('My applications');
   const [applications, setApplications] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 0, total: 0 });
   const [page, setPage] = useState(1);

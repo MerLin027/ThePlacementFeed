@@ -1,26 +1,29 @@
-const ColdStartLoader = ({ isColdStart }) => {
-  return (
-    <div className="flex flex-col items-center justify-center py-xl">
-      {/* Spinner */}
-      <div className="relative mb-md">
-        <div className="w-12 h-12 rounded-full border-4 border-outline-variant" />
-        <div className="w-12 h-12 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-      </div>
+import { DriveGridSkeleton, TimelineSkeleton } from './Skeleton';
 
+/**
+ * Loading state for the drive list and timeline. Shows the page's shape with
+ * skeletons; after a few seconds without a response (Render free-tier cold
+ * start) it explains the wait instead of leaving the user guessing.
+ */
+const ColdStartLoader = ({ isColdStart, variant = 'cards' }) => (
+  <div>
+    <div role="status" aria-live="polite" className={isColdStart ? 'mb-md' : 'sr-only'}>
       {isColdStart ? (
-        <>
-          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-xs">
-            Waking up the server...
-          </h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant text-center max-w-md">
-            The server is hosted on a free tier and may take up to a minute to start up after being idle. Thanks for your patience!
-          </p>
-        </>
+        <div className="flex items-start gap-xs p-sm bg-surface-container-low border border-outline-variant rounded-xl">
+          <span className="material-symbols-outlined text-[20px] text-primary flex-shrink-0" aria-hidden="true">hourglass_top</span>
+          <div>
+            <p className="font-label-md text-label-md text-on-surface">Waking up the server…</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              It runs on a free tier and can take up to a minute to start after a quiet spell. Your drives will appear here.
+            </p>
+          </div>
+        </div>
       ) : (
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Loading placements...</p>
+        'Loading drives'
       )}
     </div>
-  );
-};
+    {variant === 'timeline' ? <TimelineSkeleton /> : <DriveGridSkeleton />}
+  </div>
+);
 
 export default ColdStartLoader;

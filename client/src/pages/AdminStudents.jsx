@@ -6,6 +6,8 @@ import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { BRANCHES, branchLabel } from '../constants/branches';
 import { parseApiError } from '../utils/formErrors';
+import { TableRowsSkeleton } from '../components/Skeleton';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const PAGE_SIZE = 25;
 
@@ -35,6 +37,7 @@ const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
 );
 
 const AdminStudents = () => {
+  usePageTitle('Students');
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const [page, setPage] = useState(1);
@@ -187,16 +190,7 @@ const AdminStudents = () => {
             </thead>
             <tbody className="divide-y divide-surface-variant">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-sm py-xl text-center">
-                    <div className="flex items-center justify-center" role="status" aria-label="Loading students">
-                      <div className="relative">
-                        <div className="w-8 h-8 rounded-full border-4 border-outline-variant" />
-                        <div className="w-8 h-8 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-                      </div>
-                    </div>
-                  </td>
-                </tr>
+                <TableRowsSkeleton columns={6} label="Loading students" />
               ) : students.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">

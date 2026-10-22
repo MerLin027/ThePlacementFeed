@@ -21,7 +21,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
     <div className="w-full md:max-w-2xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
-        <div className="flex-1 flex items-center gap-2 h-11 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
+        <div className="flex-1 flex items-center gap-2 h-[46px] px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
           <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]">
             search
           </span>
@@ -35,7 +35,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`inline-flex items-center gap-2 h-11 px-4 rounded-lg font-label-md text-label-md border transition-colors ${
+          className={`inline-flex items-center gap-2 h-[46px] min-w-[46px] px-4 rounded-lg font-label-md text-label-md border transition-colors ${
             activeFilterCount > 0
               ? 'bg-primary/5 border-primary/30 text-primary'
               : 'bg-surface-container-lowest border-outline-variant text-on-surface-variant hover:bg-surface-container-low'
@@ -63,7 +63,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 onChange={(e) => handleChange('status', e.target.value)}
                 className="select-field"
               >
-                <option value="">All Statuses</option>
+                <option value="">All statuses</option>
                 <option value="Upcoming">Upcoming</option>
                 <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>
@@ -78,7 +78,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 onChange={(e) => handleChange('branch', e.target.value)}
                 className="select-field"
               >
-                <option value="">All Branches</option>
+                <option value="">All branches</option>
                 {BRANCHES.map((b) => (
                   <option key={b} value={b}>{branchLabel(b)}</option>
                 ))}
@@ -121,19 +121,19 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 onChange={(e) => handleChange('sort', e.target.value)}
                 className="select-field !w-auto"
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="date_desc">Drive Date (Latest)</option>
-                <option value="date_asc">Drive Date (Earliest)</option>
-                <option value="ctc_desc">CTC (High → Low)</option>
-                <option value="ctc_asc">CTC (Low → High)</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="date_desc">Drive date (latest)</option>
+                <option value="date_asc">Drive date (earliest)</option>
+                <option value="ctc_desc">CTC (high → low)</option>
+                <option value="ctc_asc">CTC (low → high)</option>
               </select>
             </div>
             <button
               onClick={onReset}
               className="font-label-md text-label-md text-secondary hover:text-primary transition-colors"
             >
-              Reset Filters
+              Reset filters
             </button>
           </div>
         </div>

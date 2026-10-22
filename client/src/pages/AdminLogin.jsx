@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
+import FormField from '../components/FormField';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const AdminLogin = () => {
+  usePageTitle('Admin login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -53,7 +57,7 @@ const AdminLogin = () => {
             <div className="w-14 h-14 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-sm">
               <span className="material-symbols-outlined text-on-primary text-[28px]">lock</span>
             </div>
-            <h1 className="font-headline-md text-headline-md text-on-surface mb-base">Admin Login</h1>
+            <h1 className="font-headline-md text-headline-md text-on-surface mb-base">Admin login</h1>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Sign in to manage placement drives</p>
           </div>
 
@@ -88,18 +92,15 @@ const AdminLogin = () => {
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="label">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field"
-                placeholder="Enter password"
-                autoComplete="current-password"
-              />
-            </div>
+            <FormField
+              id="password"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              autoComplete="current-password"
+            />
 
             <button
               type="submit"
@@ -108,14 +109,11 @@ const AdminLogin = () => {
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-xs">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <Spinner size="sm" tone="current" />
                   Signing in...
                 </span>
               ) : (
-                'Sign In'
+                'Sign in'
               )}
             </button>
           </form>

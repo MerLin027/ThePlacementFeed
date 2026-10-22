@@ -1,5 +1,6 @@
 import { branchLabel } from '../constants/branches';
 import { APPLICATION_STATUSES } from '../constants/applications';
+import { TableRowsSkeleton } from './Skeleton';
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 
@@ -40,16 +41,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
           </thead>
           <tbody className="divide-y divide-surface-variant">
             {loading ? (
-              <tr>
-                <td colSpan={8} className="px-sm py-xl text-center">
-                  <div className="flex items-center justify-center" role="status" aria-label="Loading applicants">
-                    <div className="relative">
-                      <div className="w-8 h-8 rounded-full border-4 border-outline-variant" />
-                      <div className="w-8 h-8 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-                    </div>
-                  </div>
-                </td>
-              </tr>
+              <TableRowsSkeleton columns={8} label="Loading applicants" />
             ) : applicants.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">

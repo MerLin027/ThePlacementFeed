@@ -1,12 +1,10 @@
 import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import Spinner from './Spinner';
 
 export const PageSpinner = () => (
-  <div className="flex items-center justify-center min-h-[60vh]" role="status" aria-label="Loading">
-    <div className="relative">
-      <div className="w-10 h-10 rounded-full border-4 border-outline-variant" />
-      <div className="w-10 h-10 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-    </div>
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <Spinner size="lg" label="Loading" />
   </div>
 );
 

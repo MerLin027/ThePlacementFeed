@@ -22,14 +22,16 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-lg">
+    <nav aria-label="Pagination" className="flex items-center justify-center gap-1 mt-lg">
       <button
+        type="button"
+        aria-label="Previous page"
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+        className="w-[44px] h-[44px] flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
                    hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_left</span>
       </button>
 
       {getPageNumbers().map((p, i) =>
@@ -40,8 +42,11 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
         ) : (
           <button
             key={p}
+            type="button"
+            aria-label={`Page ${p}`}
+            aria-current={p === page ? 'page' : undefined}
             onClick={() => onPageChange(p)}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg font-label-md text-label-md transition-colors
+            className={`w-[44px] h-[44px] flex items-center justify-center rounded-lg font-label-md text-label-md transition-colors
               ${
                 p === page
                   ? 'bg-primary-container text-on-primary'
@@ -54,14 +59,16 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
       )}
 
       <button
+        type="button"
+        aria-label="Next page"
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+        className="w-[44px] h-[44px] flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
                    hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>
       </button>
-    </div>
+    </nav>
   );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import AuthCard, { FormAlert } from '../components/AuthCard';
@@ -6,10 +6,15 @@ import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
+import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const StudentSignup = () => {
+  usePageTitle('Sign up');
   const [form, setForm] = useState({ email: '', rollNumber: '', password: '', confirmPassword: '' });
   const [fieldErrors, setFieldErrors] = useState({});
+  const formRef = useRef(null);
+  useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { student, signupStudent } = useAuth();
@@ -73,7 +78,7 @@ const StudentSignup = () => {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {error && <FormAlert icon="info">{error}</FormAlert>}
 
         <FormAlert tone="info" icon="info">
@@ -135,7 +140,7 @@ const StudentSignup = () => {
         />
 
         <SubmitButton isLoading={isLoading} loadingText="Creating account...">
-          Sign Up
+          Sign up
         </SubmitButton>
       </form>
     </AuthCard>

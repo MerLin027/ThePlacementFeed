@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import BranchSelect from './BranchSelect';
 import TagInput from './TagInput';
 import { computeAutoStatus } from '../utils/driveStatus';
+import Spinner from './Spinner';
 
 const INITIAL_FORM = {
   company: '',
@@ -269,7 +270,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         />
         <div>
           <label htmlFor="isPostponed" className="font-label-md text-label-md text-red-700 cursor-pointer select-none">
-            Mark as Postponed
+            Mark as postponed
           </label>
           <p className="font-body-sm text-body-sm text-red-500 mt-0.5">
             Use this to flag the drive as postponed due to unforeseen circumstances — the original status is preserved and can be restored by unchecking this.
@@ -280,7 +281,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
       {/* Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="label">Drive Date</label>
+          <label className="label">Drive date</label>
           <input
             type="date"
             value={form.driveDate}
@@ -301,7 +302,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
 
       {/* Eligibility */}
       <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant">
-        <h4 className="font-label-md text-label-md text-on-surface mb-sm">Eligibility Criteria</h4>
+        <h4 className="font-label-md text-label-md text-on-surface mb-sm">Eligibility criteria</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="label">Min CGPA</label>
@@ -317,7 +318,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             />
           </div>
           <div>
-            <label className="label">Max Backlogs Allowed</label>
+            <label className="label">Max backlogs allowed</label>
             <input
               type="number"
               value={form.eligibility.backlog}
@@ -329,7 +330,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           </div>
         </div>
         <div>
-          <label className="label">Eligible Branches</label>
+          <label className="label">Eligible branches</label>
           <BranchSelect
             selected={form.eligibility.branches}
             onChange={(branches) => handleEligibilityChange('branches', branches)}
@@ -400,7 +401,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
                 className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest text-primary font-label-sm text-label-sm rounded-lg border border-outline-variant hover:bg-surface-container-high focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-[16px]" aria-hidden="true">add</span>
-                Add Question
+                Add question
               </button>
             </div>
             {form.customPrompts.length === 0 ? (
@@ -451,7 +452,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
       {/* JD Description */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="label !mb-0">Job Description</label>
+          <label className="label !mb-0">Job description</label>
           <span className="font-label-sm text-label-sm text-outline">Supports Markdown</span>
         </div>
         <textarea
@@ -469,17 +470,17 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         </div>
       </div>
 
-      {/* Selection Process */}
+      {/* Selection process */}
       <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant">
         <div className="flex items-center justify-between mb-sm">
-          <h4 className="font-label-md text-label-md text-on-surface">Selection Process <span className="text-outline font-normal ml-1">(optional)</span></h4>
+          <h4 className="font-label-md text-label-md text-on-surface">Selection process <span className="text-outline font-normal ml-1">(optional)</span></h4>
           <button
             type="button"
             onClick={addRound}
             className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest text-primary font-label-sm text-label-sm rounded-lg border border-outline-variant hover:bg-surface-container-high focus:outline-none transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
-            Add Round
+            Add round
           </button>
         </div>
         {form.selectionRounds.length === 0 ? (
@@ -545,16 +546,13 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <Spinner size="sm" tone="current" />
               Saving...
             </span>
           ) : initialData ? (
-            'Update Placement'
+            'Update placement'
           ) : (
-            'Add Placement'
+            'Add placement'
           )}
         </button>
       </div>

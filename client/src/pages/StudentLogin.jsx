@@ -6,8 +6,10 @@ import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const StudentLogin = () => {
+  usePageTitle('Student login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -49,7 +51,7 @@ const StudentLogin = () => {
   return (
     <AuthCard
       icon="login"
-      title="Student Login"
+      title="Student login"
       subtitle="Log in to apply to drives and manage your profile"
       footer={
         <>
@@ -100,7 +102,7 @@ const StudentLogin = () => {
         />
 
         <SubmitButton isLoading={isLoading} loadingText="Logging in...">
-          Log In
+          Log in
         </SubmitButton>
       </form>
     </AuthCard>

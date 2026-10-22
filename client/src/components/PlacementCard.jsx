@@ -68,7 +68,7 @@ const PlacementCard = ({ placement }) => {
           {renderDetailRow()}
         </div>
 
-        {/* Action Button — external link, in-app apply state, or View Details */}
+        {/* Action Button — external link, in-app apply state, or View details */}
         <CardApplyButton drive={placement} />
       </div>
     </Link>

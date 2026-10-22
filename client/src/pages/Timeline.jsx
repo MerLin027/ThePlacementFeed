@@ -3,8 +3,10 @@ import { Link } from 'react-router';
 import StatusBadge from '../components/StatusBadge';
 import ColdStartLoader from '../components/ColdStartLoader';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const Timeline = () => {
+  usePageTitle('Timeline');
   const [grouped, setGrouped] = useState({});
   const { loading, isColdStart, fetchPlacements } = usePlacementsFetch();
 
@@ -40,7 +42,7 @@ const Timeline = () => {
   if (loading) {
     return (
       <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md">
-        <ColdStartLoader isColdStart={isColdStart} />
+        <ColdStartLoader isColdStart={isColdStart} variant="timeline" />
       </div>
     );
   }
@@ -50,7 +52,7 @@ const Timeline = () => {
   return (
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
       <div className="text-center mb-lg">
-        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement Timeline</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement timeline</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">Chronological view of all placement drives</p>
       </div>
 
@@ -71,7 +73,7 @@ const Timeline = () => {
                   <span className="text-on-primary font-bold text-sm sm:text-base text-center leading-tight">
                     {grouped[key].label.split(' ')[0].slice(0, 3)}
                     <br />
-                    <span className="text-xs opacity-80">{grouped[key].label.split(' ')[1]}</span>
+                    <span className="text-xs">{grouped[key].label.split(' ')[1]}</span>
                   </span>
                 </div>
                 <h2 className="font-headline-md text-headline-md text-on-surface">

@@ -4,6 +4,8 @@ import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import ColdStartLoader from '../components/ColdStartLoader';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
+import EmptyState from '../components/EmptyState';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const DEFAULT_FILTERS = {
   search: '',
@@ -15,6 +17,7 @@ const DEFAULT_FILTERS = {
 };
 
 const Home = () => {
+  usePageTitle('Drives');
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -54,7 +57,7 @@ const Home = () => {
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
       {/* Header & Subtitle */}
       <div className="mb-md md:mb-lg">
-        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Active Drives</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Active drives</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">
           Track and apply to upcoming placement opportunities.
         </p>
@@ -72,7 +75,7 @@ const Home = () => {
         <div className="flex items-center justify-between mb-md">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             {pagination.total === 0
-              ? 'No placements found'
+              ? 'No drives found'
               : `Showing ${placements.length} of ${pagination.total} placement${pagination.total !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -82,21 +85,16 @@ const Home = () => {
       {loading ? (
         <ColdStartLoader isColdStart={isColdStart} />
       ) : placements.length === 0 ? (
-        <div className="text-center py-lg px-md bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant">
-          <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-sm">
-            <span className="material-symbols-outlined text-[32px] text-outline">search_off</span>
-          </div>
-          <h3 className="font-headline-sm text-headline-sm text-on-surface mb-xs">No placements found</h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            We couldn&apos;t find anything matching your current filters.
-          </p>
-          <button
-            onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="mt-md btn-secondary"
-          >
-            Clear all filters
-          </button>
-        </div>
+        <EmptyState
+          icon="search_off"
+          title="No drives match your filters"
+          description="Try a different search or clear the filters to see every drive."
+          action={
+            <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="btn-secondary">
+              Clear all filters
+            </button>
+          }
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">

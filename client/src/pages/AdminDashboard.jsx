@@ -7,8 +7,12 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
+import Spinner from '../components/Spinner';
+import { TableRowsSkeleton } from '../components/Skeleton';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const AdminDashboard = () => {
+  usePageTitle('Admin dashboard');
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const { loading, fetchPlacements } = usePlacementsFetch();
@@ -145,7 +149,7 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-sm mb-md">
         <div>
-          <h1 className="font-display-lg text-display-lg text-on-surface">Admin Dashboard</h1>
+          <h1 className="font-display-lg text-display-lg text-on-surface">Admin dashboard</h1>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
             Manage placement drives · {pagination.total} total
           </p>
@@ -155,7 +159,7 @@ const AdminDashboard = () => {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add Placement
+            Add placement
           </button>
         </div>
       </div>
@@ -185,26 +189,17 @@ const AdminDashboard = () => {
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">CTC</th>
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Status</th>
                 <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Postpone</th>
-                <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Drive Date</th>
+                <th className="text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Drive date</th>
                 <th className="text-right px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-variant">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-sm py-xl text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="relative">
-                        <div className="w-8 h-8 rounded-full border-4 border-outline-variant" />
-                        <div className="w-8 h-8 rounded-full border-4 border-primary-container border-t-transparent animate-spin absolute inset-0" />
-                      </div>
-                    </div>
-                  </td>
-                </tr>
+                <TableRowsSkeleton columns={7} label="Loading drives" />
               ) : placements.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
-                    No placements found. Click &quot;Add Placement&quot; to create one.
+                    No placements found. Click &quot;Add placement&quot; to create one.
                   </td>
                 </tr>
               ) : (
@@ -235,10 +230,7 @@ const AdminDashboard = () => {
                         }`}
                       >
                         {toggling[p._id] ? (
-                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
+                          <Spinner size="xs" tone="current" />
                         ) : (
                           <span className="material-symbols-outlined text-[12px]">
                             {p.isPostponed ? 'undo' : 'pause_circle'}
@@ -256,10 +248,7 @@ const AdminDashboard = () => {
                         >
                           <span className="flex items-center gap-1">
                             {toggling[p._id] ? (
-                              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
+                              <Spinner size="xs" tone="current" />
                             ) : (
                               <span className="material-symbols-outlined text-[12px]">restart_alt</span>
                             )}
@@ -325,7 +314,7 @@ const AdminDashboard = () => {
       <Modal
         isOpen={showForm}
         onClose={() => { setShowForm(false); setEditingPlacement(null); }}
-        title={editingPlacement ? 'Edit Placement' : 'Add New Placement'}
+        title={editingPlacement ? 'Edit placement' : 'Add placement'}
         maxWidth="max-w-3xl"
       >
         <PlacementForm
@@ -340,7 +329,7 @@ const AdminDashboard = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Placement"
+        title="Delete placement"
         message={`Are you sure you want to delete the ${deleteTarget?.company} — ${deleteTarget?.role} placement?${
           deleteAppCount > 0
             ? ` Its ${deleteAppCount} student application${deleteAppCount === 1 ? '' : 's'} will be deleted too.`
