@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { BRANCHES, branchLabel } from '../constants/branches';
 
 const FilterBar = ({ filters, onFilterChange, onReset }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const uid = useId();
+  const fid = (name) => `${uid}-${name}`;
 
   const handleChange = (key, value) => {
     onFilterChange({ ...filters, [key]: value });
@@ -14,7 +16,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
     filters.branch,
     filters.ctcMin,
     filters.ctcMax,
-    filters.sort && filters.sort !== 'newest',
+    filters.sort && filters.sort !== 'closing_soon',
   ].filter(Boolean).length;
 
   return (
@@ -22,11 +24,12 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
         <div className="flex-1 flex items-center gap-2 h-[46px] px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
-          <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]">
+          <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]" aria-hidden="true">
             search
           </span>
           <input
-            type="text"
+            type="search"
+            aria-label="Search drives by company or role"
             placeholder="Search by company or role..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
@@ -34,17 +37,21 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
           />
         </div>
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          aria-controls={fid('panel')}
+          aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
           className={`inline-flex items-center gap-2 h-[46px] min-w-[46px] px-4 rounded-lg font-label-md text-label-md border transition-colors ${
             activeFilterCount > 0
               ? 'bg-primary/5 border-primary/30 text-primary'
               : 'bg-surface-container-lowest border-outline-variant text-on-surface-variant hover:bg-surface-container-low'
           }`}
         >
-          <span className="material-symbols-outlined text-[20px]">tune</span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">tune</span>
           <span className="hidden sm:inline">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="bg-primary-container text-on-primary text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="bg-primary-container text-on-primary text-xs rounded-full w-5 h-5 flex items-center justify-center" aria-hidden="true">
               {activeFilterCount}
             </span>
           )}
@@ -53,12 +60,13 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
 
       {/* Expanded filters */}
       {isExpanded && (
-        <div className="mt-md pt-md border-t border-outline-variant">
+        <div id={fid('panel')} className="mt-md pt-md border-t border-outline-variant">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-sm">
             {/* Status */}
             <div>
-              <label className="label">Status</label>
+              <label htmlFor={fid('status')} className="label">Status</label>
               <select
+                id={fid('status')}
                 value={filters.status || ''}
                 onChange={(e) => handleChange('status', e.target.value)}
                 className="select-field"
@@ -66,14 +74,15 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 <option value="">All statuses</option>
                 <option value="Upcoming">Upcoming</option>
                 <option value="Ongoing">Ongoing</option>
-                <option value="Completed">Completed</option>
+                <option value="Completed">Completed (past drives)</option>
               </select>
             </div>
 
             {/* Branch */}
             <div>
-              <label className="label">Branch</label>
+              <label htmlFor={fid('branch')} className="label">Branch</label>
               <select
+                id={fid('branch')}
                 value={filters.branch || ''}
                 onChange={(e) => handleChange('branch', e.target.value)}
                 className="select-field"
@@ -87,10 +96,12 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
 
             {/* CTC Range */}
             <div>
-              <label className="label">Min CTC (LPA)</label>
+              <label htmlFor={fid('ctcMin')} className="label">Min CTC (LPA)</label>
               <input
+                id={fid('ctcMin')}
                 type="number"
-                placeholder="0"
+                inputMode="decimal"
+                placeholder="Any"
                 min="0"
                 step="0.5"
                 value={filters.ctcMin || ''}
@@ -99,9 +110,11 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
               />
             </div>
             <div>
-              <label className="label">Max CTC (LPA)</label>
+              <label htmlFor={fid('ctcMax')} className="label">Max CTC (LPA)</label>
               <input
+                id={fid('ctcMax')}
                 type="number"
+                inputMode="decimal"
                 placeholder="Any"
                 min="0"
                 step="0.5"
@@ -113,14 +126,16 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
           </div>
 
           {/* Sort + Reset */}
-          <div className="flex items-center justify-between mt-md pt-md border-t border-outline-variant">
+          <div className="flex flex-wrap items-center justify-between gap-sm mt-md pt-md border-t border-outline-variant">
             <div className="flex items-center gap-sm">
-              <label className="font-label-md text-label-md text-on-surface-variant">Sort by:</label>
+              <label htmlFor={fid('sort')} className="font-label-md text-label-md text-on-surface-variant">Sort by</label>
               <select
-                value={filters.sort || 'newest'}
+                id={fid('sort')}
+                value={filters.sort || 'closing_soon'}
                 onChange={(e) => handleChange('sort', e.target.value)}
                 className="select-field !w-auto"
               >
+                <option value="closing_soon">Closing soon</option>
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
                 <option value="date_desc">Drive date (latest)</option>
@@ -130,8 +145,9 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
               </select>
             </div>
             <button
+              type="button"
               onClick={onReset}
-              className="font-label-md text-label-md text-secondary hover:text-primary transition-colors"
+              className="min-h-[44px] px-2 rounded-lg font-label-md text-label-md text-secondary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               Reset filters
             </button>

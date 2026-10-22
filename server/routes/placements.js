@@ -17,6 +17,41 @@ const applicantRoutes = require('./applicants');
 router.use('/:driveId/applicants', applicantRoutes);
 
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
+const SORTS = ['closing_soon', 'newest', 'oldest', 'date_asc', 'date_desc', 'ctc_asc', 'ctc_desc'];
+
+// Far-future stand-in so drives without a date sort after dated ones
+const NO_DATE = new Date('9999-12-31T00:00:00Z');
+
+/**
+ * "Closing soon": what a student should look at first.
+ *   1. drives still taking applications (Upcoming, not postponed)
+ *   2. drives whose applications have closed but haven't happened (Ongoing)
+ *   3. postponed drives
+ *   4. completed drives
+ * Within a group: earliest deadline (or drive date if there's no deadline) first.
+ */
+const closingSoonPipeline = (match, skip, limit) => [
+  { $match: match },
+  {
+    $addFields: {
+      _rank: {
+        $switch: {
+          branches: [
+            { case: { $eq: ['$isPostponed', true] }, then: 3 },
+            { case: { $eq: ['$status', 'Upcoming'] }, then: 1 },
+            { case: { $eq: ['$status', 'Ongoing'] }, then: 2 },
+          ],
+          default: 4,
+        },
+      },
+      _closesAt: { $ifNull: ['$deadline', { $ifNull: ['$driveDate', NO_DATE] }] },
+    },
+  },
+  { $sort: { _rank: 1, _closesAt: 1, createdAt: -1, _id: 1 } },
+  { $skip: skip },
+  { $limit: limit },
+  { $project: { _rank: 0, _closesAt: 0 } },
+];
 
 // Rate limit public GET endpoints: 100 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
@@ -50,10 +85,18 @@ router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
       req.query;
 
     // --- Query param validation ---
-    if (status && !VALID_STATUSES.includes(status)) {
+    // status may be a single value or a comma-separated list ("Upcoming,Ongoing")
+    const statuses = typeof status === 'string' && status ? [...new Set(status.split(',').map((s) => s.trim()))] : [];
+    if (status !== undefined && (typeof status !== 'string' || statuses.some((s) => !VALID_STATUSES.includes(s)))) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}`,
+        message: `Invalid status. Must be one or more of: ${VALID_STATUSES.join(', ')}`,
+      });
+    }
+    if (sort !== undefined && !SORTS.includes(sort)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid sort. Must be one of: ${SORTS.join(', ')}`,
       });
     }
 
@@ -91,8 +134,10 @@ router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
     // --- Build query ---
     const query = {};
 
-    if (status) {
-      query.status = status;
+    if (statuses.length === 1) {
+      query.status = statuses[0];
+    } else if (statuses.length > 1) {
+      query.status = { $in: statuses };
     }
 
     if (branch) {
@@ -127,11 +172,13 @@ router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
     // --- Execute query with pagination ---
     const skip = (parsedPage - 1) * effectiveLimit;
     const [placements, total] = await Promise.all([
-      Placement.find(query)
-        .sort(sortOption)
-        .skip(skip)
-        .limit(effectiveLimit)
-        .lean(),
+      sort === 'closing_soon'
+        ? Placement.aggregate(closingSoonPipeline(query, skip, effectiveLimit))
+        : Placement.find(query)
+          .sort(sortOption)
+          .skip(skip)
+          .limit(effectiveLimit)
+          .lean(),
       Placement.countDocuments(query),
     ]);
 

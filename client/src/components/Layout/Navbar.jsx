@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../Notifications/NotificationBell';
@@ -22,6 +22,24 @@ const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { role, logoutAdmin, logoutStudent } = useAuth();
   const location = useLocation();
+  const menuButtonRef = useRef(null);
+
+  // The mobile menu closes on navigation, and on Escape (focus back to the menu button)
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isMobileOpen]);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -91,10 +109,13 @@ const Navbar = () => {
         <div className="flex-1 flex items-center justify-end gap-2">
           <NotificationBell />
           <button
+            ref={menuButtonRef}
+            type="button"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isMobileOpen}
-            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors"
+            aria-controls="mobile-menu"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
               {isMobileOpen ? 'close' : 'menu'}
@@ -106,7 +127,7 @@ const Navbar = () => {
 
       {/* Mobile menu — mirrors the desktop links */}
       {isMobileOpen && (
-        <nav className="md:hidden border-t border-outline-variant bg-surface-container-lowest px-sm py-sm space-y-1" aria-label="Main">
+        <nav id="mobile-menu" className="md:hidden border-t border-outline-variant bg-surface-container-lowest px-sm py-sm space-y-1 animate-menu-in" aria-label="Main">
           {navLinks.map((link) => (
             <Link
               key={link.to}

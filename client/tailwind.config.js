@@ -6,6 +6,24 @@ export default {
   ],
   theme: {
     extend: {
+      // Motion tokens: short ease-out entrances (exits are instant). The global
+      // prefers-reduced-motion rule in index.css turns these off.
+      keyframes: {
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'dialog-in': {
+          from: { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'menu-in': {
+          from: { opacity: '0', transform: 'translateY(-4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 150ms ease-out',
+        'dialog-in': 'dialog-in 200ms cubic-bezier(0.22, 1, 0.36, 1)',
+        'menu-in': 'menu-in 150ms ease-out',
+      },
       colors: {
         "brand-navy": "#031536",
         "brand-blue": "#005afd",

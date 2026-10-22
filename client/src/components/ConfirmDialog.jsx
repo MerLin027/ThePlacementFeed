@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 /**
  * Confirmation dialog. Defaults to the destructive "Delete" variant used across
@@ -16,16 +17,8 @@ const ConfirmDialog = ({
   icon,
 }) => {
   const cancelRef = useRef(null);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    cancelRef.current?.focus();
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  const panelRef = useRef(null);
+  useDialogFocus(isOpen, panelRef, onClose, cancelRef);
 
   if (!isOpen) return null;
 
@@ -34,15 +27,17 @@ const ConfirmDialog = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-sm">
       <div
-        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
+        aria-hidden="true"
       />
       <div
+        ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-md z-10 p-md"
+        className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-md z-10 p-md animate-dialog-in"
       >
         <div
           className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-sm ${

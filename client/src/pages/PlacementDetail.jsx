@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import CompanyMonogram from '../components/CompanyMonogram';
+import { deadlineInfo, DEADLINE_TONE_CLASS } from '../utils/deadline';
 import { DetailApplyPanel } from '../components/ApplyButton';
 import ApplyModal from '../components/ApplyModal';
 import { useApplyState } from '../hooks/useApplyState';
@@ -120,6 +122,8 @@ const PlacementDetail = () => {
     );
   }
 
+  const closing = placement.status === 'Upcoming' && !placement.isPostponed ? deadlineInfo(placement.deadline) : null;
+
   const typeConfig = {
     'Full-Time': 'bg-primary-container/10 text-primary',
     'Internship': 'bg-surface-container-high text-on-surface-variant border border-surface-variant',
@@ -143,23 +147,24 @@ const PlacementDetail = () => {
           </button>
         </div>
 
-        {/* Left Column (Narrower) */}
-        <div className="md:col-span-4 flex flex-col gap-xs md:gap-sm">
+        {/* Left column. On mobile it dissolves (display: contents) so cards follow the
+            order classes: apply → eligibility → dates → process → description → tags */}
+        <div className="contents md:flex md:flex-col md:col-span-4 md:gap-sm">
 
           {/* 1. Company Info Card */}
-          <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm flex flex-col">
-            <div className="w-10 h-10 border border-surface-variant rounded-lg flex items-center justify-center overflow-hidden mb-xs">
-              <span className="material-symbols-outlined text-secondary text-[24px]">domain</span>
+          <div className="order-1 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm flex flex-col">
+            <div className="mb-xs">
+              <CompanyMonogram name={placement.company} size="sm" />
             </div>
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-[2px]">{placement.company}</h1>
             <p className="font-headline-sm text-headline-sm text-on-surface-variant mb-xs">{placement.role}</p>
             <div className="flex items-baseline gap-xs mb-xs">
-              <span className="font-headline-md text-headline-md text-primary">{placement.ctc} LPA</span>
+              <span className="font-headline-md text-headline-md text-primary tabular-nums">₹{placement.ctc} LPA</span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">(CTC)</span>
             </div>
             <div className="flex flex-wrap gap-xs">
               {placement.type && (
-                <span className={`font-label-sm text-label-sm uppercase px-3 py-1 rounded-full ${typeConfig[placement.type] || typeConfig['Full-Time']}`}>
+                <span className={`font-label-md text-label-md px-2.5 py-0.5 rounded-full ${typeConfig[placement.type] || typeConfig['Full-Time']}`}>
                   {placement.type}
                 </span>
               )}
@@ -178,10 +183,16 @@ const PlacementDetail = () => {
           </div>
 
           {/* 2. Important Dates Card */}
-          <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
-            <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
-              Important Dates
-            </h3>
+          <section className="order-3 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm" aria-labelledby="dates-heading">
+            <h2 id="dates-heading" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
+              Important dates
+            </h2>
+            {closing && (
+              <p className={`inline-flex items-center gap-1 mb-xs px-2 py-0.5 rounded-md border font-label-sm text-label-sm ${DEADLINE_TONE_CLASS[closing.tone]}`}>
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">schedule</span>
+                {closing.label}
+              </p>
+            )}
             {placement.deadline && (
               <div className="flex justify-between items-center py-[6px]">
                 <span className="font-body-sm text-body-sm text-on-surface-variant">Application deadline</span>
@@ -192,11 +203,11 @@ const PlacementDetail = () => {
               <span className="font-body-sm text-body-sm text-on-surface-variant">Drive date</span>
               <span className="font-label-md text-label-md text-on-surface">{formatDateShort(placement.driveDate)}</span>
             </div>
-          </div>
+          </section>
 
           {/* 3. Selection process Card */}
           {placement.selectionRounds?.length > 0 && (
-            <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-4 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Selection process
               </h2>
@@ -225,19 +236,19 @@ const PlacementDetail = () => {
 
         </div>
 
-        {/* Right Column (Wider) */}
-        <div className="md:col-span-8 flex flex-col gap-xs md:gap-sm">
+        {/* Right column (contents on mobile, see above) */}
+        <div className="contents md:flex md:flex-col md:col-span-8 md:gap-sm">
 
           {/* 1. Eligibility Section */}
-          <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+          <section className="order-2 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
             <div className="flex items-center gap-xs mb-xs">
-              <span className="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+              <span className="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">verified_user</span>
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility criteria</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
               <div className="flex flex-col bg-surface-container-low p-xs rounded-lg">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-[3px]">
-                  Academic Requirement
+                  Academic requirement
                 </span>
                 <span className="font-body-md text-body-md text-on-surface">
                   {placement.eligibility?.cgpa != null
@@ -260,7 +271,7 @@ const PlacementDetail = () => {
 
           {/* 2. Job Description Section */}
           {placement.jdDescription && (
-            <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-5 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Job description
               </h2>
@@ -282,7 +293,7 @@ const PlacementDetail = () => {
 
           {/* Tags */}
           {placement.tags?.length > 0 && (
-            <section className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-6 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs">Tags</h2>
               <div className="flex flex-wrap gap-xs">
                 {placement.tags.map((tag, i) => (

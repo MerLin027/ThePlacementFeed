@@ -45,14 +45,14 @@ export const CardApplyButton = ({ drive }) => {
             e.stopPropagation();
             window.open(drive.formUrl, '_blank', 'noopener,noreferrer');
           }}
-          className={`btn-primary ${BASE}`}
+          className={`btn-primary ${BASE} relative z-10`}
         >
           Apply now
         </button>
       );
     case 'apply':
       return (
-        <button type="button" onClick={go(`${detailPath}?apply=1`)} className={`btn-primary ${BASE}`}>
+        <button type="button" onClick={go(`${detailPath}?apply=1`)} className={`btn-primary ${BASE} relative z-10`}>
           Apply now
         </button>
       );
@@ -61,7 +61,7 @@ export const CardApplyButton = ({ drive }) => {
         <button
           type="button"
           onClick={go(`/login?returnTo=${encodeURIComponent(`${detailPath}?apply=1`)}`)}
-          className={`btn-secondary ${BASE} text-primary`}
+          className={`btn-secondary ${BASE} text-primary relative z-10`}
         >
           Log in to apply
         </button>
@@ -71,7 +71,7 @@ export const CardApplyButton = ({ drive }) => {
         <button
           type="button"
           onClick={go(`/profile?returnTo=${encodeURIComponent(`${detailPath}?apply=1`)}`)}
-          className={`btn-secondary ${BASE} text-primary`}
+          className={`btn-secondary ${BASE} text-primary relative z-10`}
         >
           Complete profile to apply
         </button>

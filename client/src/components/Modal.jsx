@@ -1,47 +1,51 @@
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
+/**
+ * Modal dialog: labelled, focus kept inside while open (Escape closes and
+ * focus returns to the opener), page behind it locked from scrolling.
+ */
 const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => {
-  // Close on Escape key
+  const titleId = useId();
+  const panelRef = useRef(null);
+  useDialogFocus(isOpen, panelRef, onClose);
+
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    if (!isOpen) return undefined;
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-sm">
-      {/* Overlay */}
       <div
-        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
+        aria-hidden="true"
       />
-      {/* Modal */}
       <div
-        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] flex flex-col z-10 animate-in`}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] flex flex-col z-10 animate-dialog-in focus:outline-none`}
       >
-        {/* Header */}
-        <div className="flex-shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-sm rounded-t-xl flex items-center justify-between z-20">
-          <h2 className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
+        <div className="flex-shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-xs rounded-t-xl flex items-center justify-between gap-sm z-20">
+          <h2 id={titleId} className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors"
+            className="w-[44px] h-[44px] flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
           </button>
         </div>
-        {/* Body */}
         <div className="flex-1 overflow-y-auto px-md py-md content-scrollbar">
           {children}
         </div>
