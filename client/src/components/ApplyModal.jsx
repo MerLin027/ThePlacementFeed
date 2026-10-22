@@ -8,6 +8,7 @@ import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import FormField from './FormField';
 import { parseApiError } from '../utils/formErrors';
+import { branchLabel } from '../constants/branches';
 
 const SummaryRow = ({ label, value }) => (
   <div className="flex justify-between gap-sm py-[6px] border-b border-surface-variant last:border-b-0">
@@ -140,7 +141,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
               <SummaryRow label="Roll number" value={profile.rollNumber} />
               <SummaryRow label="Email" value={profile.email} />
               <SummaryRow label="Phone" value={profile.phone} />
-              <SummaryRow label="Branch" value={profile.branch} />
+              <SummaryRow label="Branch" value={branchLabel(profile.branch)} />
               <SummaryRow label="CGPA" value={profile.cgpa} />
               <SummaryRow label="Active backlogs" value={profile.activeBacklogs} />
               <SummaryRow label="Graduation year" value={profile.graduationYear} />

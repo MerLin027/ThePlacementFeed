@@ -1,4 +1,5 @@
 import { isDeadlinePassed } from './dates';
+import { branchLabel, formatBranches } from '../constants/branches';
 
 /**
  * Decides what the "Apply" control shows for a drive. UX only — the server
@@ -46,7 +47,7 @@ export const getApplyState = ({ drive, student, application }) => {
     return {
       kind: 'blocked',
       label: 'Not eligible',
-      reason: `This drive is open to ${branches.join(', ')}. Your branch is ${student.branch}.`,
+      reason: `This drive is open to ${formatBranches(branches)}. Your branch is ${branchLabel(student.branch)}.`,
     };
   }
   if (cgpa != null && student.cgpa < cgpa) {

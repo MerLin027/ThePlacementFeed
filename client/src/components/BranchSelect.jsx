@@ -1,4 +1,4 @@
-import { BRANCHES } from '../constants/branches';
+import { BRANCHES, branchLabel } from '../constants/branches';
 
 const BranchSelect = ({ selected = [], onChange }) => {
   const toggle = (branch) => {
@@ -31,7 +31,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
           Clear
         </button>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
         {BRANCHES.map((branch) => (
           <label
             key={branch}
@@ -62,7 +62,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
                 </svg>
               )}
             </span>
-            {branch}
+            {branchLabel(branch)}
           </label>
         ))}
       </div>
@@ -70,5 +70,4 @@ const BranchSelect = ({ selected = [], onChange }) => {
   );
 };
 
-export { BRANCHES };
 export default BranchSelect;

@@ -6,6 +6,7 @@ import { DetailApplyPanel } from '../components/ApplyButton';
 import ApplyModal from '../components/ApplyModal';
 import { useApplyState } from '../hooks/useApplyState';
 import { useAuth } from '../context/AuthContext';
+import { formatBranches } from '../constants/branches';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -234,7 +235,7 @@ const PlacementDetail = () => {
                 </span>
                 <span className="font-body-md text-body-md text-on-surface">
                   {placement.eligibility?.branches?.length > 0
-                    ? placement.eligibility.branches.join(', ')
+                    ? formatBranches(placement.eligibility.branches)
                     : 'All branches'}
                 </span>
               </div>

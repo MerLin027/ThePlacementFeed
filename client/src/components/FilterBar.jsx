@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BRANCHES } from './BranchSelect';
+import { BRANCHES, branchLabel } from '../constants/branches';
 
 const FilterBar = ({ filters, onFilterChange, onReset }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -80,7 +80,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
               >
                 <option value="">All Branches</option>
                 {BRANCHES.map((b) => (
-                  <option key={b} value={b}>{b}</option>
+                  <option key={b} value={b}>{branchLabel(b)}</option>
                 ))}
               </select>
             </div>

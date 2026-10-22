@@ -16,6 +16,7 @@ import StudentLogin from './pages/StudentLogin';
 import StudentSignup from './pages/StudentSignup';
 import StudentProfile from './pages/StudentProfile';
 import ChangePassword from './pages/ChangePassword';
+import AdminStudents from './pages/AdminStudents';
 
 function App() {
   return (
@@ -55,6 +56,14 @@ function App() {
                 element={
                   <RequireRole role="admin">
                     <AdminDashboard />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/admin/students"
+                element={
+                  <RequireRole role="admin">
+                    <AdminStudents />
                   </RequireRole>
                 }
               />

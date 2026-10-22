@@ -31,7 +31,10 @@ const Navbar = () => {
   // Auth-aware links. The admin login is intentionally not linked publicly;
   // /admin/login stays reachable by URL.
   if (role === 'admin') {
-    navLinks.push({ to: '/admin/dashboard', label: 'Dashboard' });
+    navLinks.push(
+      { to: '/admin/dashboard', label: 'Dashboard' },
+      { to: '/admin/students', label: 'Students' }
+    );
   } else if (role === 'student') {
     navLinks.push({ to: '/profile', label: 'Profile' });
   } else {

@@ -7,7 +7,7 @@ import { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import { PageSpinner } from '../components/RequireRole';
-import { BRANCHES } from '../constants/branches';
+import { BRANCHES, branchLabel } from '../constants/branches';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
 
@@ -178,7 +178,7 @@ const StudentProfile = () => {
                 <select {...controlProps} value={form.branch} onChange={update('branch')} className="select-field">
                   <option value="">Select your branch</option>
                   {BRANCHES.map((b) => (
-                    <option key={b} value={b}>{b}</option>
+                    <option key={b} value={b}>{branchLabel(b)}</option>
                   ))}
                 </select>
               )}

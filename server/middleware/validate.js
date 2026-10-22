@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, query, param, validationResult } = require('express-validator');
 const {
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
@@ -351,6 +351,26 @@ const applicationSubmitRules = [
     .withMessage('Answers cannot exceed 2000 characters'),
 ];
 
+// --- Admin: students ---
+
+const STUDENT_SORTS = ['newest', 'oldest', 'name', 'roll'];
+
+const adminStudentListRules = [
+  query('page').optional().isInt({ min: 1, max: 10000 }).withMessage('page must be a positive integer').toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100').toInt(),
+  query('search')
+    .optional()
+    .isString()
+    .withMessage('search must be text')
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('search cannot exceed 100 characters'),
+  query('branch').optional().isIn(BRANCHES).withMessage('Unknown branch'),
+  query('sort').optional().isIn(STUDENT_SORTS).withMessage(`sort must be one of: ${STUDENT_SORTS.join(', ')}`),
+];
+
+const mongoIdParam = (name) => [param(name).isMongoId().withMessage('Invalid ID')];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -376,5 +396,7 @@ module.exports = {
   studentProfileRules,
   changePasswordRules,
   applicationSubmitRules,
+  adminStudentListRules,
+  mongoIdParam,
   validate,
 };

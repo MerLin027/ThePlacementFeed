@@ -8,10 +8,7 @@ const { placementValidationRules, postponeValidationRules, resetStatusValidation
 
 const router = express.Router();
 
-// Escape regex special characters to prevent ReDoS
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+const { escapeRegex } = require('../utils/escapeRegex');
 
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
 

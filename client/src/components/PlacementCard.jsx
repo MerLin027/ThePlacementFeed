@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import StatusBadge from './StatusBadge';
 import { CardApplyButton } from './ApplyButton';
+import { formatBranches } from '../constants/branches';
 
 const PlacementCard = ({ placement }) => {
   const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
@@ -28,7 +29,9 @@ const PlacementCard = ({ placement }) => {
       return (
         <div className="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
           <span className="material-symbols-outlined text-[18px]">engineering</span>
-          <span>{eligibility?.branches?.length > 0 ? eligibility.branches.join(', ') : 'Multiple Branches'}</span>
+          <span className="truncate" title={eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : undefined}>
+            {eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'Multiple Branches'}
+          </span>
         </div>
       );
     }

@@ -36,6 +36,7 @@ CSRF exact-origin fix (current `startsWith` check lets `https://app.vercel.app.e
 | D8 | Excel export only, max 5000 rows, streaming | CSV is the injection-prone format. |
 | D9 | **Admin reset always sets the default password** (`DEFAULT_STUDENT_PASSWORD`, default value `college123`); the admin cannot choose a custom one | Matches your spec; no passwords pass through the admin UI. |
 | D10 | **Students cannot delete their own account** (admin-only) | Not requested; keeps scope tight. Easy to add later. |
+| D11 | **Branches are shown by full name everywhere** (e.g. "Information Technology"), but stored as the existing short codes (`IT`) | Requested during Phase 4. Live drives already store codes in `eligibility.branches`, so display-only names avoid a data migration and keep matching intact. Single map: `client/src/constants/branches.js`. |
 
 **Needs your confirmation (one question):** D6 means that after the admin deletes an account, that email/roll number *can* be used to sign up again. That reads as the sensible recovery path to me, and it doesn't contradict "can't reuse" for live accounts, but say so if you want deleted identities permanently blocked instead.
 
