@@ -21,7 +21,7 @@ const errorHandler = (err, req, res, _next) => {
 
   // Mongoose duplicate key error
   if (err.code === 11000) {
-    return res.status(400).json({
+    return res.status(409).json({
       success: false,
       message: 'Duplicate entry detected',
     });

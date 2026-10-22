@@ -31,6 +31,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/auth');
 const placementRoutes = require('./routes/placements');
+const studentAuthRoutes = require('./routes/studentAuth');
 
 const app = express();
 
@@ -62,6 +63,7 @@ if (process.env.NODE_ENV !== 'production') {
 // --- Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/placements', placementRoutes);
+app.use('/api/students/auth', studentAuthRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

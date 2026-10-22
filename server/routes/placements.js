@@ -1,7 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const Placement = require('../models/Placement');
-const auth = require('../middleware/auth');
+const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
 const { placementValidationRules, postponeValidationRules, resetStatusValidationRules, validate } = require('../middleware/validate');
 
@@ -218,7 +218,7 @@ router.get('/:id', apiLimiter, async (req, res, next) => {
 router.post(
   '/',
   mutateLimiter,
-  auth,
+  requireAdmin,
   csrfCheck,
   placementValidationRules,
   validate,
@@ -242,7 +242,7 @@ router.post(
 router.put(
   '/:id',
   mutateLimiter,
-  auth,
+  requireAdmin,
   csrfCheck,
   placementValidationRules,
   validate,
@@ -311,7 +311,7 @@ const updatePlacementWithLog = async (id, setFields, changeType) => {
 router.patch(
   '/:id/postpone',
   mutateLimiter,
-  auth,
+  requireAdmin,
   csrfCheck,
   postponeValidationRules,
   validate,
@@ -337,7 +337,7 @@ router.patch(
 router.patch(
   '/:id/reset-status-automation',
   mutateLimiter,
-  auth,
+  requireAdmin,
   csrfCheck,
   resetStatusValidationRules,
   validate,
@@ -359,7 +359,7 @@ router.patch(
 );
 
 // DELETE /api/placements/:id — auth required
-router.delete('/:id', mutateLimiter, auth, csrfCheck, async (req, res, next) => {
+router.delete('/:id', mutateLimiter, requireAdmin, csrfCheck, async (req, res, next) => {
   try {
     const placement = await Placement.findByIdAndDelete(req.params.id);
     if (!placement) {

@@ -1,4 +1,10 @@
 const { body, validationResult } = require('express-validator');
+const {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  DEFAULT_STUDENT_PASSWORD,
+  INSTITUTES,
+} = require('../constants/auth');
 
 const VALID_TYPES = ['Full-Time', 'Internship', '6M Intern + FTE'];
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
@@ -142,6 +148,57 @@ const resetStatusValidationRules = [
     .toBoolean(),
 ];
 
+// --- Student auth ---
+
+const passwordRule = (field) =>
+  body(field)
+    .isString()
+    .withMessage('Password is required')
+    .isLength({ min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH })
+    .withMessage(`Password must be ${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} characters`)
+    .custom((value) => value !== DEFAULT_STUDENT_PASSWORD)
+    .withMessage('Please choose a different password');
+
+const emailRule = body('email')
+  .isString()
+  .withMessage('Email is required')
+  .trim()
+  .toLowerCase()
+  .isLength({ max: 254 })
+  .withMessage('Email cannot exceed 254 characters')
+  .isEmail()
+  .withMessage('Please enter a valid email address');
+
+const studentSignupRules = [
+  emailRule,
+
+  body('rollNumber')
+    .isString()
+    .withMessage('Roll number is required')
+    .trim()
+    .toUpperCase()
+    .matches(/^[A-Z0-9]{4,20}$/)
+    .withMessage('Roll number must be 4–20 letters or digits'),
+
+  body('institute')
+    .optional()
+    .isIn(INSTITUTES)
+    .withMessage(`Institute must be one of: ${INSTITUTES.join(', ')}`),
+
+  passwordRule('password'),
+];
+
+// Login only checks shape — strength rules apply when a password is set, not when it's used
+const studentLoginRules = [
+  emailRule,
+
+  body('password')
+    .isString()
+    .withMessage('Password is required')
+    .isLength({ min: 1, max: PASSWORD_MAX_LENGTH })
+    .withMessage('Password is required'),
+];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -158,4 +215,12 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { placementValidationRules, postponeValidationRules, resetStatusValidationRules, validate };
+module.exports = {
+  placementValidationRules,
+  postponeValidationRules,
+  resetStatusValidationRules,
+  studentSignupRules,
+  studentLoginRules,
+  passwordRule,
+  validate,
+};

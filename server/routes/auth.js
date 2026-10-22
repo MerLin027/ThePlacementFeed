@@ -3,8 +3,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const Admin = require('../models/Admin');
-const auth = require('../middleware/auth');
+const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
+const { getCookieOptions, getClearCookieOptions } = require('../utils/cookies');
+const { ADMIN_COOKIE, ADMIN_SESSION_MS, JWT_ALGORITHM } = require('../constants/auth');
 
 const router = express.Router();
 
@@ -19,18 +21,6 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Cookie options — conditional for cross-domain production
-const getCookieOptions = () => {
-  const isProd = process.env.NODE_ENV === 'production';
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-    maxAge: 3 * 60 * 60 * 1000, // 3 hours
-    path: '/',
-  };
-};
 
 // POST /api/auth/login
 router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
@@ -65,13 +55,13 @@ router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { id: admin._id, username: admin.username },
+      { sub: admin._id.toString(), role: 'admin', username: admin.username },
       process.env.JWT_SECRET,
-      { expiresIn: '3h' }
+      { expiresIn: '3h', algorithm: JWT_ALGORITHM }
     );
 
     // Set httpOnly cookie
-    res.cookie('token', token, getCookieOptions());
+    res.cookie(ADMIN_COOKIE, token, getCookieOptions(ADMIN_SESSION_MS));
 
     res.json({
       success: true,
@@ -85,13 +75,7 @@ router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
 // POST /api/auth/logout
 router.post('/logout', csrfCheck, (req, res) => {
   // Must use same options as set (minus maxAge) for browser to clear
-  const isProd = process.env.NODE_ENV === 'production';
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'None' : 'Lax',
-    path: '/',
-  });
+  res.clearCookie(ADMIN_COOKIE, getClearCookieOptions());
 
   res.json({
     success: true,
@@ -100,7 +84,7 @@ router.post('/logout', csrfCheck, (req, res) => {
 });
 
 // GET /api/auth/check — verify if current cookie is valid
-router.get('/check', auth, (req, res) => {
+router.get('/check', requireAdmin, (req, res) => {
   res.json({
     success: true,
     authenticated: true,
