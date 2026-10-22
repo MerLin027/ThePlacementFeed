@@ -63,6 +63,10 @@ const StudentLogin = () => {
             </Link>
           </p>
           <p>Forgot your password? Please ask the CDPC admin to reset it.</p>
+          <p>
+            Password just reset? Log in with the temporary password the admin gave you — you&apos;ll
+            choose a new one straight after.
+          </p>
         </>
       }
     >

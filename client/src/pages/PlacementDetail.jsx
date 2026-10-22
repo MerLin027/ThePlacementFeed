@@ -20,6 +20,8 @@ const PlacementDetail = () => {
   const [placement, setPlacement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -27,6 +29,9 @@ const PlacementDetail = () => {
     const abortController = new AbortController();
 
     const fetchPlacement = async () => {
+      setLoading(true);
+      setError('');
+      setNotFound(false);
       try {
         const res = await api.get(`/api/placements/${id}`, {
           signal: abortController.signal
@@ -35,14 +40,16 @@ const PlacementDetail = () => {
         setLoading(false);
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-        setError(err.response?.data?.message || 'Failed to load placement');
+        // 404 = deleted drive, 400 = malformed id in the URL; both mean "not here"
+        if (err.response?.status === 404 || err.response?.status === 400) setNotFound(true);
+        else setError("We couldn't load this drive. Check your connection and try again.");
         setLoading(false);
       }
     };
     fetchPlacement();
 
     return () => abortController.abort();
-  }, [id]);
+  }, [id, reloadKey]);
 
   // ?apply=1 (from a card, or after login/profile) opens the form once the drive is eligible
   const applyRequested = searchParams.get('apply') === '1';
@@ -89,16 +96,31 @@ const PlacementDetail = () => {
     );
   }
 
-  if (error) {
+  if (notFound || error) {
     return (
       <div className="w-full max-w-container-max mx-auto px-md md:px-lg py-xl text-center">
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl">
-          <span className="material-symbols-outlined text-[48px] text-error mb-md block">error</span>
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-xs">Oops!</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-md">{error}</p>
-          <button onClick={() => navigate('/')} className="btn-primary">
-            Back to Home
-          </button>
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl max-w-lg mx-auto">
+          <span className="material-symbols-outlined text-[48px] text-outline mb-sm block" aria-hidden="true">
+            {notFound ? 'event_busy' : 'cloud_off'}
+          </span>
+          <h1 className="font-headline-md text-headline-md text-on-surface mb-xs">
+            {notFound ? 'This drive is no longer available' : "Couldn't load this drive"}
+          </h1>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-md">
+            {notFound
+              ? 'It may have been removed by the CDPC, or the link is incorrect.'
+              : error}
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-xs">
+            {!notFound && (
+              <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="btn-primary min-h-[44px]">
+                Try again
+              </button>
+            )}
+            <button type="button" onClick={() => navigate('/')} className={`${notFound ? 'btn-primary' : 'btn-secondary'} min-h-[44px]`}>
+              Browse drives
+            </button>
+          </div>
         </div>
       </div>
     );

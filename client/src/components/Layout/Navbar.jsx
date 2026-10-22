@@ -36,7 +36,10 @@ const Navbar = () => {
       { to: '/admin/students', label: 'Students' }
     );
   } else if (role === 'student') {
-    navLinks.push({ to: '/profile', label: 'Profile' });
+    navLinks.push(
+      { to: '/applications', label: 'My applications' },
+      { to: '/profile', label: 'Profile' }
+    );
   } else {
     navLinks.push({ to: '/login', label: 'Login' }, { to: '/signup', label: 'Sign up' });
   }

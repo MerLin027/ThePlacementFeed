@@ -18,6 +18,7 @@ import StudentProfile from './pages/StudentProfile';
 import ChangePassword from './pages/ChangePassword';
 import AdminStudents from './pages/AdminStudents';
 import AdminApplicants from './pages/AdminApplicants';
+import MyApplications from './pages/MyApplications';
 
 function App() {
   return (
@@ -41,6 +42,14 @@ function App() {
                 element={
                   <RequireRole role="student">
                     <StudentProfile />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/applications"
+                element={
+                  <RequireRole role="student">
+                    <MyApplications />
                   </RequireRole>
                 }
               />

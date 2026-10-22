@@ -1,0 +1,98 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
+import api from '../api/axios';
+import { ApplicationStatusPill } from '../components/ApplyButton';
+import { FormAlert } from '../components/AuthCard';
+import Pagination from '../components/Pagination';
+import { PageSpinner } from '../components/RequireRole';
+import { parseApiError } from '../utils/formErrors';
+
+const PAGE_SIZE = 20;
+
+const formatDate = (d) =>
+  new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+// Every in-app application the student has made, newest first, with its current status
+const MyApplications = () => {
+  const [applications, setApplications] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 0, total: 0 });
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    api
+      .get('/api/applications/my', { params: { page, limit: PAGE_SIZE }, signal: controller.signal })
+      .then((res) => {
+        setApplications(res.data.data);
+        setPagination(res.data.pagination);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+        setError(parseApiError(err, "We couldn't load your applications.").message);
+        setLoading(false);
+      });
+    return () => controller.abort();
+  }, [page]);
+
+  return (
+    <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
+      <div className="mb-md">
+        <h1 className="font-headline-md text-headline-md text-on-surface">My applications</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-base">
+          Drives you applied to through The Placement Feed, and where each one stands.
+        </p>
+      </div>
+
+      {error && <FormAlert>{error}</FormAlert>}
+
+      {loading ? (
+        <PageSpinner />
+      ) : !error && applications.length === 0 ? (
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-md py-lg text-center">
+          <span className="material-symbols-outlined text-[40px] text-outline" aria-hidden="true">work_history</span>
+          <h2 className="font-headline-sm text-headline-sm text-on-surface mt-xs">No applications yet</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-md mx-auto">
+            When you apply to a drive here, it shows up on this page with its latest status.
+          </p>
+          <Link to="/" className="btn-primary mt-md min-h-[44px]">Browse drives</Link>
+        </div>
+      ) : (
+        <ul className="space-y-xs" aria-label="Your applications">
+          {applications.map((a) => (
+            <li key={a.id}>
+              {a.driveId ? (
+                <Link
+                  to={`/placement/${a.driveId}`}
+                  className="flex flex-col sm:flex-row sm:items-center gap-xs sm:gap-sm bg-surface-container-lowest border border-outline-variant rounded-xl p-sm hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-label-md text-label-md text-on-surface truncate">{a.company}</p>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant truncate">{a.role}</p>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                    Applied {formatDate(a.submittedAt)}
+                  </p>
+                  <ApplicationStatusPill status={a.status} />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-xl p-sm">
+                  <p className="flex-1 font-body-sm text-body-sm text-on-surface-variant">This drive was removed.</p>
+                  <ApplicationStatusPill status={a.status} />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+    </div>
+  );
+};
+
+export default MyApplications;

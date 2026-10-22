@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router';
 import api from '../api/axios';
-import { useAuth } from '../context/AuthContext';
 import PlacementForm from '../components/PlacementForm';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -10,7 +9,6 @@ import Pagination from '../components/Pagination';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 
 const AdminDashboard = () => {
-  const { logoutAdmin } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const { loading, fetchPlacements } = usePlacementsFetch();
@@ -158,13 +156,6 @@ const AdminDashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add Placement
-          </button>
-          <button onClick={logoutAdmin} className="btn-secondary gap-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
           </button>
         </div>
       </div>

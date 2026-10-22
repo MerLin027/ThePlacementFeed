@@ -53,8 +53,8 @@ const ChangePassword = () => {
   return (
     <AuthCard
       icon="key"
-      title={isReset ? 'Choose a new password' : 'Change password'}
-      subtitle={isReset ? 'One quick step before you continue' : "You'll stay logged in here; other devices will be signed out"}
+      title={isReset ? 'Set a new password to continue' : 'Change password'}
+      subtitle={isReset ? 'Required before you can use your account' : "You'll stay logged in here; other devices will be signed out"}
       footer={
         isReset ? (
           <p>
@@ -72,9 +72,13 @@ const ChangePassword = () => {
     >
       <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {isReset && (
-          <FormAlert tone="info" icon="info">
-            Your password was reset by the CDPC admin. Enter the temporary password you were given,
-            then pick a new one that only you know.
+          <FormAlert tone="warning" icon="lock_reset">
+            <p className="font-semibold">Your password was reset by the CDPC admin.</p>
+            <p className="mt-[2px]">
+              For your security, you need to choose a new password before you can browse, apply or edit
+              your profile. Enter the temporary password you were given, then pick one that only you know.
+              The temporary password works for 72 hours after the reset.
+            </p>
           </FormAlert>
         )}
         {error && <FormAlert>{error}</FormAlert>}
