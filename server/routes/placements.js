@@ -179,7 +179,8 @@ router.get('/changes', apiLimiter, freshStatuses, async (req, res, next) => {
     let changes = [];
     placements.forEach((placement) => {
       placement.recentChanges.forEach((change) => {
-        if (change.changedAt > effectiveSinceDate) {
+        // automationReset entries are admin bookkeeping from before statuses were logged
+        if (change.changedAt > effectiveSinceDate && change.type !== 'automationReset') {
           changes.push({
             id: `${placement._id}-${change.type}-${change.changedAt.getTime()}`,
             placementId: placement._id,
@@ -196,8 +197,9 @@ router.get('/changes', apiLimiter, freshStatuses, async (req, res, next) => {
     // Sort by changedAt descending (Native Date subtraction is vastly faster)
     changes.sort((a, b) => b.changedAt - a.changedAt);
 
-    // Cap at 50 to prevent massive payloads if a very old timestamp is maliciously provided
-    res.json({ success: true, data: changes.slice(0, 50) });
+    // Cap at 50 to prevent massive payloads if a very old timestamp is maliciously provided.
+    // serverTime is the client's next cursor, so device clock skew can't drop changes.
+    res.json({ success: true, data: changes.slice(0, 50), serverTime: new Date().toISOString() });
   } catch (error) {
     next(error);
   }
@@ -377,9 +379,9 @@ router.patch(
       }
 
       doc.statusManuallySet = req.body.statusManuallySet;
-      // Restoring automation takes effect immediately, not at the next cron run
-      applyAutoStatus(doc);
-      logChange(doc, 'automationReset');
+      // Restoring automation takes effect immediately, not at the next cron run.
+      // Students only hear about it if the visible status actually changed.
+      if (applyAutoStatus(doc)) logChange(doc, 'statusChange');
       await doc.save();
       res.json({ success: true, data: doc });
     } catch (error) {

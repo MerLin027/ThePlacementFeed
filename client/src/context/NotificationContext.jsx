@@ -1,251 +1,203 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import axios from '../api/axios';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import api from '../api/axios';
+import { useAuth } from './AuthContext';
+import { useMyApplications } from './MyApplicationsContext';
+import { readJSON, writeJSON, removeKeys } from '../utils/storage';
+import { describeNotification } from '../utils/notificationText';
 
-const NotificationContext = createContext();
+const NotificationContext = createContext(null);
 
 export const useNotifications = () => useContext(NotificationContext);
 
-export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
-  const notificationsRef = useRef([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+const POLL_MS = 30 * 1000;
+const MAX_NOTIFICATIONS = 30;
+const MAX_SEEN_IDS = 300;
+const MAX_TOASTS_PER_BATCH = 3;
 
-  // Load state from localStorage on mount and listen to cross-tab updates
-  useEffect(() => {
-    const loadFromStorage = () => {
-      const stored = localStorage.getItem('placement_notifications');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setNotifications(parsed);
-          notificationsRef.current = parsed;
-          setUnreadCount(parsed.filter((n) => !n.isRead).length);
-        } catch (e) {
-          console.error('Failed to parse notifications from localStorage', e);
-        }
-      }
-    };
-    
-    // Initial load
-    loadFromStorage();
-    
-    // Listen for storage changes from other tabs
-    const handleStorageChange = (e) => {
-      if (e.key === 'placement_notifications') {
-        loadFromStorage();
-      }
-      // Another tab cleared/dismissed — remove those IDs from our in-memory list
-      if (e.key === 'dismissedNotifIds') {
-        try {
-          const dismissed = new Set(JSON.parse(e.newValue || '[]'));
-          setNotifications(prev => {
-            const filtered = prev.filter(n => !dismissed.has(n.id));
-            return filtered.length !== prev.length ? filtered : prev;
-          });
-        } catch { /* ignore malformed JSON from another tab */ }
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+const NOTIFS_KEY = 'tpf:notifications';
+// Every notification id ever shown or dismissed — the single source of "don't show again"
+const SEEN_KEY = 'tpf:seenNotificationIds';
+// Server time of the last successful poll; the next poll asks for changes since then
+const CURSOR_KEY = 'tpf:notificationCursor';
+const appStatusKey = (studentId) => `tpf:appStatuses:${studentId}`;
+const LEGACY_KEYS = ['placement_notifications', 'lastPollTime', 'dismissedNotifIds'];
+
+const TONE_ICON_CLASS = {
+  warning: 'text-amber-600',
+  success: 'text-emerald-600',
+  info: 'text-primary',
+  neutral: 'text-on-surface-variant',
+};
+
+const showToast = (n) => {
+  const { text, icon, tone } = describeNotification(n);
+  toast(text, {
+    duration: 5000,
+    icon: (
+      <span className={`material-symbols-outlined text-[20px] ${TONE_ICON_CLASS[tone]}`} aria-hidden="true">
+        {icon}
+      </span>
+    ),
+  });
+};
+
+// Marks ids as seen in storage and returns only those not seen before.
+// Re-reading storage each time means a second tab won't repeat the same toasts.
+const claimUnseen = (items) => {
+  const seen = new Set(readJSON(SEEN_KEY, []));
+  const fresh = items.filter((n) => !seen.has(n.id));
+  if (fresh.length === 0) return [];
+  fresh.forEach((n) => seen.add(n.id));
+  writeJSON(SEEN_KEY, [...seen].slice(-MAX_SEEN_IDS));
+  return fresh;
+};
+
+export const NotificationProvider = ({ children }) => {
+  const { student } = useAuth();
+  const { byDrive, loadedFor } = useMyApplications();
+  const [notifications, setNotifications] = useState(() => {
+    const stored = readJSON(NOTIFS_KEY, []);
+    return Array.isArray(stored) ? stored : [];
+  });
+  const polling = useRef(false);
+
+  // Adds new notifications (newest first), toasts them, and caps the list
+  const deliver = useCallback((items) => {
+    if (items.length === 0) return;
+    const newestFirst = [...items].sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
+    setNotifications((prev) => {
+      const ids = new Set(prev.map((n) => n.id));
+      const added = newestFirst.filter((n) => !ids.has(n.id)).map((n) => ({ ...n, isRead: false }));
+      return [...added, ...prev].slice(0, MAX_NOTIFICATIONS);
+    });
+
+    if (newestFirst.length > MAX_TOASTS_PER_BATCH) {
+      toast(`${newestFirst.length} new updates — open the bell to see them`, {
+        duration: 5000,
+        icon: <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">notifications</span>,
+      });
+    } else {
+      newestFirst.forEach(showToast);
+    }
   }, []);
 
-  // Sync unreadCount whenever notifications change, and save to localStorage
+  // One-time cleanup of the storage keys used by the previous implementation
   useEffect(() => {
-    notificationsRef.current = notifications;
-    setUnreadCount(notifications.filter((n) => !n.isRead).length);
-    
-    if (notifications.length > 0 || localStorage.getItem('placement_notifications')) {
-      const stringified = JSON.stringify(notifications);
-      // Prevent disk I/O thrashing if the state is identically synced from another tab
-      if (localStorage.getItem('placement_notifications') !== stringified) {
-        localStorage.setItem('placement_notifications', stringified);
-      }
+    removeKeys(...LEGACY_KEYS);
+  }, []);
+
+  // Persist, and follow other tabs
+  useEffect(() => {
+    const serialized = JSON.stringify(notifications);
+    let stored = null;
+    try {
+      stored = localStorage.getItem(NOTIFS_KEY);
+    } catch {
+      // storage unavailable
     }
+    if (stored !== serialized) writeJSON(NOTIFS_KEY, notifications);
   }, [notifications]);
 
-  const pollChanges = useCallback(async () => {
-    const lastPollTime = localStorage.getItem('lastPollTime');
-    // [DIAG] Bug 2 — confirm interval fires continuously
-    console.log(
-      `[NotifPoll] tick at ${new Date().toISOString()} | lastPollTime=${lastPollTime ?? '(none — first visit)'}`
-    );
-
-    try {
-      if (!lastPollTime) {
-        // First-ever visit: seed lastPollTime from the most recent drive
-        const res = await axios.get('/api/placements?sort=newest&limit=1');
-        if (res.data?.success && res.data.data.length > 0) {
-          const latest = res.data.data[0];
-          const newNotif = {
-            id: `welcome-${latest._id}`,
-            placementId: latest._id,
-            company: latest.company,
-            role: latest.role,
-            type: 'new',
-            changedAt: new Date().toISOString(),
-            isRead: false,
-          };
-          setNotifications([newNotif]);
-          const newLastPollTime = latest.updatedAt || latest.createdAt;
-          localStorage.setItem('lastPollTime', newLastPollTime);
-          toast(`Welcome! The latest drive is ${latest.company} - ${latest.role}`, {
-            icon: '👋',
-            duration: 5000,
-          });
-        } else {
-          localStorage.setItem('lastPollTime', new Date().toISOString());
-        }
-        return;
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === NOTIFS_KEY) {
+        const next = readJSON(NOTIFS_KEY, []);
+        setNotifications(Array.isArray(next) ? next : []);
       }
-
-      // Subsequent visits / polling
-      const res = await axios.get(`/api/placements/changes?since=${lastPollTime}`);
-      const changeCount = res.data?.data?.length ?? 0;
-      console.log(`[NotifPoll] server returned ${changeCount} change(s)`);
-
-      if (res.data?.success && changeCount > 0) {
-        const changes = res.data.data;
-        const prev = notificationsRef.current;
-
-        // Filter out any IDs the user has already explicitly dismissed
-        const dismissedIds = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
-        const dismissedSet = new Set(dismissedIds);
-
-        // Merge and deduplicate by id
-        const existingIds = new Set(prev.map(n => n.id));
-        const newNotifs = changes
-          .filter(c => !existingIds.has(c.id) && !dismissedSet.has(c.id))
-          .map(c => ({ ...c, isRead: false }));
-          
-        if (newNotifs.length > 0) {
-          newNotifs.forEach(notif => {
-            if (notif.type === 'postponed') {
-              toast.error(`${notif.company} drive has been postponed!`, {
-                duration: 6000,
-                style: {
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 'bold'
-                },
-                iconTheme: {
-                  primary: '#fff',
-                  secondary: '#ef4444',
-                },
-              });
-            } else if (notif.type === 'unpostponed') {
-              toast.success(`${notif.company} drive is no longer postponed.`, {
-                duration: 6000,
-              });
-            } else if (notif.type === 'statusChange') {
-              toast(`${notif.company} status changed`, { duration: 5000, icon: 'ℹ️' });
-            } else if (notif.type === 'new') {
-              toast.success(`New drive: ${notif.company}`, { duration: 5000 });
-            } else if (notif.type === 'edit') {
-              toast(`${notif.company} details updated`, { duration: 5000, icon: '📝' });
-            } else if (notif.type === 'automationReset') {
-              toast(`${notif.company} status automation reset`, { duration: 5000, icon: '🔄' });
-            } else {
-              toast(`${notif.company} updated`, { duration: 5000, icon: '🔔' });
-            }
-          });
-
-          const combined = [...newNotifs, ...prev];
-          // Cap at 15 items
-          setNotifications(combined.slice(0, 15));
-        }
-        
-        // Update lastPollTime to the most recent changedAt from the server
-        // to prevent clock-skew race conditions
-        const latestChangeTime = changes.reduce((latest, current) => {
-          return new Date(current.changedAt) > new Date(latest) ? current.changedAt : latest;
-        }, lastPollTime);
-        
-        localStorage.setItem('lastPollTime', latestChangeTime);
-      }
-    } catch (error) {
-      console.error('[NotifPoll] Failed to fetch changes:', error);
-    }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Setup polling interval and visibility-based sync
+  // --- Drive updates (everyone) ---
+  const pollDrives = useCallback(async () => {
+    // Single flight: overlapping polls (interval + tab focus + mount) are skipped, not queued
+    if (polling.current) return;
+    polling.current = true;
+    try {
+      const cursor = readJSON(CURSOR_KEY, null);
+      const res = await api.get('/api/placements/changes', {
+        params: { since: cursor || new Date().toISOString() },
+      });
+      const { data = [], serverTime } = res.data || {};
+
+      if (!cursor) {
+        // First visit: start tracking from now without inventing notifications for old changes
+        claimUnseen(data);
+      } else {
+        deliver(claimUnseen(data.map((c) => ({ ...c, kind: 'drive' }))));
+      }
+      if (serverTime) writeJSON(CURSOR_KEY, serverTime);
+    } catch {
+      // Network blips/cold starts: try again on the next tick
+    } finally {
+      polling.current = false;
+    }
+  }, [deliver]);
+
   useEffect(() => {
-    console.log('[NotifPoll] interval REGISTERED — will fire every 20s');
-    pollChanges(); // Initial poll on mount
-    const intervalId = setInterval(pollChanges, 20000); // 20s — reduced from 60s for time-sensitive updates
-    
-    // Instantly sync when user tabs back or wakes device from sleep
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[NotifPoll] visibility tick (tab focus/wake)');
-        pollChanges();
-      }
+    pollDrives();
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') pollDrives();
+    }, POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pollDrives();
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
-      console.log('[NotifPoll] interval TORN DOWN (unmount)');
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [pollChanges]);
+  }, [pollDrives]);
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
+  // --- Application status changes (logged-in student) ---
+  // Compares the latest statuses with the last ones this browser saw for this student.
+  useEffect(() => {
+    if (!loadedFor || loadedFor !== student?.id) return;
+    const key = appStatusKey(loadedFor);
+    const previous = readJSON(key, null);
+    const current = {};
+    byDrive.forEach((a, driveId) => {
+      current[driveId] = a.status;
+    });
 
-  const clearAll = () => {
-    const current = notificationsRef.current;
-
-    // Advance lastPollTime past every cleared notification so they are never
-    // re-fetched from the server after a refresh (Bug 1 fix).
-    if (current.length > 0) {
-      const latestClearedAt = current.reduce((latest, n) => {
-        return new Date(n.changedAt) > new Date(latest) ? n.changedAt : latest;
-      }, current[0].changedAt);
-      // Merge (not replace) cleared IDs with any previously dismissed IDs.
-      // Replacing would drop individually-dismissed IDs, allowing them to
-      // reappear via the server's 10-second overlap buffer on the next poll.
-      const existing = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
-      const merged = [...new Set([...existing, ...current.map(n => n.id)])];
-      // Cap at 100 entries to prevent unbounded localStorage growth
-      const capped = merged.slice(-100);
-      localStorage.setItem('dismissedNotifIds', JSON.stringify(capped));
-      localStorage.setItem('lastPollTime', latestClearedAt);
+    if (previous && typeof previous === 'object') {
+      const changes = [];
+      byDrive.forEach((a, driveId) => {
+        if (previous[driveId] && previous[driveId] !== a.status) {
+          changes.push({
+            id: `app-${driveId}-${a.status}-${a.updatedAt}`,
+            kind: 'application',
+            type: 'applicationStatus',
+            placementId: driveId,
+            company: a.company,
+            role: a.role,
+            status: a.status,
+            changedAt: a.updatedAt || new Date().toISOString(),
+          });
+        }
+      });
+      deliver(claimUnseen(changes));
     }
+    writeJSON(key, current);
+  }, [byDrive, loadedFor, student?.id, deliver]);
 
-    setNotifications([]);
-  };
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
-  const dismissNotification = (id) => {
-    const target = notificationsRef.current.find(n => n.id === id);
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => (prev.some((n) => !n.isRead) ? prev.map((n) => ({ ...n, isRead: true })) : prev));
+  }, []);
 
-    // Persist the dismissed ID so this specific notification is never
-    // re-fetched even if lastPollTime hasn't advanced past it (Bug 1 fix).
-    if (target) {
-      const existing = JSON.parse(localStorage.getItem('dismissedNotifIds') || '[]');
-      if (!existing.includes(id)) {
-        existing.push(id);
-        // Cap at 100 entries to prevent unbounded localStorage growth
-        const capped = existing.slice(-100);
-        localStorage.setItem('dismissedNotifIds', JSON.stringify(capped));
-      }
-    }
-
+  // Removed items stay in the seen set, so they never come back
+  const clearAll = useCallback(() => setNotifications([]), []);
+  const dismissNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  }, []);
 
   return (
     <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        markAllAsRead,
-        clearAll,
-        dismissNotification,
-      }}
+      value={{ notifications, unreadCount, markAllAsRead, clearAll, dismissNotification }}
     >
       {children}
     </NotificationContext.Provider>

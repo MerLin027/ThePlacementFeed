@@ -83,13 +83,13 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
           .filter((p) => (answers[p._id] || '').trim())
           .map((p) => ({ promptId: p._id, answer: answers[p._id].trim() })),
       });
-      markApplied(drive._id, 'Applied');
+      markApplied(drive._id, 'Applied', { company: drive.company, role: drive.role });
       toast.success(`Application sent to ${drive.company}`);
       onClose();
     } catch (err) {
       const code = err.response?.data?.code;
       if (code === 'ALREADY_APPLIED') {
-        markApplied(drive._id, 'Applied');
+        markApplied(drive._id, 'Applied', { company: drive.company, role: drive.role });
         toast('You had already applied to this drive.');
         onClose();
         return;

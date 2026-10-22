@@ -26,7 +26,8 @@ function App() {
         <MyApplicationsProvider>
         <NotificationProvider>
           <div className="h-screen overflow-hidden flex flex-col">
-            <Toaster position="top-right" />
+            {/* Bottom-centre: never covers the header, the bell or its open panel (desktop or phone) */}
+            <Toaster position="bottom-center" containerStyle={{ bottom: 16 }} />
             <Navbar />
           <main id="main-content" className="flex-1 min-h-0 overflow-y-auto content-scrollbar">
             <Routes>

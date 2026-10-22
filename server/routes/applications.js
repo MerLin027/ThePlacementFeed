@@ -119,13 +119,23 @@ router.post(
 router.get('/my/summary', readLimiter, requireStudent, async (req, res, next) => {
   try {
     const apps = await Application.find({ studentId: req.student.id })
-      .select('driveId status')
+      .select('driveId status updatedAt')
       .sort({ createdAt: -1 })
       .limit(500)
+      .populate('driveId', 'company role')
       .lean();
     res.json({
       success: true,
-      data: apps.map((a) => ({ driveId: a.driveId.toString(), status: a.status })),
+      // Applications whose drive was deleted are cascade-removed, but skip any orphan defensively
+      data: apps
+        .filter((a) => a.driveId)
+        .map((a) => ({
+          driveId: a.driveId._id.toString(),
+          status: a.status,
+          company: a.driveId.company,
+          role: a.driveId.role,
+          updatedAt: a.updatedAt,
+        })),
     });
   } catch (error) {
     next(error);
