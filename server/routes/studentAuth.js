@@ -166,6 +166,10 @@ router.get('/check', sessionLimiter, requireStudentAllowPending, async (req, res
         id: student._id.toString(),
         email: student.email,
         firstName: student.firstName ?? '',
+        // Academic fields let the UI pre-check drive eligibility (the server re-checks on apply)
+        branch: student.branch ?? '',
+        cgpa: student.cgpa ?? null,
+        activeBacklogs: student.activeBacklogs ?? 0,
         missingFields: student.getMissingFields(),
         mustChangePassword: student.mustChangePassword,
       },

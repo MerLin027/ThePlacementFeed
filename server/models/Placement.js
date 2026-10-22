@@ -102,6 +102,35 @@ const placementSchema = new mongoose.Schema(
         message: 'Form URL must be a valid HTTPS URL',
       },
     },
+    // How students apply: the external formUrl, the in-app form, or both.
+    // Defaults to 'external' so drives created before in-app applications behave as before.
+    applicationMode: {
+      type: String,
+      enum: {
+        values: ['external', 'in_app', 'both'],
+        message: '{VALUE} is not a valid application mode',
+      },
+      default: 'external',
+    },
+    // Extra questions shown on the in-app application form
+    customPrompts: {
+      type: [{
+        question: {
+          type: String,
+          required: [true, 'Question text is required'],
+          trim: true,
+          maxlength: [500, 'Question cannot exceed 500 characters'],
+        },
+        required: {
+          type: Boolean,
+          default: false,
+        },
+      }],
+      validate: {
+        validator: (v) => !v || v.length <= 5,
+        message: 'A drive can have at most 5 custom questions',
+      },
+    },
     recentChanges: [{
       type: {
         type: String,

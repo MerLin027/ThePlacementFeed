@@ -18,6 +18,19 @@ const AdminDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPlacement, setEditingPlacement] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  // Applications that will be deleted along with the drive (null while loading)
+  const [deleteAppCount, setDeleteAppCount] = useState(null);
+
+  useEffect(() => {
+    if (!deleteTarget) return undefined;
+    const controller = new AbortController();
+    setDeleteAppCount(null);
+    api
+      .get(`/api/placements/${deleteTarget._id}/application-count`, { signal: controller.signal })
+      .then((res) => setDeleteAppCount(res.data.data.count))
+      .catch(() => setDeleteAppCount(null));
+    return () => controller.abort();
+  }, [deleteTarget]);
 
   // Search
   const [search, setSearch] = useState('');
@@ -328,7 +341,11 @@ const AdminDashboard = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Delete Placement"
-        message={`Are you sure you want to delete the ${deleteTarget?.company} — ${deleteTarget?.role} placement? This action cannot be undone.`}
+        message={`Are you sure you want to delete the ${deleteTarget?.company} — ${deleteTarget?.role} placement?${
+          deleteAppCount > 0
+            ? ` Its ${deleteAppCount} student application${deleteAppCount === 1 ? '' : 's'} will be deleted too.`
+            : ''
+        } This action cannot be undone.`}
       />
     </div>
   );

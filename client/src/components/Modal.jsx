@@ -33,7 +33,9 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
         <div className="flex-shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-sm rounded-t-xl flex items-center justify-between z-20">
           <h2 className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>

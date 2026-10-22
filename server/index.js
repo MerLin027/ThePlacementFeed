@@ -33,6 +33,7 @@ const authRoutes = require('./routes/auth');
 const placementRoutes = require('./routes/placements');
 const studentAuthRoutes = require('./routes/studentAuth');
 const studentRoutes = require('./routes/students');
+const applicationRoutes = require('./routes/applications');
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/placements', placementRoutes);
 app.use('/api/students/auth', studentAuthRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

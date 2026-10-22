@@ -20,7 +20,17 @@ const INITIAL_FORM = {
   tags: [],
   formUrl: '',
   selectionRounds: [],
+  applicationMode: 'external',
+  customPrompts: [],
 };
+
+const MAX_PROMPTS = 5;
+
+const APPLICATION_MODES = [
+  { value: 'external', label: 'External form only', description: 'Students use the Application Form URL above.' },
+  { value: 'in_app', label: 'In-app only', description: 'Students apply here; their profile is shared with you.' },
+  { value: 'both', label: 'Both', description: 'In-app application, with the external form offered as an alternative.' },
+];
 
 const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
   const [form, setForm] = useState(INITIAL_FORM);
@@ -51,6 +61,11 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         tags: initialData.tags || [],
         formUrl: initialData.formUrl || '',
         selectionRounds: initialData.selectionRounds || [],
+        applicationMode: initialData.applicationMode || 'external',
+        customPrompts: (initialData.customPrompts || []).map((p) => ({
+          question: p.question,
+          required: Boolean(p.required),
+        })),
       });
     }
   }, [initialData]);
@@ -89,6 +104,29 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     }));
   };
 
+  const addPrompt = () => {
+    setForm((prev) =>
+      prev.customPrompts.length >= MAX_PROMPTS
+        ? prev
+        : { ...prev, customPrompts: [...prev.customPrompts, { question: '', required: false }] }
+    );
+  };
+
+  const updatePrompt = (index, field, value) => {
+    setForm((prev) => {
+      const prompts = [...prev.customPrompts];
+      prompts[index] = { ...prompts[index], [field]: value };
+      return { ...prev, customPrompts: prompts };
+    });
+  };
+
+  const removePrompt = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      customPrompts: prev.customPrompts.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -97,6 +135,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
     if (!form.role.trim()) return setError('Role is required');
     if (form.ctc === '' || form.ctc < 0) return setError('CTC must be a non-negative number');
     if (form.formUrl && !/^https:\/\//i.test(form.formUrl.trim())) return setError('Application Form URL must start with https://');
+    if (form.applicationMode === 'both' && !form.formUrl.trim()) return setError('Add an Application Form URL, or choose "In-app only"');
 
     setIsSubmitting(true);
     try {
@@ -117,6 +156,9 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             roundName: r.roundName.trim(),
             roundDescription: r.roundDescription?.trim() || "",
           })),
+        customPrompts: form.customPrompts
+          .filter((p) => p.question.trim())
+          .map((p) => ({ question: p.question.trim(), required: p.required })),
       };
 
       // Set statusManuallySet if status was explicitly changed
@@ -310,6 +352,96 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           />
         </div>
       </div>
+
+      {/* How students apply */}
+      <fieldset className="p-sm bg-surface-container-low rounded-xl border border-outline-variant">
+        <legend className="font-label-md text-label-md text-on-surface px-1">How students apply</legend>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-xs mt-xs">
+          {APPLICATION_MODES.map((mode) => (
+            <label
+              key={mode.value}
+              className={`flex items-start gap-xs p-xs rounded-lg border cursor-pointer transition-colors min-h-[44px] ${
+                form.applicationMode === mode.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-high'
+              }`}
+            >
+              <input
+                type="radio"
+                name="applicationMode"
+                value={mode.value}
+                checked={form.applicationMode === mode.value}
+                onChange={(e) => handleChange('applicationMode', e.target.value)}
+                className="mt-[3px] accent-primary"
+              />
+              <span>
+                <span className="block font-label-md text-label-md text-on-surface">{mode.label}</span>
+                <span className="block font-body-sm text-body-sm text-on-surface-variant">{mode.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {form.applicationMode !== 'external' && (
+          <div className="mt-sm">
+            <div className="flex items-center justify-between mb-xs">
+              <h4 className="font-label-md text-label-md text-on-surface">
+                Extra questions <span className="text-outline font-normal ml-1">(optional, up to {MAX_PROMPTS})</span>
+              </h4>
+              <button
+                type="button"
+                onClick={addPrompt}
+                disabled={form.customPrompts.length >= MAX_PROMPTS}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest text-primary font-label-sm text-label-sm rounded-lg border border-outline-variant hover:bg-surface-container-high focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">add</span>
+                Add Question
+              </button>
+            </div>
+            {form.customPrompts.length === 0 ? (
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-center py-sm border border-dashed border-outline-variant rounded-lg">
+                Students will only share their profile, resume and an optional note.
+              </p>
+            ) : (
+              <div className="space-y-xs">
+                {form.customPrompts.map((prompt, index) => (
+                  <div key={index} className="flex items-start gap-xs bg-surface-container-lowest p-xs rounded-lg border border-outline-variant">
+                    <div className="flex-1 space-y-1">
+                      <input
+                        type="text"
+                        value={prompt.question}
+                        onChange={(e) => updatePrompt(index, 'question', e.target.value)}
+                        className="input-field"
+                        placeholder="e.g. Are you open to relocating to Bengaluru?"
+                        aria-label={`Question ${index + 1}`}
+                        maxLength={500}
+                      />
+                      <label className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={prompt.required}
+                          onChange={(e) => updatePrompt(index, 'required', e.target.checked)}
+                          className="accent-primary"
+                        />
+                        Required
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePrompt(index)}
+                      className="text-on-surface-variant hover:text-error transition-colors p-1 rounded-md hover:bg-error-container"
+                      aria-label={`Remove question ${index + 1}`}
+                      title="Remove question"
+                    >
+                      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </fieldset>
 
       {/* JD Description */}
       <div>

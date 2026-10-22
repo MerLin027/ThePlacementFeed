@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const Placement = require('../models/Placement');
+const Application = require('../models/Application');
 const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
 const { placementValidationRules, postponeValidationRules, resetStatusValidationRules, validate } = require('../middleware/validate');
@@ -358,7 +359,17 @@ router.patch(
   }
 );
 
-// DELETE /api/placements/:id — auth required
+// GET /api/placements/:id/application-count — admin only, shown before deleting a drive
+router.get('/:id/application-count', apiLimiter, requireAdmin, async (req, res, next) => {
+  try {
+    const count = await Application.countDocuments({ driveId: req.params.id });
+    res.json({ success: true, data: { count } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/placements/:id — auth required; also deletes the drive's applications
 router.delete('/:id', mutateLimiter, requireAdmin, csrfCheck, async (req, res, next) => {
   try {
     const placement = await Placement.findByIdAndDelete(req.params.id);
@@ -368,7 +379,14 @@ router.delete('/:id', mutateLimiter, requireAdmin, csrfCheck, async (req, res, n
         message: 'Placement not found',
       });
     }
-    res.json({ success: true, message: 'Placement deleted successfully' });
+    // Drive first, then applications: a crash in between leaves harmless orphans
+    // rather than a drive whose applications are gone
+    const { deletedCount } = await Application.deleteMany({ driveId: placement._id });
+    res.json({
+      success: true,
+      message: 'Placement deleted successfully',
+      deletedApplications: deletedCount,
+    });
   } catch (error) {
     next(error);
   }

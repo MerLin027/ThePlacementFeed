@@ -196,6 +196,8 @@ Fixed order, failures return `{success:false, code, message}`:
 
 (No email-verification step.) User text is stored as plain text and rendered by React (auto-escaped).
 
+> **Implemented in Phase 3:** rules live in `server/services/applicationRules.js` (pure function, mirrored for button state in `client/src/utils/applyState.js`). Deadlines are whole IST days — a drive with deadline "25 Oct" accepts applications through 25 Oct, the same convention the status cron uses (`server/utils/dates.js`, shared with the cron). A drive's in-app form opens only on the detail page (`?apply=1`); cards are links, so their buttons route there. `GET /api/placements/:id/application-count` (admin) powers the delete warning.
+
 ---
 
 ## 8. Frontend

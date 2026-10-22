@@ -1,8 +1,9 @@
 import { Link } from 'react-router';
 import StatusBadge from './StatusBadge';
+import { CardApplyButton } from './ApplyButton';
 
 const PlacementCard = ({ placement }) => {
-  const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility, formUrl } = placement;
+  const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -12,40 +13,6 @@ const PlacementCard = ({ placement }) => {
       year: 'numeric',
     });
   };
-
-  // Determine the bottom button style & text based on formUrl and status.
-  // Completed drives ALWAYS show View Details — never Apply Now — even if a formUrl exists.
-  const getButtonConfig = () => {
-    if (formUrl && status !== 'Completed') {
-      return {
-        className: 'btn-primary w-full py-3 justify-center',
-        label: 'Apply Now',
-        isApply: true,
-      };
-    }
-
-    if (isPostponed) {
-      return {
-        className: 'btn-secondary w-full py-3 justify-center text-red-700 border-red-200 hover:bg-red-50 focus:ring-red-700',
-        label: 'View Details',
-        isApply: false,
-      };
-    }
-
-    const secondaryStyles = {
-      Upcoming: 'btn-secondary w-full py-3 justify-center text-primary',
-      Ongoing: 'btn-secondary w-full py-3 justify-center text-primary',
-      Completed: 'btn-secondary w-full py-3 justify-center text-secondary',
-    };
-
-    return {
-      className: secondaryStyles[status] || secondaryStyles.Upcoming,
-      label: 'View Details',
-      isApply: false,
-    };
-  };
-
-  const btn = getButtonConfig();
 
   // Bottom detail row — varies by status
   const renderDetailRow = () => {
@@ -98,23 +65,8 @@ const PlacementCard = ({ placement }) => {
           {renderDetailRow()}
         </div>
 
-        {/* Action Button */}
-        {btn.isApply ? (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              window.open(formUrl, '_blank', 'noopener,noreferrer');
-            }}
-            className={btn.className}
-          >
-            {btn.label}
-          </button>
-        ) : (
-          <div className={btn.className}>
-            {btn.label}
-          </div>
-        )}
+        {/* Action Button — external link, in-app apply state, or View Details */}
+        <CardApplyButton drive={placement} />
       </div>
     </Link>
   );

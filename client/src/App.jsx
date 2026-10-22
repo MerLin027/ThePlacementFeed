@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { MyApplicationsProvider } from './context/MyApplicationsContext';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
@@ -20,6 +21,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <MyApplicationsProvider>
         <NotificationProvider>
           <div className="h-screen overflow-hidden flex flex-col">
             <Toaster position="top-right" />
@@ -62,6 +64,7 @@ function App() {
           <Footer />
         </div>
         </NotificationProvider>
+        </MyApplicationsProvider>
       </AuthProvider>
     </BrowserRouter>
   );

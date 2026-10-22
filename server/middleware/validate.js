@@ -135,6 +135,33 @@ const placementValidationRules = [
     .isBoolean()
     .withMessage('statusManuallySet must be a boolean')
     .toBoolean(),
+
+  body('applicationMode')
+    .optional()
+    .isIn(['external', 'in_app', 'both'])
+    .withMessage('Application mode must be external, in_app or both')
+    .custom((value, { req }) => value !== 'both' || Boolean(req.body.formUrl))
+    .withMessage('Add an Application Form URL to offer both ways of applying'),
+
+  body('customPrompts')
+    .optional()
+    .isArray({ max: 5 })
+    .withMessage('A drive can have at most 5 custom questions'),
+
+  body('customPrompts.*.question')
+    .isString()
+    .withMessage('Each question must be text')
+    .trim()
+    .notEmpty()
+    .withMessage('Questions cannot be empty')
+    .isLength({ max: 500 })
+    .withMessage('Questions cannot exceed 500 characters'),
+
+  body('customPrompts.*.required')
+    .optional()
+    .isBoolean()
+    .withMessage('required must be a boolean')
+    .toBoolean(),
 ];
 
 // Minimal validation rules for the PATCH /postpone quick-toggle route
@@ -278,6 +305,52 @@ const changePasswordRules = [
     .withMessage('Your new password must be different from the current one'),
 ];
 
+// --- Applications ---
+
+const applicationSubmitRules = [
+  body('driveId')
+    .isMongoId()
+    .withMessage('Invalid drive'),
+
+  body('resumeUrl')
+    .optional()
+    .isString()
+    .withMessage('Resume link must be text')
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Resume link cannot exceed 500 characters')
+    .custom((value) => value === '' || isHttpsUrl(value))
+    .withMessage('Resume link must be a valid https:// URL'),
+
+  body('coverNote')
+    .optional()
+    .isString()
+    .withMessage('Note must be text')
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage('Note cannot exceed 2000 characters'),
+
+  body('consentGiven')
+    .custom((value) => value === true)
+    .withMessage('Please confirm you agree to share your details'),
+
+  body('customAnswers')
+    .optional()
+    .isArray({ max: 5 })
+    .withMessage('Too many answers'),
+
+  body('customAnswers.*.promptId')
+    .isMongoId()
+    .withMessage('Invalid question'),
+
+  body('customAnswers.*.answer')
+    .isString()
+    .withMessage('Answers must be text')
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage('Answers cannot exceed 2000 characters'),
+];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -302,5 +375,6 @@ module.exports = {
   studentLoginRules,
   studentProfileRules,
   changePasswordRules,
+  applicationSubmitRules,
   validate,
 };

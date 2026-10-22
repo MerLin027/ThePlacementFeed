@@ -1,19 +1,6 @@
 const cron = require('node-cron');
 const Placement = require('../models/Placement');
-
-// Get the start of the current day in IST, represented as a UTC midnight Date
-// This aligns with how <input type="date"> saves dates into MongoDB (as UTC midnight)
-function getStartOfTodayIST() {
-  const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const istTime = new Date(now.getTime() + istOffset);
-
-  const year = istTime.getUTCFullYear();
-  const month = istTime.getUTCMonth();
-  const date = istTime.getUTCDate();
-
-  return new Date(Date.UTC(year, month, date));
-}
+const { getStartOfTodayIST } = require('../utils/dates');
 
 async function transitionPlacement(p, newStatus) {
   const oldStatus = p.status;

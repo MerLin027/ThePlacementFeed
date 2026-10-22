@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import { DetailApplyPanel } from '../components/ApplyButton';
+import ApplyModal from '../components/ApplyModal';
+import { useApplyState } from '../hooks/useApplyState';
+import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -15,6 +19,8 @@ const PlacementDetail = () => {
   const [placement, setPlacement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isApplyOpen, setIsApplyOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -36,6 +42,21 @@ const PlacementDetail = () => {
 
     return () => abortController.abort();
   }, [id]);
+
+  // ?apply=1 (from a card, or after login/profile) opens the form once the drive is eligible
+  const applyRequested = searchParams.get('apply') === '1';
+  const applyKind = useApplyState(placement || { _id: id }).kind;
+  const { loading: authLoading } = useAuth();
+  useEffect(() => {
+    // Wait for the session check too, or a logged-in student would look logged out
+    if (!placement || !applyRequested || authLoading) return;
+    if (applyKind === 'apply') setIsApplyOpen(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('apply');
+      return next;
+    }, { replace: true });
+  }, [placement, applyRequested, applyKind, authLoading, setSearchParams]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -127,18 +148,7 @@ const PlacementDetail = () => {
               )}
               <StatusBadge status={placement.status} isPostponed={placement.isPostponed} />
             </div>
-            {placement.formUrl && placement.status !== 'Completed' && (
-              <div className="border-t border-surface-variant mt-xs pt-xs">
-                <a
-                  href={placement.formUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary w-full py-2 mt-auto"
-                >
-                  Apply Now
-                </a>
-              </div>
-            )}
+            <DetailApplyPanel drive={placement} onApply={() => setIsApplyOpen(true)} />
             {/* Timestamp footnote */}
             <div className="border-t border-surface-variant mt-xs pt-xs">
               <p className="font-label-sm text-label-sm text-outline font-normal tracking-normal">
@@ -214,7 +224,7 @@ const PlacementDetail = () => {
                 </span>
                 <span className="font-body-md text-body-md text-on-surface">
                   {placement.eligibility?.cgpa != null
-                    ? `CGPA > ${placement.eligibility.cgpa}${placement.eligibility.backlog != null ? ` (Max ${placement.eligibility.backlog} Backlogs)` : ' (No Active Backlogs)'}`
+                    ? `Min. CGPA ${placement.eligibility.cgpa}${placement.eligibility.backlog != null ? ` (Max ${placement.eligibility.backlog} Backlogs)` : ' (No Active Backlogs)'}`
                     : 'Not specified'}
                 </span>
               </div>
@@ -275,6 +285,10 @@ const PlacementDetail = () => {
 
 
       </div>
+
+      {isApplyOpen && (
+        <ApplyModal drive={placement} isOpen={isApplyOpen} onClose={() => setIsApplyOpen(false)} />
+      )}
     </div>
   );
 };
