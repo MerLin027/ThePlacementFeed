@@ -9,7 +9,7 @@
 
 ---
 
-**[theplacementfeed.vercel.app](https://theplacementfeed.vercel.app)** — Students can browse, filter, and search active/past placement drives. A single authenticated admin manages all drive entries from a protected dashboard.
+**[theplacementfeed.vercel.app](https://theplacementfeed.vercel.app)** — Students can browse, filter, and search active/past placement drives, create an account, and apply to drives in-app. A single authenticated admin manages drives, student accounts and applicants from a protected dashboard.
 
 ---
 
@@ -29,6 +29,7 @@
 | | Mongoose | 8.6 |
 | | node-cron | 4.6 |
 | | JWT + bcryptjs | 9.0 / 2.4 |
+| | ExcelJS (applicant export) | 4.4 |
 | **Database** | MongoDB (local dev) / MongoDB Atlas (prod) | — |
 | **Deployment** | Frontend → Vercel, Backend → Render | — |
 
@@ -39,13 +40,18 @@
 - Browse, search, and filter placement drives by branch, status, CTC range, and keyword
 - Drive detail pages with full JD rendered as Markdown (GFM + sanitized HTML)
 - Selection process steps shown per drive (round name + description)
-- Direct **Apply Now** link on drives that have a registration URL (`formUrl`)
+- Per-drive application mode: external form link (`formUrl`), **in-app application**, or both
 - Timeline view — drives grouped chronologically by month
 - Automatic status transitions (Upcoming → Ongoing → Completed) via daily cron at 00:05 IST; skipped if status was manually overridden
 - Postponed-drive handling — toggle `isPostponed`; status automation resettable per drive
-- Notification polling every 60 s via `GET /api/placements/changes` — toast alerts on new, edited, postponed, or status-changed drives; persisted in `localStorage`, synced across tabs
-- Admin dashboard — create, edit, delete drives; protected by JWT in httpOnly cookie (3 h session)
-- Security hardened: Helmet, CORS, rate-limiting, CSRF origin checks, input sanitization, ReDoS-safe search
+- Notification polling every 20 s via `GET /api/placements/changes` — toast alerts on new, edited, postponed, or status-changed drives; persisted in `localStorage`, synced across tabs
+- **Student accounts** — sign up with email + roll number (one account each, can't be changed later), profile with academic details, change password; 7-day session in its own httpOnly cookie
+- **In-app applications** — eligibility checked server-side (status, postponed, deadline, branch, CGPA, backlogs, profile completeness); profile is snapshotted at submission; optional per-drive questions; students see their application status
+- Admin dashboard — create, edit, delete drives (deleting a drive also deletes its applications); protected by JWT in httpOnly cookie (3 h session)
+- **Admin applicants page** per drive — filter, sort, change status (single or bulk), private notes, and **Excel export** (formula-injection safe)
+- **Admin students page** — search students, reset a password to the default, or delete an account (applications are kept with personal details removed)
+- Branches are shown by full name (e.g. *Information Technology*) and stored as short codes (`IT`)
+- Security hardened: Helmet, CORS, rate-limiting, exact-origin CSRF checks, input validation + allowlists, separate admin/student sessions with token revocation, audit log for admin account/export actions, ReDoS-safe search
 
 ---
 
@@ -87,6 +93,8 @@ npm run dev               # → http://localhost:5173
 | `ADMIN_USERNAME` | initial seed only | Used once on first boot to create admin |
 | `ADMIN_PASSWORD` | initial seed only | Used once on first boot to create admin |
 | `PORT` | auto-set by Render | Defaults to 5000 |
+| `CRON_SECRET` | optional | Bearer token for `GET /api/cron/trigger`; endpoint is disabled when unset |
+| `DEFAULT_STUDENT_PASSWORD` | optional | Temporary password set when the admin resets a student account. Defaults to `college123` |
 
 **Client** (`client/.env`):
 
@@ -95,6 +103,17 @@ npm run dev               # → http://localhost:5173
 | `VITE_API_URL` | ✅ |
 
 The server auto-creates the admin account on first boot from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. After rotating credentials with `node scripts/resetAdmin.js`, those two vars can be dropped from the environment.
+
+### Student accounts & password resets
+
+There is no email sending. A student who forgets their password asks the CDPC admin, who resets it from **Students** in the admin dashboard. The account then gets the default password (`DEFAULT_STUDENT_PASSWORD`), which:
+
+- works for **72 hours** only,
+- signs the student out of every device when it's set,
+- only lets the student reach the change-password screen until they pick a new password (enforced by the API, not just the UI),
+- can't be kept as the new password.
+
+Hand the temporary password to the student in person.
 
 > **Render cold starts:** The free tier spins down after inactivity — first request may take 30–50 s. The app shows a loading state during this time.
 
@@ -107,20 +126,26 @@ ThePlacementFeed/
 ├── client/                  # Vite + React frontend
 │   ├── public/              # Static assets (logo, favicons)
 │   └── src/
-│       ├── api/             # Axios instance + 401 interceptor
-│       ├── context/         # AuthContext, NotificationContext
-│       ├── hooks/           # usePlacementsFetch
+│       ├── api/             # Axios instance + session-expiry interceptor
+│       ├── constants/       # Branch names, application statuses
+│       ├── context/         # AuthContext (admin + student), NotificationContext, MyApplicationsContext
+│       ├── hooks/           # usePlacementsFetch, useApplyState
+│       ├── utils/           # Apply-state rules, IST dates, form errors, safe redirects
 │       ├── components/
 │       │   ├── Layout/      # Navbar, Footer
 │       │   ├── Notifications/ # NotificationBell
-│       │   └── ...          # FilterBar, PlacementCard, PlacementForm, etc.
-│       └── pages/           # Home, PlacementDetail, Timeline, AdminDashboard, AdminLogin
+│       │   └── ...          # ApplyButton, ApplyModal, Applicant*, RequireRole, PlacementForm, etc.
+│       └── pages/           # Home, PlacementDetail, Timeline, Student*, ChangePassword, Admin*
 └── server/                  # Express API
     ├── config/              # DB connection, admin seed
+    ├── constants/           # Auth settings, branch codes + names
     ├── jobs/                # node-cron status transition job
-    ├── middleware/          # Auth, CSRF, validation, error handler
-    ├── models/              # Placement, Admin schemas
-    ├── routes/              # /api/placements, /api/auth
+    ├── middleware/          # requireAdmin, requireStudent, CSRF, validation, error handler
+    ├── models/              # Placement, Admin, Student, Application
+    ├── routes/              # /api/auth, /api/placements (+ /:driveId/applicants), /api/students,
+    │                        # /api/applications, /api/admin/students
+    ├── services/            # Application eligibility rules
+    ├── utils/               # Cookies, sessions, IST dates, audit log, regex escaping
     └── scripts/             # resetAdmin.js (credential rotation)
 ```
 

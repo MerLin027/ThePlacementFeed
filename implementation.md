@@ -1,6 +1,6 @@
 # Implementation Plan — Student Accounts, In-App Applications & Admin Management
 
-> **Status: FINAL DRAFT (v3) — awaiting go-ahead. No application code has been written.**
+> **Status: IMPLEMENTED (2026-10-22).** Phases 1–6 shipped as commits `a74da19`, `47cc679`, `f3372b6`, `5e4c88b`, `49bec59` and the Phase 6 wrap-up commit. Details per phase are in `HISTORY.md`. The text below is the v3 plan with implementation notes added inline.
 > v3 = v2 plus your latest requests: **email verification removed entirely**, a mellow "one account per email/roll number" warning, and an **admin Students page** (list, reset password to `college123`, delete account). All paths were checked against the repo on 2026-10-22.
 > **Process rules:** one git commit at the end of each phase; update `HISTORY.md` each phase (`.agents/AGENTS.md` rule); update the Obsidian vault notes after the last phase.
 
