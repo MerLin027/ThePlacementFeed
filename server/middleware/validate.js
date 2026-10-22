@@ -79,12 +79,20 @@ const placementValidationRules = [
   body('deadline')
     .optional({ values: 'null' })
     .isISO8601()
-    .withMessage('Deadline must be a valid date'),
+    .withMessage('Deadline must be a valid date')
+    .bail()
+    .custom((value, { req }) => {
+      const driveDate = req.body.driveDate;
+      if (!value || !driveDate) return true;
+      return new Date(value).getTime() <= new Date(driveDate).getTime();
+    })
+    .withMessage('Deadline cannot be after the drive date'),
 
+  // "auto" = status follows the dates; a real status pins it manually
   body('status')
     .optional()
-    .isIn(VALID_STATUSES)
-    .withMessage(`Status must be one of: ${VALID_STATUSES.join(', ')}`),
+    .isIn(['auto', ...VALID_STATUSES])
+    .withMessage(`Status must be auto or one of: ${VALID_STATUSES.join(', ')}`),
 
   body('jdDescription')
     .optional()
@@ -129,12 +137,6 @@ const placementValidationRules = [
     .optional()
     .isBoolean()
     .withMessage('isPostponed must be a boolean')
-    .toBoolean(),
-
-  body('statusManuallySet')
-    .optional()
-    .isBoolean()
-    .withMessage('statusManuallySet must be a boolean')
     .toBoolean(),
 
   body('applicationMode')

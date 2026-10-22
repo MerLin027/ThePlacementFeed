@@ -30,7 +30,7 @@ const PlacementCard = ({ placement }) => {
         <div className="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
           <span className="material-symbols-outlined text-[18px]">engineering</span>
           <span className="truncate" title={eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : undefined}>
-            {eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'Multiple Branches'}
+            {eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'All branches'}
           </span>
         </div>
       );

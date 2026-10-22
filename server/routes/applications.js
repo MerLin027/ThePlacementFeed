@@ -5,6 +5,7 @@ const Placement = require('../models/Placement');
 const Student = require('../models/Student');
 const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudent } = require('../middleware/requireStudent');
+const { freshStatuses } = require('../jobs/statusCron');
 const { applicationSubmitRules, validate } = require('../middleware/validate');
 const {
   checkApplicationRules,
@@ -50,6 +51,7 @@ router.post(
   csrfCheck,
   requireStudent,
   applyLimiter,
+  freshStatuses,
   applicationSubmitRules,
   validate,
   async (req, res, next) => {

@@ -17,6 +17,7 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const crypto = require('crypto');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -100,8 +101,10 @@ app.get('/api/cron/trigger', cronLimiter, async (req, res) => {
     return res.status(503).json({ success: false, message: 'Cron endpoint is not configured.' });
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+  // Compare fixed-length digests in constant time so response timing doesn't leak the secret
+  const digest = (value) => crypto.createHash('sha256').update(String(value)).digest();
+  const authHeader = req.headers.authorization || '';
+  if (!crypto.timingSafeEqual(digest(authHeader), digest(`Bearer ${cronSecret}`))) {
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
 

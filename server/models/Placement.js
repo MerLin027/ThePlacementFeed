@@ -136,6 +136,11 @@ const placementSchema = new mongoose.Schema(
         type: String,
         enum: ['new', 'statusChange', 'postponed', 'unpostponed', 'edit', 'automationReset'],
       },
+      // Status after this change (lets notifications say "now Ongoing")
+      status: {
+        type: String,
+        enum: ['Upcoming', 'Ongoing', 'Completed'],
+      },
       changedAt: {
         type: Date,
         default: Date.now,

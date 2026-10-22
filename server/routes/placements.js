@@ -9,6 +9,8 @@ const { placementValidationRules, postponeValidationRules, resetStatusValidation
 const router = express.Router();
 
 const { escapeRegex } = require('../utils/escapeRegex');
+const { applyAutoStatus } = require('../utils/driveStatus');
+const { freshStatuses } = require('../jobs/statusCron');
 const applicantRoutes = require('./applicants');
 
 // Admin applicant management for a drive (auth enforced inside the sub-router)
@@ -41,7 +43,7 @@ const mutateLimiter = rateLimit({
 });
 
 // GET /api/placements — public, paginated, filterable
-router.get('/', apiLimiter, async (req, res, next) => {
+router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
 
   try {
     const { branch, status, ctcMin, ctcMax, search, sort, page, limit } =
@@ -149,7 +151,7 @@ router.get('/', apiLimiter, async (req, res, next) => {
 });
 
 // GET /api/placements/changes — public, get recent changes since a timestamp
-router.get('/changes', apiLimiter, async (req, res, next) => {
+router.get('/changes', apiLimiter, freshStatuses, async (req, res, next) => {
   try {
     const { since } = req.query;
     if (!since) {
@@ -184,6 +186,7 @@ router.get('/changes', apiLimiter, async (req, res, next) => {
             company: placement.company,
             role: placement.role,
             type: change.type,
+            status: change.status,
             changedAt: change.changedAt,
           });
         }
@@ -201,7 +204,7 @@ router.get('/changes', apiLimiter, async (req, res, next) => {
 });
 
 // GET /api/placements/:id — public
-router.get('/:id', apiLimiter, async (req, res, next) => {
+router.get('/:id', apiLimiter, freshStatuses, async (req, res, next) => {
   try {
     const placement = await Placement.findById(req.params.id).lean();
     if (!placement) {
@@ -216,6 +219,57 @@ router.get('/:id', apiLimiter, async (req, res, next) => {
   }
 });
 
+// --- Writes ---
+
+// Fields an admin may set through the drive form. Everything else (status
+// automation flag, change log, timestamps) is server-managed.
+const EDITABLE_FIELDS = [
+  'company', 'role', 'type', 'ctc', 'eligibility', 'driveDate', 'deadline',
+  'isPostponed', 'jdDescription', 'tags', 'formUrl', 'selectionRounds',
+  'applicationMode', 'customPrompts',
+];
+
+const pickEditable = (body) => {
+  const data = {};
+  for (const field of EDITABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) data[field] = body[field];
+  }
+  return data;
+};
+
+/**
+ * Status mode from the form: "auto" (or omitted on create) means the status
+ * follows the dates; one of the real statuses pins it manually.
+ * Returns { manual, status } or null to keep the current mode (edit without a status).
+ */
+const resolveStatusMode = (status, isCreate) => {
+  if (status === undefined || status === null || status === '') {
+    return isCreate ? { manual: false } : null;
+  }
+  if (status === 'auto') return { manual: false };
+  return { manual: true, status };
+};
+
+const MAX_RECENT_CHANGES = 10;
+
+const logChange = (doc, type) => {
+  doc.recentChanges.push({ type, status: doc.status, changedAt: new Date() });
+  if (doc.recentChanges.length > MAX_RECENT_CHANGES) {
+    doc.recentChanges.splice(0, doc.recentChanges.length - MAX_RECENT_CHANGES);
+  }
+};
+
+// Applies the status mode, then recomputes the automatic status from the dates
+const applyStatusMode = (doc, mode) => {
+  if (mode?.manual) {
+    doc.statusManuallySet = true;
+    doc.status = mode.status;
+  } else if (mode) {
+    doc.statusManuallySet = false;
+  }
+  applyAutoStatus(doc);
+};
+
 // POST /api/placements — auth required
 router.post(
   '/',
@@ -226,14 +280,12 @@ router.post(
   validate,
   async (req, res, next) => {
     try {
-      const placementData = { ...req.body };
-      // statusManuallySet is a server-computed field; strip it from the
-      // create payload so a caller cannot lock automation off at birth.
-      delete placementData.statusManuallySet;
-      placementData.recentChanges = [{ type: 'new', changedAt: new Date() }];
-      
-      const placement = await Placement.create(placementData);
-      res.status(201).json({ success: true, data: placement });
+      const doc = new Placement(pickEditable(req.body));
+      applyStatusMode(doc, resolveStatusMode(req.body.status, true));
+      logChange(doc, 'new');
+      // save() runs full schema validation, including deadline <= driveDate
+      await doc.save();
+      res.status(201).json({ success: true, data: doc });
     } catch (error) {
       next(error);
     }
@@ -250,64 +302,31 @@ router.put(
   validate,
   async (req, res, next) => {
     try {
-      const existingPlacement = await Placement.findById(req.params.id);
-      if (!existingPlacement) {
+      const doc = await Placement.findById(req.params.id);
+      if (!doc) {
         return res.status(404).json({
           success: false,
           message: 'Placement not found',
         });
       }
 
-      const updateData = { ...req.body };
-      delete updateData.recentChanges;
-      delete updateData._id;
-      delete updateData.__v;
-      delete updateData.createdAt;
-      delete updateData.updatedAt;
+      const previousStatus = doc.status;
+      const wasPostponed = Boolean(doc.isPostponed);
+      doc.set(pickEditable(req.body));
+      applyStatusMode(doc, resolveStatusMode(req.body.status, false));
 
-      let statusChanged = false;
-      if (updateData.status && updateData.status !== existingPlacement.status) {
-        statusChanged = true;
-        updateData.statusManuallySet = true;
-      }
-
-      const changeType = statusChanged ? 'statusChange' : 'edit';
-
-      const placement = await Placement.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: updateData,
-          $push: {
-            recentChanges: {
-              $each: [{ type: changeType, changedAt: new Date() }],
-              $slice: -10,
-            },
-          },
-        },
-        { new: true, runValidators: true }
-      );
-      res.json({ success: true, data: placement });
+      // One log entry per save, describing the most meaningful change
+      let changeType = 'edit';
+      if (Boolean(doc.isPostponed) !== wasPostponed) changeType = doc.isPostponed ? 'postponed' : 'unpostponed';
+      else if (doc.status !== previousStatus) changeType = 'statusChange';
+      logChange(doc, changeType);
+      await doc.save();
+      res.json({ success: true, data: doc });
     } catch (error) {
       next(error);
     }
   }
 );
-
-const updatePlacementWithLog = async (id, setFields, changeType) => {
-  return await Placement.findByIdAndUpdate(
-    id,
-    {
-      $set: setFields,
-      $push: {
-        recentChanges: {
-          $each: [{ type: changeType, changedAt: new Date() }],
-          $slice: -10,
-        },
-      },
-    },
-    { new: true, runValidators: true }
-  );
-};
 
 // PATCH /api/placements/:id/postpone — lightweight toggle, auth required
 router.patch(
@@ -319,23 +338,27 @@ router.patch(
   validate,
   async (req, res, next) => {
     try {
-      const changeType = req.body.isPostponed ? 'postponed' : 'unpostponed';
-      const placement = await updatePlacementWithLog(req.params.id, { isPostponed: req.body.isPostponed }, changeType);
-      
-      if (!placement) {
+      const doc = await Placement.findById(req.params.id);
+      if (!doc) {
         return res.status(404).json({
           success: false,
           message: 'Placement not found',
         });
       }
-      res.json({ success: true, data: placement });
+
+      doc.isPostponed = req.body.isPostponed;
+      // Un-postponing hands the drive back to automation, which may have moved on
+      applyAutoStatus(doc);
+      logChange(doc, req.body.isPostponed ? 'postponed' : 'unpostponed');
+      await doc.save();
+      res.json({ success: true, data: doc });
     } catch (error) {
       next(error);
     }
   }
 );
 
-// PATCH /api/placements/:id/reset-status-automation — lightweight toggle, auth required
+// PATCH /api/placements/:id/reset-status-automation — restore (false) or pin (true), auth required
 router.patch(
   '/:id/reset-status-automation',
   mutateLimiter,
@@ -345,15 +368,20 @@ router.patch(
   validate,
   async (req, res, next) => {
     try {
-      const placement = await updatePlacementWithLog(req.params.id, { statusManuallySet: req.body.statusManuallySet }, 'automationReset');
-      
-      if (!placement) {
+      const doc = await Placement.findById(req.params.id);
+      if (!doc) {
         return res.status(404).json({
           success: false,
           message: 'Placement not found',
         });
       }
-      res.json({ success: true, data: placement });
+
+      doc.statusManuallySet = req.body.statusManuallySet;
+      // Restoring automation takes effect immediately, not at the next cron run
+      applyAutoStatus(doc);
+      logChange(doc, 'automationReset');
+      await doc.save();
+      res.json({ success: true, data: doc });
     } catch (error) {
       next(error);
     }

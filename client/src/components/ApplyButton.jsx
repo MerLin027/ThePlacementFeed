@@ -118,8 +118,9 @@ export const DetailApplyPanel = ({ drive, onApply }) => {
   const navigate = useNavigate();
   const state = useApplyState(drive);
   const returnTo = encodeURIComponent(`/placement/${drive._id}?apply=1`);
+  // The external alternative is only offered while applying is actually open
   const showExternalAlt =
-    drive.applicationMode === 'both' && drive.formUrl && drive.status !== 'Completed' && state.kind !== 'applied';
+    drive.applicationMode === 'both' && drive.formUrl && ['apply', 'login', 'completeProfile'].includes(state.kind);
 
   let primary = null;
   switch (state.kind) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import BranchSelect from './BranchSelect';
 import TagInput from './TagInput';
+import { computeAutoStatus } from '../utils/driveStatus';
 
 const INITIAL_FORM = {
   company: '',
@@ -14,7 +15,8 @@ const INITIAL_FORM = {
   },
   driveDate: '',
   deadline: '',
-  status: 'Upcoming',
+  // 'auto' = status follows the dates; a real status pins it manually
+  status: 'auto',
   isPostponed: false,
   jdDescription: '',
   tags: [],
@@ -55,7 +57,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         deadline: initialData.deadline
           ? new Date(initialData.deadline).toISOString().split('T')[0]
           : '',
-        status: initialData.status || 'Upcoming',
+        status: initialData.statusManuallySet ? initialData.status || 'Upcoming' : 'auto',
         isPostponed: initialData.isPostponed ?? false,
         jdDescription: initialData.jdDescription || '',
         tags: initialData.tags || [],
@@ -161,11 +163,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           .map((p) => ({ question: p.question.trim(), required: p.required })),
       };
 
-      // Set statusManuallySet if status was explicitly changed
-      const originalStatus = initialData ? initialData.status : INITIAL_FORM.status;
-      if (form.status !== originalStatus) {
-        payload.statusManuallySet = true;
-      }
 
       await onSubmit(payload);
     } catch (err) {
@@ -240,16 +237,24 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           />
         </div>
         <div>
-          <label className="label">Status</label>
+          <label htmlFor="placement-status" className="label">Status</label>
           <select
+            id="placement-status"
             value={form.status}
             onChange={(e) => handleChange('status', e.target.value)}
+            aria-describedby="placement-status-help"
             className="select-field"
           >
-            <option value="Upcoming">Upcoming</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Completed">Completed</option>
+            <option value="auto">Automatic ({computeAutoStatus(form) || 'Upcoming'})</option>
+            <option value="Upcoming">Upcoming (fixed)</option>
+            <option value="Ongoing">Ongoing (fixed)</option>
+            <option value="Completed">Completed (fixed)</option>
           </select>
+          <p id="placement-status-help" className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+            {form.status === 'auto'
+              ? 'Follows the dates: Ongoing after the deadline, Completed after the drive date.'
+              : "Fixed — dates won't change it until you switch back to Automatic."}
+          </p>
         </div>
       </div>
 

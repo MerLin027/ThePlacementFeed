@@ -17,10 +17,11 @@ export const getApplyState = ({ drive, student, application }) => {
 
   const mode = drive.applicationMode || 'external';
   const inApp = mode === 'in_app' || mode === 'both';
-  if (!inApp) {
-    return drive.formUrl ? { kind: 'external' } : { kind: 'none' };
+  if (!inApp && !drive.formUrl) {
+    return { kind: 'none' };
   }
 
+  // Closed states apply to the external form too, not just in-app applications
   if (drive.isPostponed) {
     return {
       kind: 'blocked',
@@ -34,6 +35,9 @@ export const getApplyState = ({ drive, student, application }) => {
       label: 'Deadline passed',
       reason: 'The application deadline for this drive has passed.',
     };
+  }
+  if (!inApp) {
+    return { kind: 'external' };
   }
   if (!student) {
     return { kind: 'login' };

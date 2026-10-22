@@ -260,7 +260,7 @@ const AdminDashboard = () => {
                         <button
                           onClick={() => handleResetStatusAutomation(p)}
                           disabled={!!toggling[p._id]}
-                          title="Status was manually set. Click to restore automatic updates."
+                          title="Status is fixed by hand. Click to let it follow the dates again."
                           className="mt-2 inline-flex flex-col items-start gap-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span className="flex items-center gap-1">
@@ -272,7 +272,7 @@ const AdminDashboard = () => {
                             ) : (
                               <span className="material-symbols-outlined text-[12px]">restart_alt</span>
                             )}
-                            Reset Auto Status
+                            Use automatic status
                           </span>
                         </button>
                       )}

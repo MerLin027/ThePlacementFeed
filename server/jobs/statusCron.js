@@ -1,104 +1,101 @@
 const cron = require('node-cron');
 const Placement = require('../models/Placement');
 const { getStartOfTodayIST } = require('../utils/dates');
+const { computeAutoStatus } = require('../utils/driveStatus');
 
-async function transitionPlacement(p, newStatus) {
-  const oldStatus = p.status;
-  p.status = newStatus;
-  p.recentChanges = p.recentChanges || [];
-  p.recentChanges.push({ type: 'statusChange', changedAt: new Date() });
-  if (p.recentChanges.length > 10) {
-    p.recentChanges.shift();
-  }
-  await p.save();
-  console.log(`[Cron] Transitioned Placement ID ${p._id} from ${oldStatus} to ${newStatus} at ${new Date().toISOString()}`);
-}
+const MAX_RECENT_CHANGES = 10;
 
+// IST day (UTC-midnight timestamp) of the last successful run
+let lastRunDay = null;
+let inFlight = null;
+
+/**
+ * Brings every automated drive's status in line with its dates — in either
+ * direction, so an extended deadline moves a drive back to Upcoming.
+ * Skips drives whose status the admin pinned and drives that are postponed.
+ * Idempotent: running it twice in a row changes nothing the second time.
+ */
 async function runStatusTransitionJob() {
+  const today = getStartOfTodayIST();
   console.log('[Cron] Starting placement status transition job...');
-  try {
-    const today = getStartOfTodayIST();
-    
-    // 1. Log warnings for anomalous data (deadline > driveDate)
-    const anomalousPlacements = await Placement.find({
-      deadline: { $exists: true, $ne: null },
-      driveDate: { $exists: true, $ne: null },
-      $expr: { $gt: ['$deadline', '$driveDate'] },
-    });
 
-    for (const p of anomalousPlacements) {
-      console.warn(`[Cron] WARNING: Placement ID ${p._id} (${p.company}) has deadline (${p.deadline.toISOString()}) after driveDate (${p.driveDate.toISOString()}). Data entry error, skipping automation.`);
-    }
+  const candidates = await Placement.find({
+    statusManuallySet: { $ne: true },
+    isPostponed: { $ne: true },
+    $or: [{ deadline: { $ne: null } }, { driveDate: { $ne: null } }],
+  })
+    .select('status deadline driveDate company')
+    .lean();
 
-    const anomalousIds = anomalousPlacements.map(p => p._id);
+  let changed = 0;
+  for (const p of candidates) {
+    const target = computeAutoStatus(p, today);
+    if (!target || target === p.status) continue;
 
-    // 2. Upcoming -> Ongoing
-    // Triggered when deadline passes, OR if deadline missing, when driveDate passes.
-    const upcomingToOngoing = await Placement.find({
-      status: 'Upcoming',
-      statusManuallySet: { $ne: true },
-      _id: { $nin: anomalousIds },
-      $or: [
-        { deadline: { $lt: today, $ne: null } },
-        { 
-          $and: [
-            { deadline: null },
-            { driveDate: { $lt: today, $ne: null } }
-          ]
+    // Conditional update: skip if an admin changed the drive since we read it
+    const result = await Placement.updateOne(
+      { _id: p._id, status: p.status, statusManuallySet: { $ne: true }, isPostponed: { $ne: true } },
+      {
+        $set: { status: target },
+        $push: {
+          recentChanges: {
+            $each: [{ type: 'statusChange', status: target, changedAt: new Date() }],
+            $slice: -MAX_RECENT_CHANGES,
+          },
         },
-        { 
-          $and: [
-            { deadline: { $exists: false } },
-            { driveDate: { $lt: today, $ne: null } }
-          ]
-        }
-      ]
-    });
-
-    for (const p of upcomingToOngoing) {
-      await transitionPlacement(p, 'Ongoing');
+      }
+    );
+    if (result.modifiedCount === 1) {
+      changed += 1;
+      console.log(`[Cron] ${p._id} (${p.company}): ${p.status} -> ${target}`);
     }
-
-    // 3. Ongoing -> Completed
-    // Triggered when driveDate passes. (If missing, it doesn't auto-trigger).
-    const ongoingToCompleted = await Placement.find({
-      status: 'Ongoing',
-      statusManuallySet: { $ne: true },
-      _id: { $nin: anomalousIds },
-      driveDate: { $lt: today, $ne: null }
-    });
-
-    for (const p of ongoingToCompleted) {
-      await transitionPlacement(p, 'Completed');
-    }
-
-    console.log('[Cron] Placement status transition job completed successfully.');
-  } catch (error) {
-    console.error('[Cron] Error running status transition job:', error);
   }
+
+  lastRunDay = today.getTime();
+  console.log(`[Cron] Status transition job finished: ${changed} drive(s) updated.`);
+  return changed;
 }
 
-// Schedule the job to run once daily at 00:05 IST
-// node-cron supports timezone option.
+/**
+ * Runs the job once per IST day, on demand. Render's free tier sleeps through
+ * midnight, so the scheduled run often never fires; calling this before serving
+ * drive data guarantees statuses are current for the first request of the day.
+ * Concurrent callers share one run.
+ */
+function ensureStatusesFresh() {
+  if (lastRunDay === getStartOfTodayIST().getTime()) return Promise.resolve();
+  if (!inFlight) {
+    inFlight = runStatusTransitionJob().finally(() => {
+      inFlight = null;
+    });
+  }
+  return inFlight;
+}
+
+// Express middleware: refresh statuses before handling, but never block the request on failure
+const freshStatuses = async (req, res, next) => {
+  try {
+    await ensureStatusesFresh();
+  } catch (error) {
+    console.error('[Cron] On-demand status refresh failed:', error.message);
+  }
+  next();
+};
+
+// Schedule the job once daily at 00:05 IST, plus a catch-up run at startup.
 function initCronJobs() {
   console.log('[Cron] Initializing cron jobs...');
-  // Runs every day at 00:05 in Asia/Kolkata
-  cron.schedule('5 0 * * *', runStatusTransitionJob, {
+  cron.schedule('5 0 * * *', () => {
+    runStatusTransitionJob().catch((err) => console.error('[Cron] Scheduled job failed:', err));
+  }, {
     scheduled: true,
-    timezone: 'Asia/Kolkata'
+    timezone: 'Asia/Kolkata',
   });
-  
-  // Run immediately on startup to catch up on any missed transitions.
-  // On Render, the server may be sleeping at midnight, so the scheduled cron above may
-  // never fire. This startup run acts as the primary catch-up mechanism.
-  // The /api/cron/trigger HTTP endpoint handles subsequent daily triggers via an external
-  // scheduler (e.g. cron-job.org, Render cron, UptimeRobot).
+
   console.log('[Cron] Running startup catch-up job...');
-  runStatusTransitionJob().then(() => {
-    console.log('[Cron] Startup catch-up job finished.');
-  }).catch((err) => {
-    console.error('[Cron] Startup catch-up job failed:', err);
-  });
+  ensureStatusesFresh()
+    .then(() => console.log('[Cron] Startup catch-up job finished.'))
+    .catch((err) => console.error('[Cron] Startup catch-up job failed:', err));
 }
 
-module.exports = { initCronJobs, runStatusTransitionJob };
+module.exports = { initCronJobs, runStatusTransitionJob, ensureStatusesFresh, freshStatuses };
