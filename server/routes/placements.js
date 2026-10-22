@@ -9,6 +9,10 @@ const { placementValidationRules, postponeValidationRules, resetStatusValidation
 const router = express.Router();
 
 const { escapeRegex } = require('../utils/escapeRegex');
+const applicantRoutes = require('./applicants');
+
+// Admin applicant management for a drive (auth enforced inside the sub-router)
+router.use('/:driveId/applicants', applicantRoutes);
 
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
 

@@ -7,6 +7,7 @@ const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
 const { adminStudentListRules, mongoIdParam, validate } = require('../middleware/validate');
 const { escapeRegex } = require('../utils/escapeRegex');
+const { logAdminAction } = require('../utils/auditLog');
 const {
   BCRYPT_COST,
   DEFAULT_STUDENT_PASSWORD,
@@ -35,20 +36,6 @@ const actionLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Audit trail for account actions: who, what, which account — never emails or passwords
-const logAdminAction = (req, action, studentId) => {
-  console.info(
-    '[AdminAction]',
-    JSON.stringify({
-      action,
-      adminId: req.admin.id,
-      studentId: studentId.toString(),
-      ip: req.ip,
-      at: new Date().toISOString(),
-    })
-  );
-};
 
 const SORTS = {
   newest: { createdAt: -1 },
@@ -138,7 +125,7 @@ router.post(
         return res.status(404).json({ success: false, message: 'Student not found' });
       }
 
-      logAdminAction(req, 'student.resetPassword', student._id);
+      logAdminAction(req, 'student.resetPassword', { studentId: student._id.toString() });
       // The password itself is never returned
       res.json({
         success: true,
@@ -179,7 +166,7 @@ router.delete('/:id', actionLimiter, csrfCheck, mongoIdParam('id'), validate, as
 
     await Student.deleteOne({ _id: student._id });
 
-    logAdminAction(req, 'student.delete', student._id);
+    logAdminAction(req, 'student.delete', { studentId: student._id.toString() });
     res.json({
       success: true,
       message: 'Account deleted',

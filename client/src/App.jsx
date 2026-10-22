@@ -17,6 +17,7 @@ import StudentSignup from './pages/StudentSignup';
 import StudentProfile from './pages/StudentProfile';
 import ChangePassword from './pages/ChangePassword';
 import AdminStudents from './pages/AdminStudents';
+import AdminApplicants from './pages/AdminApplicants';
 
 function App() {
   return (
@@ -56,6 +57,14 @@ function App() {
                 element={
                   <RequireRole role="admin">
                     <AdminDashboard />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/admin/drives/:driveId/applicants"
+                element={
+                  <RequireRole role="admin">
+                    <AdminApplicants />
                   </RequireRole>
                 }
               />

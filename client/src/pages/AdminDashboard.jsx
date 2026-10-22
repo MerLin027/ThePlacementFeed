@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import PlacementForm from '../components/PlacementForm';
@@ -285,6 +286,14 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-sm py-sm text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Link
+                          to={`/admin/drives/${p._id}/applicants`}
+                          className="p-2 text-outline hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                          title="Applicants"
+                          aria-label={`Applicants for ${p.company}`}
+                        >
+                          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">group</span>
+                        </Link>
                         <button
                           onClick={() => openEdit(p)}
                           className="p-2 text-outline hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"

@@ -6,6 +6,7 @@ const {
   INSTITUTES,
 } = require('../constants/auth');
 const { BRANCHES } = require('../constants/branches');
+const { APPLICATION_STATUSES } = require('../models/Application');
 
 const isHttpsUrl = (value) => {
   try {
@@ -371,6 +372,53 @@ const adminStudentListRules = [
 
 const mongoIdParam = (name) => [param(name).isMongoId().withMessage('Invalid ID')];
 
+// --- Admin: applicants ---
+
+const APPLICANT_SORTS = ['newest', 'oldest', 'cgpa_desc', 'cgpa_asc', 'name', 'roll'];
+
+// Filters shared by the applicant list and the export
+const applicantFilterRules = [
+  query('status').optional().isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
+  query('branch').optional().isIn(BRANCHES).withMessage('Unknown branch'),
+  query('cgpaMin').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMin must be between 0 and 10').toFloat(),
+  query('cgpaMax').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMax must be between 0 and 10').toFloat(),
+  query('search')
+    .optional()
+    .isString()
+    .withMessage('search must be text')
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('search cannot exceed 100 characters'),
+  query('sort').optional().isIn(APPLICANT_SORTS).withMessage(`sort must be one of: ${APPLICANT_SORTS.join(', ')}`),
+];
+
+const applicantListRules = [
+  ...applicantFilterRules,
+  query('page').optional().isInt({ min: 1, max: 10000 }).withMessage('page must be a positive integer').toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100').toInt(),
+];
+
+const applicantUpdateRules = [
+  body('status').optional().isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
+  body('adminNote')
+    .optional()
+    .isString()
+    .withMessage('Note must be text')
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Note cannot exceed 1000 characters'),
+  body().custom((value) => value && (value.status !== undefined || value.adminNote !== undefined))
+    .withMessage('Nothing to update'),
+];
+
+const applicantBulkRules = [
+  body('applicationIds')
+    .isArray({ min: 1, max: 100 })
+    .withMessage('Select between 1 and 100 applicants'),
+  body('applicationIds.*').isMongoId().withMessage('Invalid applicant'),
+  body('status').isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
+];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -398,5 +446,9 @@ module.exports = {
   applicationSubmitRules,
   adminStudentListRules,
   mongoIdParam,
+  applicantFilterRules,
+  applicantListRules,
+  applicantUpdateRules,
+  applicantBulkRules,
   validate,
 };
