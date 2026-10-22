@@ -5,6 +5,15 @@ const {
   DEFAULT_STUDENT_PASSWORD,
   INSTITUTES,
 } = require('../constants/auth');
+const { BRANCHES } = require('../constants/branches');
+
+const isHttpsUrl = (value) => {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 const VALID_TYPES = ['Full-Time', 'Internship', '6M Intern + FTE'];
 const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
@@ -199,6 +208,76 @@ const studentLoginRules = [
     .withMessage('Password is required'),
 ];
 
+// --- Student profile ---
+// Every field is optional; an empty string (or null for numbers) clears it.
+
+const NAME_PATTERN = /^[\p{L}\p{M} .'-]+$/u;
+
+const optionalName = (field, label) =>
+  body(field)
+    .optional()
+    .isString()
+    .withMessage(`${label} must be text`)
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage(`${label} cannot exceed 100 characters`)
+    .custom((value) => value === '' || NAME_PATTERN.test(value))
+    .withMessage(`${label} can only contain letters, spaces, dots, hyphens and apostrophes`);
+
+const optionalNumber = (field, { min, max, int }, message) => {
+  const chain = body(field).optional({ values: 'null' });
+  return (int ? chain.isInt({ min, max }) : chain.isFloat({ min, max }))
+    .withMessage(message)
+    .bail()
+    .customSanitizer((value) => (int ? parseInt(value, 10) : parseFloat(value)));
+};
+
+const studentProfileRules = [
+  optionalName('firstName', 'First name'),
+  optionalName('lastName', 'Last name'),
+
+  body('branch')
+    .optional()
+    .isIn(['', ...BRANCHES])
+    .withMessage('Please choose a branch from the list'),
+
+  optionalNumber('cgpa', { min: 0, max: 10 }, 'CGPA must be between 0 and 10'),
+  optionalNumber('activeBacklogs', { min: 0, max: 50, int: true }, 'Active backlogs must be a whole number from 0 to 50'),
+  optionalNumber('historyBacklogs', { min: 0, max: 50, int: true }, 'Backlog history must be a whole number from 0 to 50'),
+  optionalNumber('graduationYear', { min: 2020, max: 2040, int: true }, 'Graduation year must be between 2020 and 2040'),
+
+  body('phone')
+    .optional()
+    .isString()
+    .withMessage('Phone number must be text')
+    .trim()
+    .customSanitizer((value) => value.replace(/[\s-]/g, ''))
+    .custom((value) => value === '' || /^\+?[0-9]{10,15}$/.test(value))
+    .withMessage('Phone number must be 10–15 digits, optionally starting with +'),
+
+  body('resumeUrl')
+    .optional()
+    .isString()
+    .withMessage('Resume link must be text')
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Resume link cannot exceed 500 characters')
+    .custom((value) => value === '' || isHttpsUrl(value))
+    .withMessage('Resume link must be a valid https:// URL'),
+];
+
+const changePasswordRules = [
+  body('currentPassword')
+    .isString()
+    .withMessage('Current password is required')
+    .isLength({ min: 1, max: PASSWORD_MAX_LENGTH })
+    .withMessage('Current password is required'),
+
+  passwordRule('newPassword')
+    .custom((value, { req }) => value !== req.body.currentPassword)
+    .withMessage('Your new password must be different from the current one'),
+];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -221,6 +300,7 @@ module.exports = {
   resetStatusValidationRules,
   studentSignupRules,
   studentLoginRules,
-  passwordRule,
+  studentProfileRules,
+  changePasswordRules,
   validate,
 };

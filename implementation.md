@@ -243,7 +243,7 @@ Every phase ends with: lint/build, the phase's verification (real HTTP/browser c
 
 ### Phase 2 — Frontend auth, profile & password change
 **Scope:** `AuthContext`, `axios.js`, `RequireRole`, Navbar, `StudentLogin/Signup/Profile/ChangePassword`, `/students/me` GET/PATCH and `POST /me/password`, mellow notice (§8.2), `returnTo`, `ProfileCompletionBanner`.
-**Verify (browser):** nav for all three roles; student at `/admin/dashboard` → home; `/profile` logged-out → login → back; `returnTo=//evil.com` ignored; PATCH with `email`/`rollNumber`/`passwordHash` has no effect; password change works, old cookie dies, new password ≠ default enforced; admin and student sessions coexist; 375px mobile has no horizontal scroll; notice text renders on signup and profile.
+**Verify (browser):** nav for all three roles; student at `/admin/dashboard` → `/admin/login` (sessions are independent, so a student is simply "not an admin"); `/profile` logged-out → login → back; `returnTo=//evil.com` ignored; PATCH with `email`/`rollNumber`/`passwordHash` has no effect; password change works, old cookie dies, new password ≠ default enforced; admin and student sessions coexist; 375px mobile has no horizontal scroll; notice text renders on signup and profile.
 
 ### Phase 3 — In-app applications
 **Scope:** `Placement` fields + validators + `PlacementForm` controls; `Application` model; `applications.js`; rules engine; `ApplyButton`, `ApplyModal`; wire into `PlacementCard`/`PlacementDetail`; drive-delete cascade with count in the confirm dialog.

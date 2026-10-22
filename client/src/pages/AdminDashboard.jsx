@@ -9,7 +9,7 @@ import Pagination from '../components/Pagination';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 
 const AdminDashboard = () => {
-  const { logout } = useAuth();
+  const { logoutAdmin } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const { loading, fetchPlacements } = usePlacementsFetch();
@@ -145,7 +145,7 @@ const AdminDashboard = () => {
             </svg>
             Add Placement
           </button>
-          <button onClick={logout} className="btn-secondary gap-2">
+          <button onClick={logoutAdmin} className="btn-secondary gap-2">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -7,7 +7,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isAdmin } = useAuth();
+  const { loginAdmin, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -32,7 +32,7 @@ const AdminLogin = () => {
 
     setIsLoading(true);
     try {
-      await login(username.trim(), password);
+      await loginAdmin(username.trim(), password);
       navigate('/admin/dashboard', { replace: true });
     } catch (err) {
       const msg =

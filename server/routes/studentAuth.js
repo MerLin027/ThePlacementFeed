@@ -1,18 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const Student = require('../models/Student');
 const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudentAllowPending } = require('../middleware/requireStudent');
 const { studentSignupRules, studentLoginRules, validate } = require('../middleware/validate');
-const { getCookieOptions, getClearCookieOptions } = require('../utils/cookies');
-const {
-  STUDENT_COOKIE,
-  STUDENT_SESSION_MS,
-  JWT_ALGORITHM,
-  BCRYPT_COST,
-} = require('../constants/auth');
+const { getClearCookieOptions } = require('../utils/cookies');
+const { issueStudentSession } = require('../utils/studentSession');
+const { STUDENT_COOKIE, BCRYPT_COST } = require('../constants/auth');
 
 const router = express.Router();
 
@@ -60,15 +55,6 @@ const sessionLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const issueSession = (res, student) => {
-  const token = jwt.sign(
-    { sub: student._id.toString(), role: 'student', tv: student.tokenVersion },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d', algorithm: JWT_ALGORITHM }
-  );
-  res.cookie(STUDENT_COOKIE, token, getCookieOptions(STUDENT_SESSION_MS));
-};
-
 const DUPLICATE_ACCOUNT_MESSAGE =
   'An account with these details already exists. If this is you, try logging in — or ask the CDPC admin for help.';
 
@@ -97,7 +83,7 @@ router.post(
         throw error;
       }
 
-      issueSession(res, student);
+      issueStudentSession(res, student);
       res.status(201).json({
         success: true,
         message: 'Account created',
@@ -144,7 +130,7 @@ router.post(
         });
       }
 
-      issueSession(res, student);
+      issueStudentSession(res, student);
       res.json({
         success: true,
         message: 'Login successful',

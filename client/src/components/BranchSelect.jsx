@@ -1,6 +1,4 @@
-const BRANCHES = [
-  'CE', 'IT', 'CS', 'EC', 'EE', 'ME', 'CL', 'IC', 'BME', 'AI/ML', 'CSE', 'Other'
-];
+import { BRANCHES } from '../constants/branches';
 
 const BranchSelect = ({ selected = [], onChange }) => {
   const toggle = (branch) => {
