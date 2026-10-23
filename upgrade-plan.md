@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–6 done (C1 used, C2 not needed, C3 folded into Phase 6); next: Phase 7 (react-router 8).
+**Status:** IN PROGRESS — Phases 0–7 done (C1 used, C2 not needed, C3 folded into Phase 6); next: Phase 8 (final).
 **Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
@@ -291,6 +291,13 @@ existing browser suites).
 
 **Gate:** build OK, full regression green, no console warnings from the router.
 **Commit:** `chore(deps): react-router 8`.
+
+**Result:** no code change. Changelog 8.0.0–8.5.0 checked: every breaking change is in data/framework
+mode (loaders/actions, `meta`, middleware, future flags), the removed `react-router-dom` package, or
+packaging (ESM-only, Node ≥ 22.22). Client `engines` is now `^22.22.0`. Verified on the official
+Node 22.23.4 build (checksum-checked, portable — the user's system Node is untouched): install, build,
+lint, and the full regression with API, Vite and test runners all on 22.23.4 — 741/741; no console
+warnings across guest/student/admin routes. **User action:** update local Node to 22.22+ (22.23.4 LTS).
 
 ## Phase 8 — Final verification, version re-audit, docs, deploy checklist
 
