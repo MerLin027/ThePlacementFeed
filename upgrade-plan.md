@@ -1,10 +1,24 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–5 done (C1 used, C2 not needed); next: Phase 6 (Tailwind CSS 4).
+**Status:** IN PROGRESS — Phases 0–5 done (C1 used, C2 not needed); Phase 6 (Tailwind CSS 4) in progress.
+**Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate
 passes. Nothing is pushed or merged to `main` until the user says so.
+
+## Version policy (user requirement, 2026-10-23)
+
+Only **stable releases**: the version npm publishes under the `latest` dist-tag, with no
+pre-release identifier (`-alpha`, `-beta`, `-rc`, `-pre`, `-next`, `-canary`, nightly or
+experimental builds). `package.json` keeps caret ranges; the lockfile pins the exact versions that
+were tested. Runtime: Node 22 LTS (Render resolves the bounded `engines` range to the latest 22.x).
+
+**Audit (2026-10-23, every direct dependency of client and server):** all installed versions are
+stable `latest` releases — no pre-releases. Two newer stable releases had appeared since the
+inventory: **react-router 8.5.0** (major; v8 has been stable since 8.0.0 on 2026-06-17 — the
+inventory missed it) and **mongoose 9.11.4** (patch). Both are added below. Phase 8 re-runs this
+audit before sign-off so the final state is current.
 
 ## Inventory (from `npm outdated`, 2026-10-23)
 
@@ -24,8 +38,10 @@ passes. Nothing is pushed or merged to `main` until the user says so.
 | express | 4.22.3 | 5.3.0 | **major** |
 | react-markdown | 9.1.0 | 10.1.0 | **major** |
 | tailwindcss | 3.4.19 | 4.3.3 | **major** |
+| react-router | 7.18.4 | 8.5.0 | **major** (added in replan) |
+| mongoose (patch) | 9.11.3 | 9.11.4 | patch (added in replan; taken in Phase 8) |
 
-Everything else (axios, vite, react-router, express-validator, jsonwebtoken, exceljs, node-cron,
+Everything else (axios, vite, express-validator, jsonwebtoken, exceljs, node-cron,
 morgan, cors, cookie-parser, nodemon, …) is already current.
 
 ## What the code audit found (this decides the phases)
@@ -56,7 +72,8 @@ Phase 3  Express 5  (+ sanitiser, body, query handling)
 Phase 4  Mongoose 9 (+ Node pin)
 Phase 5  react-markdown 10 (+ XSS regression)
 Phase 6  Tailwind CSS 4 (6a tooling → 6b theme → 6c classes → 6d visual diff)
-Phase 7  Final verification, docs, deploy checklist
+Phase 7  react-router 8 (+ Node 22.22 prerequisite)            [added in replan]
+Phase 8  Final verification, version re-audit, docs, deploy checklist
 --- contingency phases, only if the trigger happens ---
 Phase C1  Replace express-mongo-sanitize        (trigger: it fails on Express 5)
 Phase C2  Read validated query via matchedData  (trigger: .toInt() on req.query fails)
@@ -238,15 +255,40 @@ targets ≥ 44 px; no horizontal scroll; no console errors; `npm audit` shows th
 **Gate:** zero unexplained visual diffs, axe clean, build size not materially larger, audit clean.
 **Commit:** `chore(deps): tailwind css 4 (css-first theme)`.
 
-## Phase 7 — Final verification, docs, deploy checklist
+## Phase 7 — react-router 8  (added in replan)
 
+**Prerequisite:** react-router 8 requires **Node ≥ 22.22.0** (and React ≥ 19.2.7 ✔, ESM-only ✔
+under Vite). The local machine has Node 22.12.0 → the user upgrades local Node to the current 22.x
+LTS (22.23.4) — a patch-level update within the same LTS line. Client `engines` becomes `^22.22.0`
+(Vite 8's 20.19 support no longer applies once react-router needs 22.22). Vercel's "22.x" setting and
+Render's bounded range already resolve to 22.23.
+
+**Code audit:** the client uses declarative mode only — `BrowserRouter`, `Routes`, `Route`,
+`Navigate`, `Link`, `useNavigate`, `useLocation`, `useParams`, `useSearchParams`, all imported
+from `react-router` (not `react-router-dom`). No loaders/actions, `useMatches`, route `meta`,
+middleware or future flags — the areas v8 changed. Expected code change: none.
+
+**Steps:** confirm the v8 changelog against this list; install `react-router@8`; build; full
+regression (routing, guards, redirects on 401 and on forced password change, `?apply=1`, search
+params on Home/admin lists, 404 page, skip link and focus-on-route-change are all covered by the
+existing browser suites).
+
+**Gate:** build OK, full regression green, no console warnings from the router.
+**Commit:** `chore(deps): react-router 8`.
+
+## Phase 8 — Final verification, version re-audit, docs, deploy checklist
+
+- **Version re-audit:** list every direct dependency's installed version against npm `latest`;
+  take newer stable patch/minor releases (e.g. mongoose 9.11.4), re-run the full regression;
+  a newer *major* goes back into the plan as its own phase. No pre-releases.
 - Fresh install from lockfiles (`rm -rf node_modules && npm ci`) in both packages; `npm run build`.
 - Full regression (all suites) → 619/619; axe over all page views; `npm audit` (full) = 0.
 - Update `README.md` tech-stack versions, `HISTORY.md`, this plan's status, the vault notes
   (`Projects/The_Placement_Feed.md`, `Architecture/Dependencies_Map.md`, add a decision note on the
-  Tailwind 4 move and the Node ≥ 20.19 requirement), and the memory file.
+  Tailwind 4 move and the Node 22 requirement), and the memory file.
 - **Deploy checklist (written, not executed):**
-  1. Set Node 22 on Render; 2. confirm the Atlas server version supports driver 7;
+  1. Check the Render build log shows Node 22.x (and that `NODE_VERSION`, if set, is 22);
+     2. confirm the Atlas server version supports driver 7;
   3. deploy the server first (API contract unchanged), smoke-test `/api/health` and a login;
   4. deploy the client on Vercel, smoke-test Home, a drive page, signup, apply, admin login;
   5. rollback = redeploy the previous Render/Vercel build; code rollback = `git revert` the phase commit.
@@ -281,7 +323,8 @@ anything deferred and any advisory it leaves open.
 
 | Risk | Mitigation |
 |---|---|
-| Render builds on a Node < 20.19 and Mongoose 9 refuses to start | `engines` + `.node-version` in Phase 0; Render Node setting checked in the deploy checklist |
+| Render builds on a Node < 20.19 (Mongoose 9 refuses to start) or on an untested new major | Bounded `engines` range (resolves to latest 22.x); Render build log checked in the deploy checklist |
+| A "latest" version is a pre-release or a brand-new major slips in | Version policy above; re-audit in Phase 8 |
 | A regression only shows against production data | Test against a local mongod seeded with realistic data; never touch `server/.env` / Atlas from tests |
 | Tailwind 4 subtly changes visuals | Before/after screenshots, axe, 44 px check; Phase C3 |
 | Sanitiser silently stops working (security regression) | Dedicated injection tests are a gate in Phase 3; never "fix" by removing the middleware |
@@ -290,5 +333,5 @@ anything deferred and any advisory it leaves open.
 
 ## Effort (rough)
 
-Phases 0–2: small. Phase 3: medium. Phase 4: small–medium. Phase 5: small. Phase 6: the largest,
+Phases 0–2: small. Phase 3: medium. Phase 4: small–medium. Phase 5: small. Phase 7: small. Phase 6: the largest,
 roughly as much as the rest combined. Contingency phases are expected to be needed for C1 and C3.
