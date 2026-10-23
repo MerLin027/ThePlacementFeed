@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phase 0 done.
+**Status:** IN PROGRESS — Phases 0–1 done.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate
@@ -92,6 +92,10 @@ because it touches every page.
   `autoprefixer` 10.6.1; `react-hot-toast` 2.6.1; `oxlint` 1.89.0.
 - Server: `mongoose` 8.24.6 (stay on 8 for now).
 - `npm install`, `npm run lint` (fix or justify any new oxlint findings), `npm run build`.
+- Result: oxlint 1.89 enables React-Compiler-style rules by default (`set-state-in-effect` ×13,
+  `purity` ×1, `refs` ×1) — all warnings (exit 0) on established patterns (loading flags in
+  effects, latest-ref, `new Date()` in the footer). Left as visible warnings, not refactored here;
+  follow-up candidate after the upgrade.
 - React minor: watch for new dev-mode warnings in the browser console (our suites assert zero
   console errors).
 
