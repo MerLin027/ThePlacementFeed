@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–4 done (C1 used, C2 not needed); next: Phase 5 (react-markdown 10).
+**Status:** IN PROGRESS — Phases 0–5 done (C1 used, C2 not needed); next: Phase 6 (Tailwind CSS 4).
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate
@@ -190,6 +190,12 @@ Regression 723/723. Atlas server version vs driver 7 remains a deploy-checklist 
 
 **Gate:** XSS cases neutralised, markdown visuals unchanged, build + axe clean.
 **Commit:** `chore(deps): react-markdown 10`.
+
+**Result:** no code change. `upgrade5-test` (18) renders a hostile description in the browser: no
+script ran, no script/iframe/form/button, no on* or style attributes, no `javascript:` links, every
+link `_blank` + `noopener noreferrer`; a raw `<input>` survives only as a disabled checkbox (GitHub
+sanitise schema, used by GFM task lists). Headings, lists, tables, code, quotes still render and
+are styled. Regression 741/741.
 
 ## Phase 6 — Tailwind CSS 4  (largest; four sub-steps, one commit at the end, WIP commits allowed)
 
