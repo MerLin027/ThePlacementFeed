@@ -23,7 +23,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-sm">
       <div
-        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -33,15 +33,15 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] flex flex-col z-10 animate-dialog-in focus:outline-none`}
+        className={`relative bg-surface-container-lowest rounded-xl shadow-2xl w-full ${maxWidth} max-h-[85vh] flex flex-col z-10 animate-dialog-in focus:outline-hidden`}
       >
-        <div className="flex-shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-xs rounded-t-xl flex items-center justify-between gap-sm z-20">
+        <div className="shrink-0 bg-surface-container-lowest border-b border-outline-variant px-md py-xs rounded-t-xl flex items-center justify-between gap-sm z-20">
           <h2 id={titleId} className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-[44px] h-[44px] flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="w-[44px] h-[44px] flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
           </button>

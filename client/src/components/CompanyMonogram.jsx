@@ -30,7 +30,7 @@ const SIZES = {
 
 const CompanyMonogram = ({ name, size = 'md' }) => (
   <span
-    className={`${SIZES[size]} ${tintFor(name)} rounded-lg flex items-center justify-center font-headline-sm font-semibold flex-shrink-0 select-none`}
+    className={`${SIZES[size]} ${tintFor(name)} rounded-lg flex items-center justify-center font-headline-sm font-semibold shrink-0 select-none`}
     aria-hidden="true"
   >
     {initials(name)}

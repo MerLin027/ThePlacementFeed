@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–5 done (C1 used, C2 not needed); Phase 6 (Tailwind CSS 4) in progress.
+**Status:** IN PROGRESS — Phases 0–6 done (C1 used, C2 not needed, C3 folded into Phase 6); next: Phase 7 (react-router 8).
 **Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
@@ -254,6 +254,22 @@ targets ≥ 44 px; no horizontal scroll; no console errors; `npm audit` shows th
 
 **Gate:** zero unexplained visual diffs, axe clean, build size not materially larger, audit clean.
 **Commit:** `chore(deps): tailwind css 4 (css-first theme)`.
+
+**Result:** `npx @tailwindcss/upgrade` moved the theme to `@theme`, renamed classes (`rounded-sm`→`rounded-xs`,
+`shadow-sm`→`shadow-xs`, `outline-none`→`outline-hidden`, `flex-shrink-0`→`shrink-0`, `!x`→`x!`, …) and
+added the v3 border-colour compatibility rule; then switched from `@tailwindcss/postcss` to the
+`@tailwindcss/vite` plugin (no PostCSS config, autoprefixer/postcss removed). Fixes found by the
+v3-vs-v4 comparison (C3 work, done inside this phase):
+- **Spacing/container collision (predicted):** v4 resolved `max-w-md|lg|xl|xs` to our spacing tokens
+  (1.5rem…) instead of container widths (28rem…) — 11 usages now use `max-w-(--container-*)`.
+- **Icons grew:** utilities now live in native cascade layers, and Google's unlayered
+  `.material-symbols-outlined { font-size: 24px; display: inline-block }` beat `text-[18px]`, `hidden` etc.
+  The icon stylesheet is now `@import`ed into the lowest layer (`vendor`) and preloaded in `index.html`.
+- Restored v3 defaults that v4 changed: button pointer cursor, gray-400 placeholders.
+Verification: v3 and v4 captured back-to-back on the same data — 24/32 views pixel-identical, the other
+8 differ only in glyph anti-aliasing (computed styles identical); focus/hover/disabled states equivalent
+(`outline-hidden` additionally keeps a high-contrast-mode outline). CSS 8.1 → 10.8 kB gzip. `npm audit`
+(full, incl. dev) 0 on client and server. Regression 741/741.
 
 ## Phase 7 — react-router 8  (added in replan)
 

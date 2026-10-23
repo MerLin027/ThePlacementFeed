@@ -6,7 +6,7 @@ const EmptyState = ({ icon, title, description, action, className = '' }) => (
     )}
     <h2 className="font-headline-sm text-headline-sm text-on-surface mt-xs">{title}</h2>
     {description && (
-      <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-md mx-auto">{description}</p>
+      <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-(--container-md) mx-auto">{description}</p>
     )}
     {action && <div className="mt-md flex justify-center gap-xs flex-wrap">{action}</div>}
   </div>

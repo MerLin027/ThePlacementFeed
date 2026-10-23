@@ -57,10 +57,10 @@ const Section = ({ title, hint, children, tinted = false }) => (
 );
 
 const smallButton =
-  'inline-flex items-center gap-1 min-h-[44px] px-3 bg-surface-container-lowest text-primary font-label-md text-label-md rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center gap-1 min-h-[44px] px-3 bg-surface-container-lowest text-primary font-label-md text-label-md rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed';
 
 const removeButton =
-  'flex-shrink-0 w-[44px] h-[44px] flex items-center justify-center rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+  'shrink-0 w-[44px] h-[44px] flex items-center justify-center rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
 
 // Client-side checks that mirror the server's rules (the server re-validates everything)
 const validateForm = (form) => {
@@ -304,7 +304,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             type="checkbox"
             checked={form.isPostponed}
             onChange={(e) => handleChange('isPostponed', e.target.checked)}
-            className="mt-[2px] w-5 h-5 accent-red-600 cursor-pointer flex-shrink-0"
+            className="mt-[2px] w-5 h-5 accent-red-600 cursor-pointer shrink-0"
           />
           <span>
             <span className="block font-label-md text-label-md text-red-800">Mark as postponed</span>
@@ -445,7 +445,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
           <ol className="space-y-xs">
             {form.selectionRounds.map((round, index) => (
               <li key={index} className="flex items-start gap-xs bg-surface-container-lowest p-xs rounded-lg border border-outline-variant">
-                <span className="w-7 h-7 mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm flex-shrink-0" aria-hidden="true">
+                <span className="w-7 h-7 mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm shrink-0" aria-hidden="true">
                   {index + 1}
                 </span>
                 <div className="flex-1 min-w-0 space-y-xs">

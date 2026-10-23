@@ -3,7 +3,7 @@ import cdpcLogo from '../../assets/cdpc-logo.png';
 
 const Footer = () => {
   return (
-    <footer className="bg-surface-container-low border-t border-outline-variant flex-shrink-0">
+    <footer className="bg-surface-container-low border-t border-outline-variant shrink-0">
       <div className="flex flex-col md:flex-row justify-between items-center w-full px-sm md:px-lg py-sm max-w-container-max mx-auto gap-sm">
         <p className="font-body-sm text-body-sm text-on-surface-variant">
           © {new Date().getFullYear()} <span className="text-brand-navy">The </span><span className="text-brand-blue">Placement</span><span className="text-brand-navy"> Feed</span>. All rights reserved.

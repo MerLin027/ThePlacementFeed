@@ -1,7 +1,7 @@
 // Centered card shell shared by the student auth pages (matches AdminLogin).
 const AuthCard = ({ icon, title, subtitle, children, footer }) => (
   <div className="min-h-full flex items-center justify-center py-lg px-sm">
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-(--container-md)">
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
         <div className="px-md pt-md pb-sm text-center">
           <div className="w-14 h-14 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-sm">
@@ -37,7 +37,7 @@ export const FormAlert = ({ tone = 'error', icon, children }) => {
       className={`p-sm border rounded-lg font-body-sm text-body-sm flex items-start gap-xs ${styles}`}
     >
       {icon && (
-        <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-[1px]" aria-hidden="true">{icon}</span>
+        <span className="material-symbols-outlined text-[18px] shrink-0 mt-px" aria-hidden="true">{icon}</span>
       )}
       <div>{children}</div>
     </div>

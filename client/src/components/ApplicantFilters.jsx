@@ -16,7 +16,7 @@ const ApplicantFilters = ({ filters, onChange }) => {
           placeholder="Name, email or roll number"
           aria-label="Search applicants"
           maxLength={100}
-          className="input-field !pl-10"
+          className="input-field pl-10!"
         />
       </div>
       <select value={filters.status} onChange={set('status')} aria-label="Filter by status" className="select-field">

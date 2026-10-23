@@ -192,7 +192,7 @@ export const DetailApplyPanel = ({ drive, onApply }) => {
           href={drive.formUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 mt-xs font-body-sm text-body-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+          className="inline-flex items-center gap-1 mt-xs font-body-sm text-body-sm text-primary hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
         >
           Or apply through the external form
           <span className="material-symbols-outlined text-[16px]" aria-hidden="true">open_in_new</span>

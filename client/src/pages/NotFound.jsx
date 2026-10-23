@@ -5,7 +5,7 @@ const NotFound = () => {
   usePageTitle('Page not found');
   return (
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-xl flex items-center justify-center min-h-[60vh]">
-      <div className="text-center max-w-md">
+      <div className="text-center max-w-(--container-md)">
         <div className="w-20 h-20 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-md">
           <span className="material-symbols-outlined text-[40px] text-on-surface-variant" aria-hidden="true">explore_off</span>
         </div>

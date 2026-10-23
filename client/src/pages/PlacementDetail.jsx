@@ -96,7 +96,7 @@ const PlacementDetail = () => {
   if (notFound || error) {
     return (
       <div className="w-full max-w-container-max mx-auto px-md md:px-lg py-xl text-center">
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl max-w-lg mx-auto">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl max-w-(--container-lg) mx-auto">
           <span className="material-symbols-outlined text-[48px] text-outline mb-sm block" aria-hidden="true">
             {notFound ? 'event_busy' : 'cloud_off'}
           </span>
@@ -141,7 +141,7 @@ const PlacementDetail = () => {
         <div className="md:col-span-12">
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-xs min-h-[44px] pr-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+            className="inline-flex items-center gap-xs min-h-[44px] pr-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xs"
           >
             <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
             Back to drives
@@ -153,7 +153,7 @@ const PlacementDetail = () => {
         <div className="contents md:flex md:flex-col md:col-span-4 md:gap-sm">
 
           {/* 1. Company Info Card */}
-          <div className="order-1 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm flex flex-col">
+          <div className="order-1 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm flex flex-col">
             <div className="mb-xs">
               <CompanyMonogram name={placement.company} size="sm" />
             </div>
@@ -184,7 +184,7 @@ const PlacementDetail = () => {
           </div>
 
           {/* 2. Important Dates Card */}
-          <section className="order-3 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm" aria-labelledby="dates-heading">
+          <section className="order-3 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm" aria-labelledby="dates-heading">
             <h2 id="dates-heading" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
               Important dates
             </h2>
@@ -208,7 +208,7 @@ const PlacementDetail = () => {
 
           {/* 3. Selection process Card */}
           {placement.selectionRounds?.length > 0 && (
-            <section className="order-4 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-4 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Selection process
               </h2>
@@ -217,7 +217,7 @@ const PlacementDetail = () => {
                 {placement.selectionRounds.map((step, index) => (
                   <div key={index} className="flex items-start gap-xs relative z-10">
                     <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm flex-shrink-0 mt-0.5 bg-primary-container text-on-primary-container"
+                      className="w-6 h-6 rounded-full flex items-center justify-center font-label-sm text-label-sm shrink-0 mt-0.5 bg-primary-container text-on-primary-container"
                     >
                       {index + 1}
                     </div>
@@ -241,7 +241,7 @@ const PlacementDetail = () => {
         <div className="contents md:flex md:flex-col md:col-span-8 md:gap-sm">
 
           {/* 1. Eligibility Section */}
-          <section className="order-2 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+          <section className="order-2 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
             <div className="flex items-center gap-xs mb-xs">
               <span className="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">verified_user</span>
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility criteria</h2>
@@ -270,7 +270,7 @@ const PlacementDetail = () => {
 
           {/* 2. Job Description Section */}
           {placement.jdDescription && (
-            <section className="order-5 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-5 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Job description
               </h2>
@@ -292,7 +292,7 @@ const PlacementDetail = () => {
 
           {/* Tags */}
           {placement.tags?.length > 0 && (
-            <section className="order-6 md:order-none bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
+            <section className="order-6 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-xl p-sm">
               <h2 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs">Tags</h2>
               <div className="flex flex-wrap gap-xs">
                 {placement.tags.map((tag, i) => (

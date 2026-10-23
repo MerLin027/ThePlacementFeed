@@ -135,7 +135,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
               <h3 id="apply-summary-heading" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 Shared from your profile
               </h3>
-              <Link to="/profile" className="font-body-sm text-body-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
+              <Link to="/profile" className="font-body-sm text-body-sm text-primary hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs">
                 Edit profile
               </Link>
             </div>
@@ -206,7 +206,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
               onChange={(e) => setConsent(e.target.checked)}
               aria-invalid={fieldErrors.consentGiven ? true : undefined}
               aria-describedby={fieldErrors.consentGiven ? 'apply-consent-error' : undefined}
-              className="mt-[3px] w-5 h-5 accent-primary flex-shrink-0 cursor-pointer"
+              className="mt-[3px] w-5 h-5 accent-primary shrink-0 cursor-pointer"
             />
             <span className="font-body-sm text-body-sm text-on-surface">
               I confirm these details are correct, and I agree to share them with the CDPC and {drive.company} for this drive.

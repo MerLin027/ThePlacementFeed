@@ -71,7 +71,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                       <p className="font-label-md text-label-md text-on-surface">
                         {name}
                         {a.studentDeleted && (
-                          <span className="ml-xs px-2 py-[1px] rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+                          <span className="ml-xs px-2 py-px rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
                             Account deleted
                           </span>
                         )}
@@ -111,7 +111,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                         type="button"
                         onClick={() => onView(a)}
                         aria-label={`View application from ${name}`}
-                        className="inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 font-label-sm text-label-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">visibility</span>
                         <span className="hidden lg:inline">View</span>

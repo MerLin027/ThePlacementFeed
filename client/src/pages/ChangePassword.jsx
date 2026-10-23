@@ -67,7 +67,7 @@ const ChangePassword = () => {
             <button
               type="button"
               onClick={logoutStudent}
-              className="text-primary font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+              className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
             >
               Log out
             </button>

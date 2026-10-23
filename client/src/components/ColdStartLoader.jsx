@@ -10,7 +10,7 @@ const ColdStartLoader = ({ isColdStart, variant = 'cards' }) => (
     <div role="status" aria-live="polite" className={isColdStart ? 'mb-md' : 'sr-only'}>
       {isColdStart ? (
         <div className="flex items-start gap-xs p-sm bg-surface-container-low border border-outline-variant rounded-xl">
-          <span className="material-symbols-outlined text-[20px] text-primary flex-shrink-0" aria-hidden="true">hourglass_top</span>
+          <span className="material-symbols-outlined text-[20px] text-primary shrink-0" aria-hidden="true">hourglass_top</span>
           <div>
             <p className="font-label-md text-label-md text-on-surface">Waking up the server…</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant">

@@ -7,7 +7,7 @@ import { deadlineInfo, DEADLINE_TONE_CLASS, formatDay } from '../utils/deadline'
 
 const Row = ({ icon, children, title }) => (
   <div className="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm min-w-0" title={title}>
-    <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">{icon}</span>
+    <span className="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">{icon}</span>
     <span className="truncate">{children}</span>
   </div>
 );
@@ -50,14 +50,14 @@ const PlacementCard = ({ placement }) => {
       <h3 className="font-headline-md text-headline-md text-on-surface mb-[2px] truncate">
         <Link
           to={`/placement/${_id}`}
-          className="after:absolute after:inset-0 after:rounded-xl focus:outline-none"
+          className="after:absolute after:inset-0 after:rounded-xl focus:outline-hidden"
         >
           {company}
         </Link>
       </h3>
       <p className="font-body-md text-body-md text-on-surface-variant mb-sm truncate">{role}</p>
 
-      <div className="space-y-xs mb-md flex-grow">
+      <div className="space-y-xs mb-md grow">
         <Row icon="payments">
           <span className="font-label-md text-label-md text-on-surface tabular-nums">₹{ctc} LPA</span>
         </Row>

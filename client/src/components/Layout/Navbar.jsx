@@ -5,14 +5,14 @@ import NotificationBell from '../Notifications/NotificationBell';
 import logo from '../../assets/logo.png';
 
 const desktopLinkClass = (active) =>
-  `h-16 flex items-center px-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm ${
+  `h-16 flex items-center px-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xs ${
     active
       ? 'text-primary font-bold border-b-2 border-primary'
       : 'text-on-surface-variant hover:text-primary'
   }`;
 
 const mobileLinkClass = (active) =>
-  `block w-full text-left px-sm py-xs min-h-[44px] rounded-lg font-body-md text-body-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+  `block w-full text-left px-sm py-xs min-h-[44px] rounded-lg font-body-md text-body-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
     active
       ? 'bg-primary/5 text-primary font-semibold'
       : 'text-on-surface-variant hover:bg-surface-container-low'
@@ -75,7 +75,7 @@ const Navbar = () => {
           <Link
             to="/"
             aria-label="The Placement Feed — home"
-            className="flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <img
               src={logo}
@@ -119,7 +119,7 @@ const Navbar = () => {
             aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isMobileOpen}
             aria-controls="mobile-menu"
-            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
               {isMobileOpen ? 'close' : 'menu'}

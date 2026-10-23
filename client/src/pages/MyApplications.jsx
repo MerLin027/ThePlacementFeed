@@ -58,7 +58,7 @@ const MyApplications = () => {
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-md py-lg text-center">
           <span className="material-symbols-outlined text-[40px] text-outline" aria-hidden="true">work_history</span>
           <h2 className="font-headline-sm text-headline-sm text-on-surface mt-xs">No applications yet</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-md mx-auto">
+          <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-(--container-md) mx-auto">
             When you apply to a drive here, it shows up on this page with its latest status.
           </p>
           <Link to="/" className="btn-primary mt-md min-h-[44px]">Browse drives</Link>
@@ -70,7 +70,7 @@ const MyApplications = () => {
               {a.driveId ? (
                 <Link
                   to={`/placement/${a.driveId}`}
-                  className="flex flex-col sm:flex-row sm:items-center gap-xs sm:gap-sm bg-surface-container-lowest border border-outline-variant rounded-xl p-sm hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex flex-col sm:flex-row sm:items-center gap-xs sm:gap-sm bg-surface-container-lowest border border-outline-variant rounded-xl p-sm hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-shadow duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-label-md text-label-md text-on-surface truncate">{a.company}</p>

@@ -55,7 +55,7 @@ const NotificationBell = () => {
         aria-expanded={isOpen}
         aria-controls={panelId}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-        className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
       >
         <span className="material-symbols-outlined text-[24px]" aria-hidden="true">notifications</span>
         {unreadCount > 0 && (
@@ -73,7 +73,7 @@ const NotificationBell = () => {
           id={panelId}
           role="region"
           aria-label="Notifications"
-          className="absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-1rem)] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh]"
+          className="absolute right-0 mt-2 w-88 max-w-[calc(100vw-1rem)] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh]"
         >
           <div className="flex items-center justify-between gap-sm px-sm py-xs border-b border-outline-variant">
             <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Notifications</h3>
@@ -81,7 +81,7 @@ const NotificationBell = () => {
               <button
                 type="button"
                 onClick={clearAll}
-                className="min-h-[44px] px-2 rounded-lg text-primary hover:bg-primary/5 font-label-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-h-[44px] px-2 rounded-lg text-primary hover:bg-primary/5 font-label-md text-label-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Clear all
               </button>
@@ -104,9 +104,9 @@ const NotificationBell = () => {
                       <Link
                         to={`/placement/${n.placementId}`}
                         onClick={() => close(false)}
-                        className="flex-1 flex items-start gap-xs p-sm min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                        className="flex-1 flex items-start gap-xs p-sm min-w-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                       >
-                        <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${TONE_ICON[tone]}`} aria-hidden="true">
+                        <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${TONE_ICON[tone]}`} aria-hidden="true">
                           <span className="material-symbols-outlined text-[18px]">{icon}</span>
                         </span>
                         <span className="min-w-0">
@@ -123,7 +123,7 @@ const NotificationBell = () => {
                         type="button"
                         onClick={() => dismissNotification(n.id)}
                         aria-label={`Dismiss: ${text}`}
-                        className="flex-shrink-0 self-center mr-1 w-[44px] h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="shrink-0 self-center mr-1 w-[44px] h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
                       </button>

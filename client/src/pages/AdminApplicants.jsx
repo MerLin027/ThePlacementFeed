@@ -181,7 +181,7 @@ const AdminApplicants = () => {
     <div className="max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
       <Link
         to="/admin/dashboard"
-        className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm mb-sm"
+        className="inline-flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs mb-sm"
       >
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
         Back to dashboard
@@ -217,7 +217,7 @@ const AdminApplicants = () => {
               type="button"
               aria-pressed={active}
               onClick={() => setFilters((f) => ({ ...f, status: active ? '' : s }))}
-              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
                 active
                   ? 'bg-primary-container text-on-primary border-primary-container'
                   : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'

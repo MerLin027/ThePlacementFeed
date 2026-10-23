@@ -8,8 +8,8 @@ import { parseApiError } from '../utils/formErrors';
 
 const Row = ({ label, children }) => (
   <div className="flex flex-col sm:flex-row sm:justify-between gap-[2px] sm:gap-sm py-[6px] border-b border-surface-variant last:border-b-0">
-    <dt className="font-body-sm text-body-sm text-on-surface-variant flex-shrink-0">{label}</dt>
-    <dd className="font-body-md text-body-md text-on-surface sm:text-right break-words">{children}</dd>
+    <dt className="font-body-sm text-body-sm text-on-surface-variant shrink-0">{label}</dt>
+    <dd className="font-body-md text-body-md text-on-surface sm:text-right wrap-break-word">{children}</dd>
   </div>
 );
 
@@ -80,7 +80,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
                   href={applicant.resumeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                  className="text-primary hover:underline inline-flex items-center gap-1 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
                 >
                   Open resume
                   <span className="material-symbols-outlined text-[16px]" aria-hidden="true">open_in_new</span>
@@ -95,7 +95,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
         {applicant.coverNote && (
           <section>
             <h3 className="label">Note from the student</h3>
-            <p className="font-body-md text-body-md text-on-surface whitespace-pre-wrap break-words">{applicant.coverNote}</p>
+            <p className="font-body-md text-body-md text-on-surface whitespace-pre-wrap wrap-break-word">{applicant.coverNote}</p>
           </section>
         )}
 
@@ -106,7 +106,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
               {applicant.customAnswers.map((a, i) => (
                 <div key={i}>
                   <dt className="font-label-md text-label-md text-on-surface">{a.question}</dt>
-                  <dd className="font-body-md text-body-md text-on-surface-variant whitespace-pre-wrap break-words">{a.answer}</dd>
+                  <dd className="font-body-md text-body-md text-on-surface-variant whitespace-pre-wrap wrap-break-word">{a.answer}</dd>
                 </div>
               ))}
             </dl>

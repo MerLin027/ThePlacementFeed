@@ -59,7 +59,7 @@ const StudentLogin = () => {
             New here?{' '}
             <Link
               to={`/signup${rawReturnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
-              className="text-primary font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+              className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
             >
               Create an account
             </Link>

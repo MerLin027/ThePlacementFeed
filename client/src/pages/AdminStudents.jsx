@@ -25,7 +25,7 @@ const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
     disabled={disabled}
     aria-label={label}
     title={label}
-    className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg font-label-sm text-label-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed ${
+    className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed ${
       danger
         ? 'text-on-surface-variant hover:text-error hover:bg-error-container'
         : 'text-on-surface-variant hover:text-primary hover:bg-primary/5'
@@ -144,7 +144,7 @@ const AdminStudents = () => {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-sm mb-md">
-        <div className="relative w-full sm:max-w-md">
+        <div className="relative w-full sm:max-w-(--container-md)">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" aria-hidden="true">search</span>
           <input
             type="search"
@@ -153,7 +153,7 @@ const AdminStudents = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             maxLength={100}
-            className="input-field !pl-10"
+            className="input-field pl-10!"
           />
         </div>
         <select
@@ -163,7 +163,7 @@ const AdminStudents = () => {
             setBranch(e.target.value);
             setPage(1);
           }}
-          className="select-field sm:max-w-xs"
+          className="select-field sm:max-w-(--container-xs)"
         >
           <option value="">All branches</option>
           {BRANCHES.map((b) => (

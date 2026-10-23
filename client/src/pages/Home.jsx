@@ -180,7 +180,7 @@ const Home = () => {
             onClick={() => setPastOpen((v) => !v)}
             aria-expanded={pastOpen}
             aria-controls="past-drives"
-            className="w-full flex items-center justify-between gap-sm min-h-[52px] px-md rounded-xl border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="w-full flex items-center justify-between gap-sm min-h-[52px] px-md rounded-xl border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="flex items-center gap-xs font-headline-sm text-headline-sm">
               <span className="material-symbols-outlined text-[22px] text-on-surface-variant" aria-hidden="true">history</span>

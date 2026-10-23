@@ -85,7 +85,7 @@ const Timeline = () => {
           icon="calendar_month"
           title="No drives yet"
           description="Drives appear here by month once the CDPC posts them."
-          className="max-w-xl mx-auto"
+          className="max-w-(--container-xl) mx-auto"
         />
       ) : (
         <div className="relative max-w-4xl mx-auto">
@@ -97,7 +97,7 @@ const Timeline = () => {
               <section key={g.key} className="mb-lg" aria-labelledby={`month-${g.key}`}>
                 <div className="relative flex items-center gap-sm mb-md">
                   <div
-                    className={`w-12 sm:w-16 h-12 sm:h-16 rounded-xl flex flex-col items-center justify-center z-10 flex-shrink-0 leading-tight ${
+                    className={`w-12 sm:w-16 h-12 sm:h-16 rounded-xl flex flex-col items-center justify-center z-10 shrink-0 leading-tight ${
                       isPastMonth ? 'bg-surface-container-high text-on-surface' : 'bg-primary-container text-on-primary'
                     }`}
                     aria-hidden="true"
@@ -120,7 +120,7 @@ const Timeline = () => {
                       <Fragment key={p._id}>
                         {p._id === firstPastId && (
                           <li className="flex items-center gap-xs -ml-8 sm:-ml-10" aria-label="Today">
-                            <span className="w-3 h-3 rounded-full bg-primary-container ring-4 ring-primary/15 -ml-[6px] z-10" aria-hidden="true" />
+                            <span className="w-3 h-3 rounded-full bg-primary-container ring-4 ring-primary/15 ml-[-6px] z-10" aria-hidden="true" />
                             <span className="font-label-md text-label-md text-primary">
                               Today · {formatDay(new Date(today), { day: 'numeric', month: 'short' })}
                             </span>
@@ -130,7 +130,7 @@ const Timeline = () => {
                         <li>
                           <Link
                             to={`/placement/${p._id}`}
-                            className={`block rounded-xl border p-md transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                            className={`block rounded-xl border p-md transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
                               past ? 'bg-surface-container-low border-outline-variant' : 'bg-surface-container-lowest border-outline-variant'
                             }`}
                           >
@@ -142,7 +142,7 @@ const Timeline = () => {
                                 </div>
                                 <p className="font-body-sm text-body-sm text-on-surface-variant">{p.role}</p>
                               </div>
-                              <div className="text-right flex-shrink-0">
+                              <div className="text-right shrink-0">
                                 <p className="font-label-md text-label-md text-on-surface tabular-nums">₹{p.ctc} LPA</p>
                                 <p className="font-label-sm text-label-sm text-on-surface-variant mt-0.5 tabular-nums">
                                   {p.driveDate ? formatDay(p.driveDate, { day: 'numeric', month: 'short' }) : 'Date TBA'}

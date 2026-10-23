@@ -24,7 +24,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
         <div className="flex-1 flex items-center gap-2 h-[46px] px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
-          <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]" aria-hidden="true">
+          <span className="material-symbols-outlined shrink-0 text-outline text-[20px]" aria-hidden="true">
             search
           </span>
           <input
@@ -33,7 +33,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
             placeholder="Search by company or role..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
-            className="flex-1 min-w-0 h-full bg-transparent font-body-md text-body-md text-on-surface placeholder-outline focus:outline-none text-center placeholder:text-center"
+            className="flex-1 min-w-0 h-full bg-transparent font-body-md text-body-md text-on-surface placeholder-outline focus:outline-hidden text-center placeholder:text-center"
           />
         </div>
         <button
@@ -133,7 +133,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 id={fid('sort')}
                 value={filters.sort || 'closing_soon'}
                 onChange={(e) => handleChange('sort', e.target.value)}
-                className="select-field !w-auto"
+                className="select-field w-auto!"
               >
                 <option value="closing_soon">Closing soon</option>
                 <option value="newest">Newest first</option>
@@ -147,7 +147,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
             <button
               type="button"
               onClick={onReset}
-              className="min-h-[44px] px-2 rounded-lg font-label-md text-label-md text-secondary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="min-h-[44px] px-2 rounded-lg font-label-md text-label-md text-secondary hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
               Reset filters
             </button>

@@ -13,7 +13,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 const iconButton =
-  'inline-flex items-center justify-center w-[44px] h-[44px] rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+  'inline-flex items-center justify-center w-[44px] h-[44px] rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
 
 const AdminDashboard = () => {
   usePageTitle('Admin dashboard');
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
       <button
         type="button"
         onClick={() => setDeleteTarget(p)}
-        className={`${iconButton} hover:!text-error hover:!bg-error-container`}
+        className={`${iconButton} hover:text-error! hover:bg-error-container!`}
         title="Delete"
         aria-label={`Delete ${p.company}`}
       >
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
         aria-busy={!!toggling[p._id]}
         title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
         aria-label={p.isPostponed ? `Un-postpone ${p.company}` : `Mark ${p.company} as postponed`}
-        className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
           p.isPostponed
             ? 'bg-red-100 text-red-800 hover:bg-red-200'
             : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-surface-variant'
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
           aria-disabled={!!toggling[p._id]}
           aria-busy={!!toggling[p._id]}
           title="Status is fixed by hand. Click to let it follow the dates again."
-          className="inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md bg-primary-fixed text-on-primary-fixed hover:bg-primary/15 transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md bg-primary-fixed text-on-primary-fixed hover:bg-primary/15 transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           {toggling[p._id] ? (
             <Spinner size="xs" tone="current" />
@@ -256,7 +256,7 @@ const AdminDashboard = () => {
 
       {/* Search */}
       <div className="mb-md">
-        <div className="relative max-w-md">
+        <div className="relative max-w-(--container-md)">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" aria-hidden="true">search</span>
           <input
             type="search"
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
             placeholder="Search placements..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input-field !pl-10"
+            className="input-field pl-10!"
           />
         </div>
       </div>

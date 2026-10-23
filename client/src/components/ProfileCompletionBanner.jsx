@@ -13,7 +13,7 @@ const ProfileCompletionBanner = ({ missingFields = [], linkTo }) => {
       role="status"
       className="p-sm bg-amber-50 border border-amber-200 rounded-xl font-body-sm text-body-sm text-amber-900 flex items-start gap-xs"
     >
-      <span className="material-symbols-outlined text-[20px] flex-shrink-0 text-amber-700" aria-hidden="true">
+      <span className="material-symbols-outlined text-[20px] shrink-0 text-amber-700" aria-hidden="true">
         assignment_late
       </span>
       <div className="flex-1">
@@ -24,7 +24,7 @@ const ProfileCompletionBanner = ({ missingFields = [], linkTo }) => {
         {linkTo && (
           <Link
             to={linkTo}
-            className="inline-flex items-center gap-1 mt-xs font-semibold text-amber-900 underline underline-offset-2 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="inline-flex items-center gap-1 mt-xs font-semibold text-amber-900 underline underline-offset-2 hover:no-underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
           >
             Complete profile
             <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>

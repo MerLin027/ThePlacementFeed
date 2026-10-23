@@ -40,7 +40,7 @@ const FormField = ({ id, label, helper, error, children, className = '', ...inpu
             aria-label={revealed ? 'Hide password' : 'Show password'}
             aria-pressed={revealed}
             aria-controls={id}
-            className="absolute right-0 top-0 w-[44px] h-[44px] flex items-center justify-center rounded-r-lg text-on-surface-variant hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="absolute right-0 top-0 w-[44px] h-[44px] flex items-center justify-center rounded-r-lg text-on-surface-variant hover:text-on-surface focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
               {revealed ? 'visibility_off' : 'visibility'}

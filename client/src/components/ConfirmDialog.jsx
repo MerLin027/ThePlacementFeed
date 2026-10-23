@@ -27,7 +27,7 @@ const ConfirmDialog = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-sm">
       <div
-        className="fixed inset-0 bg-on-surface/50 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -37,7 +37,7 @@ const ConfirmDialog = ({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-md z-10 p-md animate-dialog-in"
+        className="relative bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-(--container-md) z-10 p-md animate-dialog-in"
       >
         <div
           className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-sm ${

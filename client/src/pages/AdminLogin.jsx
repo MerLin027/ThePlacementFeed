@@ -49,7 +49,7 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-full flex items-center justify-center py-lg px-sm">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-(--container-md)">
         {/* Card */}
         <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
           {/* Header */}
@@ -66,7 +66,7 @@ const AdminLogin = () => {
             {/* Session expired alert */}
             {expired && !error && (
               <div className="p-sm bg-amber-50 border border-amber-200 rounded-lg font-body-sm text-body-sm text-amber-700 flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[18px] flex-shrink-0">warning</span>
+                <span className="material-symbols-outlined text-[18px] shrink-0">warning</span>
                 Session expired. Please log in again.
               </div>
             )}

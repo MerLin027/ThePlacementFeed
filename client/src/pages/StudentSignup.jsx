@@ -71,7 +71,7 @@ const StudentSignup = () => {
           Already have an account?{' '}
           <Link
             to={`/login${searchParams.get('returnTo') ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
-            className="text-primary font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
           >
             Log in
           </Link>
