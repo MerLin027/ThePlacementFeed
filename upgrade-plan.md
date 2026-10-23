@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–3 done (C1 used, C2 not needed); next: Phase 4 (Mongoose 9).
+**Status:** IN PROGRESS — Phases 0–4 done (C1 used, C2 not needed); next: Phase 5 (react-markdown 10).
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate
@@ -173,6 +173,11 @@ found three pre-existing 500s on Express 4 (object username on admin login; obje
 **Gate:** 619/619, new-DB index check identical to before, deadline-after-drive validation test
 still returns the same message, cron/aggregation tests pass.
 **Commit:** `chore(deps): mongoose 9 and validate-hook rewrite`.
+
+**Result:** only the hook needed changing. `upgrade4-test` (26): indexes built by Mongoose 9 on a
+fresh DB are identical to those Mongoose 8 built (all four models, no `background`); hook message,
+duplicate-key 409s, CastError 400, aggregation, cron, changes feed and delete cascade unchanged.
+Regression 723/723. Atlas server version vs driver 7 remains a deploy-checklist item.
 
 ## Phase 5 — react-markdown 10
 

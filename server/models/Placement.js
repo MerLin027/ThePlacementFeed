@@ -153,13 +153,11 @@ const placementSchema = new mongoose.Schema(
 );
 
 // Pre-validate hook for deadline <= driveDate
-placementSchema.pre('validate', function(next) {
-  if (this.driveDate && this.deadline) {
-    if (this.deadline > this.driveDate) {
-      this.invalidate('deadline', 'Deadline cannot be after the drive date');
-    }
+// (Mongoose 9 hooks take no `next` callback; a synchronous hook simply returns.)
+placementSchema.pre('validate', function() {
+  if (this.driveDate && this.deadline && this.deadline > this.driveDate) {
+    this.invalidate('deadline', 'Deadline cannot be after the drive date');
   }
-  next();
 });
 
 // Index for common queries
