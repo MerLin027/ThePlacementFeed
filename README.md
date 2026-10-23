@@ -103,7 +103,7 @@ npm run dev               # → http://localhost:5173
 |---|---|
 | `VITE_API_URL` | ✅ |
 
-The server auto-creates the admin account on first boot from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. After rotating credentials with `node scripts/resetAdmin.js`, those two vars can be dropped from the environment.
+The server auto-creates the admin account on first boot from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. After rotating credentials with `node server/scripts/resetAdmin.js` (works from any folder; it reads `server/.env`), those two vars can be dropped from the environment.
 
 ### Student accounts & password resets
 

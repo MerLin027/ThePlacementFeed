@@ -1,4 +1,6 @@
-require('dotenv').config({ quiet: true });
+const path = require('path');
+// Load server/.env by absolute path so the script works from any folder
+require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
 const readline = require('readline');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -15,7 +17,7 @@ const resetAdmin = async () => {
   let exitCode = 0;
   try {
     if (!process.env.MONGODB_URI) {
-      console.error('FATAL: MONGODB_URI is not defined in .env');
+      console.error(`FATAL: MONGODB_URI is not defined in ${path.join(__dirname, '..', '.env')}`);
       exitCode = 1;
       return;
     }
