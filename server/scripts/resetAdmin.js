@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const readline = require('readline');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');

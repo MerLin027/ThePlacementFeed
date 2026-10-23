@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const Student = require('../models/Student');
 const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudentAllowPending } = require('../middleware/requireStudent');
@@ -20,7 +20,7 @@ const limiterMessage = (message) => ({ success: false, message });
 
 const signupLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  limit: 30,
   message: limiterMessage('Too many sign-up attempts. Please try again in a few minutes.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -28,7 +28,7 @@ const signupLimiter = rateLimit({
 
 const loginIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  limit: 100,
   message: limiterMessage('Too many login attempts. Please try again after 15 minutes.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -36,11 +36,12 @@ const loginIpLimiter = rateLimit({
 
 const loginAccountLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  limit: 5,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => {
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-    return `${req.ip}|${email}`;
+    // ipKeyGenerator groups IPv6 clients by /56 so one user cannot rotate addresses to dodge the limit
+    return `${ipKeyGenerator(req.ip)}|${email}`;
   },
   message: limiterMessage('Too many login attempts. Please try again after 15 minutes.'),
   standardHeaders: true,
@@ -49,7 +50,7 @@ const loginAccountLimiter = rateLimit({
 
 const sessionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  limit: 300,
   message: limiterMessage('Too many requests. Please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,

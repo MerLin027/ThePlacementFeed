@@ -23,7 +23,7 @@ const limiterMessage = (message) => ({ success: false, message });
 
 const listLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  limit: 300,
   message: limiterMessage('Too many requests. Please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -31,7 +31,7 @@ const listLimiter = rateLimit({
 
 const actionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  limit: 30,
   message: limiterMessage('Too many account changes. Please try again in a few minutes.'),
   standardHeaders: true,
   legacyHeaders: false,

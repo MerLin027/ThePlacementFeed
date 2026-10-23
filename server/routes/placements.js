@@ -56,7 +56,7 @@ const closingSoonPipeline = (match, skip, limit) => [
 // Rate limit public GET endpoints: 100 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  limit: 100,
   message: {
     success: false,
     message: 'Too many requests. Please try again later.',
@@ -68,7 +68,7 @@ const apiLimiter = rateLimit({
 // Rate limit mutating endpoints: 50 requests per 15 minutes per IP
 const mutateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  limit: 50,
   message: {
     success: false,
     message: 'Too many updates. Please try again later.',

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 // --- Fail fast if required env vars are missing ---
 const requiredEnvVars = [
@@ -85,7 +85,7 @@ app.get('/api/health', (req, res) => {
 // Rate limit cron trigger: 10 requests per 15 minutes per IP
 const cronLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  limit: 10,
   message: {
     success: false,
     message: 'Too many cron trigger attempts. Please try again later.',

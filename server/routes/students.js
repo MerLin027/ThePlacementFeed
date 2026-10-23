@@ -27,7 +27,7 @@ const limiterMessage = (message) => ({ success: false, message });
 
 const profileReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  limit: 300,
   message: limiterMessage('Too many requests. Please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -36,7 +36,7 @@ const profileReadLimiter = rateLimit({
 // Keyed by student (these run after auth) so classmates on one IP don't share a budget
 const profileUpdateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  limit: 30,
   keyGenerator: (req) => req.student.id,
   message: limiterMessage('Too many updates. Please try again in a few minutes.'),
   standardHeaders: true,
@@ -45,7 +45,7 @@ const profileUpdateLimiter = rateLimit({
 
 const passwordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  limit: 5,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => req.student.id,
   message: limiterMessage('Too many attempts. Please try again after 15 minutes.'),

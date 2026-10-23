@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–1 done.
+**Status:** IN PROGRESS — Phases 0–2 done; next: Phase 3 (Express 5).
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate

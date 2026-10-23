@@ -19,7 +19,7 @@ const limiterMessage = (message) => ({ success: false, message });
 
 const readLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  limit: 300,
   message: limiterMessage('Too many requests. Please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -28,7 +28,7 @@ const readLimiter = rateLimit({
 // Keyed per student (runs after auth) so a lab sharing one IP isn't throttled together
 const applyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  limit: 10,
   keyGenerator: (req) => req.student.id,
   message: limiterMessage('Too many applications in a short time. Please try again in a few minutes.'),
   standardHeaders: true,

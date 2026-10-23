@@ -30,7 +30,7 @@ const limiterMessage = (message) => ({ success: false, message });
 
 const readLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  limit: 300,
   message: limiterMessage('Too many requests. Please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -38,7 +38,7 @@ const readLimiter = rateLimit({
 
 const updateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  limit: 200,
   message: limiterMessage('Too many updates. Please try again in a few minutes.'),
   standardHeaders: true,
   legacyHeaders: false,
@@ -47,7 +47,7 @@ const updateLimiter = rateLimit({
 // Exports are expensive and move a lot of personal data at once
 const exportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  limit: 5,
   message: limiterMessage('Too many exports. Please try again in a few minutes.'),
   standardHeaders: true,
   legacyHeaders: false,
