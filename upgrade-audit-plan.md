@@ -1,6 +1,6 @@
 # Upgrade Audit Plan
 
-**Status:** APPROVED 2026-10-24 — Pass 1 in progress. Report: `upgrade-audit-report.md`.
+**Status:** COMPLETE 2026-10-24 — report and fix plan in `upgrade-audit-report.md`; fixes await approval.
 **Subject:** everything on branch `upgrade/deps` compared with `main` — 17 commits, 56 files
 (+2297 / −1941 lines incl. lockfiles; +980 / −392 without), Phases 0–9 of `upgrade-plan.md`.
 **Goal:** independently confirm that the upgrade is correct, secure and complete before it is merged
