@@ -21,14 +21,17 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
           <thead>
             <tr className="bg-surface-container-low border-b border-outline-variant">
               <th className="px-sm py-sm w-10">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={() => onToggleAll(!allSelected)}
-                  aria-label="Select all applicants on this page"
-                  className="w-5 h-5 accent-primary cursor-pointer align-middle"
-                  disabled={applicants.length === 0}
-                />
+                {/* 44px tap area around the native checkbox */}
+                <label className="inline-flex w-[44px] h-[44px] -m-2 items-center justify-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => onToggleAll(!allSelected)}
+                    aria-label="Select all applicants on this page"
+                    className="w-5 h-5 accent-primary cursor-pointer"
+                    disabled={applicants.length === 0}
+                  />
+                </label>
               </th>
               <th className={thClass}>Applicant</th>
               <th className={`${thClass} hidden md:table-cell`}>Branch</th>
@@ -54,13 +57,15 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                 return (
                   <tr key={a.id} className={selected.has(a.id) ? 'bg-primary/5' : 'hover:bg-surface-container-low/50'}>
                     <td className="px-sm py-xs">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(a.id)}
-                        onChange={() => onToggle(a.id)}
-                        aria-label={`Select ${name}`}
-                        className="w-5 h-5 accent-primary cursor-pointer align-middle"
-                      />
+                      <label className="inline-flex w-[44px] h-[44px] -m-2 items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(a.id)}
+                          onChange={() => onToggle(a.id)}
+                          aria-label={`Select ${name}`}
+                          className="w-5 h-5 accent-primary cursor-pointer"
+                        />
+                      </label>
                     </td>
                     <td className="px-sm py-xs">
                       <p className="font-label-md text-label-md text-on-surface">
@@ -94,7 +99,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                         onChange={(e) => onStatusChange(a, e.target.value)}
                         disabled={busyIds.has(a.id)}
                         aria-label={`Status for ${name}`}
-                        className="select-field !h-10 min-w-[130px]"
+                        className="select-field min-w-[140px]"
                       >
                         {APPLICATION_STATUSES.map((s) => (
                           <option key={s} value={s}>{s}</option>

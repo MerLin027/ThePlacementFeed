@@ -217,7 +217,7 @@ const AdminApplicants = () => {
               type="button"
               aria-pressed={active}
               onClick={() => setFilters((f) => ({ ...f, status: active ? '' : s }))}
-              className={`inline-flex items-center gap-xs min-h-[40px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 active
                   ? 'bg-primary-container text-on-primary border-primary-container'
                   : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
@@ -251,7 +251,7 @@ const AdminApplicants = () => {
             id="bulk-status"
             value={bulkStatus}
             onChange={(e) => setBulkStatus(e.target.value)}
-            className="select-field sm:w-auto !h-10"
+            className="select-field sm:w-auto"
           >
             {APPLICATION_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>

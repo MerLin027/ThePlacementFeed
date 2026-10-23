@@ -18,15 +18,15 @@ const BranchSelect = ({ selected = [], onChange }) => {
         <button
           type="button"
           onClick={selectAll}
-          className="font-label-sm text-label-sm text-primary hover:text-primary-container"
+          className="min-h-[44px] min-w-[44px] px-2 rounded-lg font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Select all
         </button>
-        <span className="text-outline-variant">|</span>
+        <span className="text-outline-variant" aria-hidden="true">|</span>
         <button
           type="button"
           onClick={clearAll}
-          className="font-label-sm text-label-sm text-secondary hover:text-on-surface"
+          className="min-h-[44px] min-w-[44px] px-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Clear
         </button>
