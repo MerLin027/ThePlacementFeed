@@ -1,6 +1,7 @@
 # Dependency Upgrade Plan
 
 **Status:** COMPLETE 2026-10-23 — Phases 0–8 done on branch `upgrade/deps` (C1 used, C2 not needed, C3 folded into Phase 6, C4 not needed). Not merged or pushed — awaiting the user.
+**Phase 9 (Node 24 LTS runtime): APPROVED, in progress.**
 **Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
@@ -74,6 +75,7 @@ Phase 5  react-markdown 10 (+ XSS regression)
 Phase 6  Tailwind CSS 4 (6a tooling → 6b theme → 6c classes → 6d visual diff)
 Phase 7  react-router 8 (+ Node 22.22 prerequisite)            [added in replan]
 Phase 8  Final verification, version re-audit, docs, deploy checklist
+Phase 9  Node 24 LTS runtime (runtime only, no library changes)  [planned 2026-10-23]
 --- contingency phases, only if the trigger happens ---
 Phase C1  Replace express-mongo-sanitize        (trigger: it fails on Express 5)
 Phase C2  Read validated query via matchedData  (trigger: .toInt() on req.query fails)
@@ -339,6 +341,81 @@ advisory) under `exceljs@4.4.0`, the newest ExcelJS; oxlint's React-Compiler-sty
    student login; then the client on Vercel (Project Settings → Node.js 22.x), smoke-test Home, a drive
    page, signup, apply, and the icons/dialog widths.
 6. **Rollback:** redeploy the previous Render/Vercel build; in git, `git revert` the phase commit(s).
+
+---
+
+## Phase 9 — Node 24 LTS runtime  (APPROVED 2026-10-23 — in progress)
+
+**Why:** Node 22 is in maintenance and reaches end-of-life on **2027-04-30** (≈ 6 months). Node 24
+("Krypton") is LTS, maintained until **2028-04-30**. Node 26 becomes LTS only on 2026-10-28 and a new
+LTS line needs time to settle — not chosen (version policy: stable LTS line, latest patch).
+**Target:** Node **24.22.1** (latest 24.x, 2026-10-20 security release; bundles npm 11.19.1, OpenSSL
+3.5.9 — the same OpenSSL as the 22.23.4 already tested, V8 13.6).
+**Scope:** runtime only. No library changes — the upgrades of Phases 1–8 stay exactly as they are.
+
+### What was already checked (before planning)
+| Check | Result |
+|---|---|
+| `engines.node` of all 321 locked packages (client + server) vs 24.22.1 | all satisfied |
+| Installed code vs the 30 Node APIs removed in Node 23/24 (official deprecations list: `util.is*()`, `util.log`, `tls.createSecurePair`, `OutgoingMessage._headers`, `timers.enroll/active`, `dirent.path`, …) | no real use — only same-named helpers (bluebird's own `util`, fast-csv/mongodb/mongoose/mquery own members); exceljs matches are in its browser bundle, which Node never loads |
+| Native binaries (rolldown, lightningcss, `@tailwindcss/oxide`, oxlint) | Node-API prebuilt — not tied to a Node version (confirmed by running in 9.4) |
+| TLS (Atlas) | same OpenSSL 3.5.9 as 22.23.4 |
+| `engines` ranges below on Render's resolver | resolve to 24.22.1 |
+
+### Steps
+- **9.0 Baseline.** On branch `upgrade/deps` at `904c802`, last full run: 741/741 on Node 22.23.4.
+- **9.1 Runtime.** Download the official `node-v24.22.1-win-x64.zip` from nodejs.org, verify SHA-256
+  against `SHASUMS256.txt`, use it portably from the scratchpad (system Node untouched).
+- **9.2 Clean install.** `rm -rf node_modules && npm ci` in client and server under 24.22.1 (npm 11).
+  Gate: install succeeds with no engine warnings; `git diff` of the lockfiles is empty (if npm 11 only
+  rewrites metadata, review and commit it separately).
+- **9.3 Static gates.** `npm run build`, `npm run lint`, `npm audit` (full) = 0 on both.
+  Build reproducibility: compare `dist/` file hashes built on Node 22.23.4 vs 24.22.1 — expected identical.
+- **9.4 Full regression on Node 24** — API, Vite and every suite (741 checks) run on 24.22.1 with
+  `NODE_OPTIONS=--trace-deprecation`. Gate: 741/741; API boot log and Vite log contain **no**
+  `DeprecationWarning`/`ExperimentalWarning` (any warning → N2).
+- **9.5 Targeted checks for the riskiest code paths on Node 24** (new script `upgrade9-test`):
+  - Excel export (exceljs → archiver → old stream/zip deps, the oldest code in the tree): download the
+    `.xlsx` via the API, re-open it with ExcelJS, check headers, row count and formula-injection escaping.
+  - bcrypt hash/compare (pre-upgrade `$2a$` hashes and new hashes), JWT sign/verify + cookie flags,
+    rate-limit headers, cron trigger, CSV/JSON responses, `crypto.timingSafeEqual` cron-secret check.
+  - Production-mode boot (`NODE_ENV=production`, local DB): starts, `/api/health` 200, no warnings.
+  - `resetAdmin.js` from the project root (prompt shown, no DB contact).
+- **9.6 Version ranges** (keep 22 allowed so it stays a one-click fallback):
+  - server `engines.node`: `>=20.19.0 <25` → Render resolves 24.22.1;
+  - client `engines.node`: `^22.22.0 || ^24.0.0` → Vercel uses its Node 24.x setting;
+  - run `npm install` so the lockfiles' copy of `engines` is in sync (lesson from Phase 7);
+  - re-run 9.4 quickly after the change (engines don't affect runtime, but the lockfiles changed).
+- **9.7 Docs.** README (Node 24 LTS), this plan, `HISTORY.md`, vault (decision note
+  `TPF_Dependency_Upgrade_2026_10`, dependency map, project note), memory; update the deploy checklist
+  (Node 24 installer, Vercel 24.x, Render log shows 24.x).
+- **9.8 Commit:** `chore(runtime): node 24 lts` (+ docs commit). Not merged or pushed until the user says.
+
+**Gate for the phase:** 9.2–9.5 all green, no deprecation warnings, lockfiles reviewed, docs updated.
+
+### If something breaks (Phase 9 contingencies)
+| ID | Trigger | Response |
+|---|---|---|
+| N1 | A library fails or behaves differently on Node 24 | Isolate with a minimal repro; if a newer **stable** release of that library fixes it, upgrade it as its own commit with a full regression; if not, check for a documented workaround; if neither exists → **N5** |
+| N2 | Deprecation/experimental warnings from a dependency | Not a failure. Record the warning and its source; take a newer stable release if it removes it; otherwise leave it documented (no warning suppression flags in production) |
+| N3 | The test harness (Playwright scripts) misbehaves on 24 while the app is fine | Run the harness on 22.23.4 against the app on 24.22.1 (the app is what is under test); record it |
+| N4 | npm 11 rewrites lockfiles | Review the diff; commit only metadata-only changes; dependency version changes are not allowed in this phase |
+| N5 | A blocker with no clean fix | Stop Phase 9, revert its commits, stay on Node 22.23.4 (valid until 2027-04-30) and record the blocker; everything from Phases 0–8 is unaffected |
+| N6 | Production-only problem after deploy (e.g. Atlas TLS, Render build) | Instant runtime rollback without code changes: set `NODE_VERSION=22` on Render / Vercel Node setting 22.x (both ranges still allow 22), redeploy; then investigate |
+
+### Risks
+| Risk | Likelihood | Mitigation |
+|---|---|---|
+| Old transitive deps under exceljs use removed APIs | Low (scan clean) | 9.5 export round-trip test |
+| Native build tools lack Node 24 support | Very low (Node-API) | 9.3 build + reproducibility check |
+| Atlas TLS differs on 24 | Very low (same OpenSSL) | N6 instant fallback |
+| Local machine left on 22 while prod runs 24 | Medium | Deploy checklist step 1 installs 24.22.1 |
+| Node 24 itself is in maintenance (not "active") | Accepted | Maintenance LTS = security/critical fixes until 2028-04-30; Node 26 LTS reviewed in 2027 |
+
+### Changes to the user's deploy steps
+1. Install **Node 24.22.1**: https://nodejs.org/dist/v24.22.1/node-v24.22.1-x64.msi (`node -v` → v24.22.1).
+2. Vercel: Node.js Version **24.x**. Render: `NODE_VERSION` unset (or `24`); build log shows Node 24.22.x.
+3. Everything else unchanged. Fallback: N6.
 
 ---
 
