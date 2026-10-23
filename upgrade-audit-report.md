@@ -14,7 +14,7 @@ Evidence files live in the session scratchpad `audit/` folder (command output, l
 **The upgrade is sound.** No Critical or High findings. For users on current browsers the API contract, stored
 data, security posture, performance and visuals are unchanged or better, and a rollback to `main` is safe
 (data and password hashes stay compatible). Two Medium findings: **browser support** (M-1, caused by
-Tailwind 4) and **regression tests not in the repository** (M-2, pre-existing practice). Nine Lows — one
+Tailwind 4) and **regression tests not in the repository** (M-2, pre-existing practice). Eight Lows (a ninth, L-1, was withdrawn as a false positive during the fixes) — one
 caused by Express 5 (L-7), one documentation error from the upgrade (L-2), the rest pre-existing or parity
 with `main`. 15 Info notes, including two positive side-effects (pre-existing 500s fixed, skeleton
 pulse now works).
@@ -24,7 +24,7 @@ pulse now works).
 | Critical | 0 | — |
 | High | 0 | — |
 | Medium | 2 | M-1 (upgrade), M-2 (pre-existing) |
-| Low | 9 | L-2, L-7 (upgrade) · L-5 (parity) · L-1, L-3, L-4, L-6, L-8 (pre-existing) · L-9 (test tooling) |
+| Low | 8 | L-2, L-7 (upgrade) · L-5 (parity) · L-3, L-4, L-6, L-8 (pre-existing) · L-9 (test tooling) — L-1 withdrawn |
 | Info | 15 | I-1 … I-15 |
 
 ---
@@ -92,7 +92,7 @@ pulse now works).
 |---|---|---|---|---|---|
 | M-1 | M | 2 | Browser support | Tailwind 4 makes the site **unusable in browsers without CSS cascade layers** (Chrome < 99, Safari < 15.4, Firefox < 97 — before ~March 2022) and **degraded in Chrome 99–110 / Safari 15.4–16.1**: default-palette colours (status chips, monograms, error tints) and all `/NN` opacity colours incl. **focus rings** disappear. Affected devices include iPhone 6s/7/SE (1st gen), capped at iOS 15. `main` works in all of them. | Decide the support floor. Cheap partial fix for the second group: hex values for the default-palette colours used and hex+alpha (or `@supports` fallbacks) for focus rings/tints. The first group can only be served by staying on Tailwind 3 or by a CSS post-processing step that flattens layers. |
 | M-2 | M | 3 | Tests (pre-existing) | The regression suites (24 suites, 767 checks) and the audit tools live only in the session scratchpad — not in the repository. They will be lost, and future changes (or a post-merge check) cannot be re-verified. | Move the suites into the repo (e.g. `tests/`), with a README, a guard that refuses any non-local MongoDB URI, and one `npm run test:all` entry point. |
-| L-1 | L | 1 | Config docs | Root `.env.example` (the file the README says to copy) lacks `DEFAULT_STUDENT_PASSWORD`. Optional variable (defaults to `college123`), documented in the README table. **Pre-existing**, not caused by the upgrade. | Add a commented line to `.env.example`. |
+| L-1 | ~~L~~ | 1 | Config docs | **Withdrawn — false positive.** `.env.example` does document the variable as `# DEFAULT_STUDENT_PASSWORD=college123` (commented out because it is optional); the Pass 1 check only matched uncommented lines. | None. |
 | L-2 | L | 2 | Deploy docs | The deploy checklist and Phase 9 N6 say "Vercel → Node.js 24.x" and "Vercel 22.x = no-code runtime rollback". On Vercel, `engines.node` overrides the dashboard (our range builds on 24.x), so the dashboard step is unnecessary and the Vercel rollback does not work as written. Render's `NODE_VERSION` fallback is correct. Harmless in practice (client build is byte-identical on 22/24). | Correct the checklist, N6 and the user guide. |
 | L-3 | L | 2 | Performance (pre-existing) | The icon stylesheet requests the complete Material Symbols variable font (`wght,FILL@100..700,0..1`, all icons): on slow 4G icons appear only after ≈ 12.5 s, on `main` and the branch alike. | Request only the icons and axes used (Google Fonts `icon_names=` + fixed weight/fill), or self-host a subset. |
 | L-4 | L | 2 | Logging (pre-existing) | Requests with a malformed id (`/api/placements/not-an-id`) log a full stack trace — anyone can generate log volume without authentication. | Log CastError/validation errors as one line without the stack. |
@@ -127,7 +127,7 @@ each fix, and its own commit on `upgrade/deps`.
 | Group | Findings | What | Effort |
 |---|---|---|---|
 | **A — before merging** | M-1 (decision), L-7, L-2 | **M-1:** you choose the browser floor. Option 1 (recommended): accept Tailwind 4's floor (Safari 16.4 / Chrome 111 / Firefox 128 for full fidelity), document it, and add cheap fallbacks so 2022–early-2023 browsers keep status colours and focus rings (hex values for the default-palette colours we use; hex+alpha focus rings). Option 2: also flatten cascade layers in the build so pre-2022 browsers work — more invasive, not recommended. Option 3: return to Tailwind 3 — loses the cleared advisory and the CSS-first setup. **L-7:** handle the `listen` error. **L-2:** correct the Vercel notes in the deploy checklist/N6/user guide. | Small (option 1) |
-| **B — hardening (pre-existing, cheap)** | L-5, L-6, L-4, L-8, L-1 | Depth-limited iterative sanitiser (→ 400); reject NUL/control characters in query strings (→ 400); log client errors (CastError/validation) as one line without stack; `.isString()` on admin text fields; add `DEFAULT_STUDENT_PASSWORD` to `.env.example`. | Small |
+| **B — hardening (pre-existing, cheap)** | L-5, L-6, L-4, L-8 (L-1 withdrawn) | Depth-limited iterative sanitiser (→ 400); reject NUL/control characters in query strings (→ 400); log client errors (CastError/validation) as one line without stack; `.isString()` on admin text fields; add `DEFAULT_STUDENT_PASSWORD` to `.env.example`. | Small |
 | **C — performance (pre-existing)** | L-3 | Request only the Material Symbols icons and axes the app uses (icons ≈ 12.5 s → expected well under 2 s on slow 4G); verify every icon still renders. | Small–medium |
 | **D — keep the safety net** | M-2, L-9, I-15 | Move the regression suites into the repository with a local-only DB guard and a single entry point; fix the harness's missing-summary gap; replace `ok(true…)` and the worst fixed waits. | Medium |
 | **Tracked, not now** | I-3, I-11, I-12 | oxlint React-Compiler warnings; `exceljs` replacement; code-splitting. | — |
@@ -145,3 +145,11 @@ Approved 2026-10-24 with **M-1 option 1** (accept Tailwind 4's floor, add cheap 
 - **L-7:** the `app.listen` callback now exits with `Failed to start server: …` on errors (verified: EADDRINUSE → exit 1; normal start unchanged).
 - **L-2:** deploy checklist, Phase 7/9 notes, N6, user steps and vault corrected — Vercel follows `engines.node`; the runtime rollback is Render-only and Vercel needs none (byte-identical client builds).
 - **Verification:** lint 0 errors, build OK; full regression **767/767 on Node 24.22.1 and on 22.23.4**, no warnings; back-to-back visual comparison with `main`: 24/32 views pixel-identical, the other 8 the known anti-aliasing-only differences.
+
+### Group B — done
+- **L-5:** the sanitiser now limits nesting to 32 levels and answers deeper bodies with **400** "Request body is too deeply nested" (was a stack overflow → 500 + stack trace, as on `main`). Real payloads nest 3 levels at most.
+- **L-6:** query strings with control characters (incl. NUL) are rejected with **400** before any handler runs (was a MongoDB regex error → 500 on three endpoints).
+- **L-4:** client errors (CastError, Mongoose ValidationError, duplicate key, 4xx from body parsing) are logged as **one line without a stack**; real server errors keep the full log entry.
+- **L-8:** `company`, `role`, `jdDescription` and selection-round name/description reject non-strings (`isString` before `trim`); required/blank fields keep their "is required" message.
+- **L-1:** **withdrawn — false positive.** `.env.example` already documents `# DEFAULT_STUDENT_PASSWORD=college123` (commented out because it is optional); the Pass 1 check only matched uncommented lines.
+- **Verification:** sanitiser unit checks (real payloads pass; 5,000-level body → 400; operators still stripped; NUL/tab in query → 400; Unicode, brackets, dots, `$` in values pass). Over HTTP vs `main`: deep-nesting cases 400 (main 500); type fuzz 648 requests → **0 server errors** (main 12); server log: client errors one line each, 0 stack traces. Full regression **767/767 on Node 24.22.1 and 22.23.4**.

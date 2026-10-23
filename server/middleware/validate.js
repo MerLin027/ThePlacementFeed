@@ -21,7 +21,14 @@ const VALID_STATUSES = ['Upcoming', 'Ongoing', 'Completed'];
 
 // Validation rules for creating/updating a placement
 const placementValidationRules = [
+  // Text fields are type-checked before .trim(), which would otherwise turn 123 or {} into "123"/"[object Object]"
   body('company')
+    .notEmpty()
+    .withMessage('Company name is required')
+    .bail()
+    .isString()
+    .withMessage('Company name must be text')
+    .bail()
     .trim()
     .notEmpty()
     .withMessage('Company name is required')
@@ -29,6 +36,12 @@ const placementValidationRules = [
     .withMessage('Company name cannot exceed 200 characters'),
 
   body('role')
+    .notEmpty()
+    .withMessage('Role is required')
+    .bail()
+    .isString()
+    .withMessage('Role must be text')
+    .bail()
     .trim()
     .notEmpty()
     .withMessage('Role is required')
@@ -96,6 +109,9 @@ const placementValidationRules = [
 
   body('jdDescription')
     .optional()
+    .isString()
+    .withMessage('JD description must be text')
+    .bail()
     .isLength({ max: 10000 })
     .withMessage('JD description cannot exceed 10000 characters'),
 
@@ -122,6 +138,12 @@ const placementValidationRules = [
     .withMessage('selectionRounds must be an array with at most 10 items'),
 
   body('selectionRounds.*.roundName')
+    .notEmpty()
+    .withMessage('Each round must have a roundName')
+    .bail()
+    .isString()
+    .withMessage('Round name must be text')
+    .bail()
     .trim()
     .notEmpty()
     .withMessage('Each round must have a roundName')
@@ -130,6 +152,9 @@ const placementValidationRules = [
 
   body('selectionRounds.*.roundDescription')
     .optional({ values: 'falsy' })
+    .isString()
+    .withMessage('Round description must be text')
+    .bail()
     .isLength({ max: 1000 })
     .withMessage('Round description cannot exceed 1000 characters'),
 

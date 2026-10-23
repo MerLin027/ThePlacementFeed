@@ -1,13 +1,23 @@
+// Errors caused by the request itself (bad id, invalid data, malformed JSON) — not server faults
+const isClientError = (err) =>
+  err.name === 'ValidationError' || err.name === 'CastError' || err.code === 11000 ||
+  (err.statusCode >= 400 && err.statusCode < 500);
+
 // Global error handler — never leak internals to the client
 const errorHandler = (err, req, res, _next) => {
-  // Log full error details server-side
-  console.error('Server Error:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-  });
+  if (isClientError(err)) {
+    // One line, no stack: anyone can trigger these, so they must not flood the log
+    console.warn(`Client error: ${req.method} ${req.path} → ${err.name}: ${String(err.message).slice(0, 200)}`);
+  } else {
+    // Log full error details server-side
+    console.error('Server Error:', {
+      message: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
