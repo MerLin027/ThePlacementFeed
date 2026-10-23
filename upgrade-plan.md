@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–7 done (C1 used, C2 not needed, C3 folded into Phase 6); next: Phase 8 (final).
+**Status:** COMPLETE 2026-10-23 — Phases 0–8 done on branch `upgrade/deps` (C1 used, C2 not needed, C3 folded into Phase 6, C4 not needed). Not merged or pushed — awaiting the user.
 **Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
@@ -318,6 +318,27 @@ warnings across guest/student/admin routes. **User action:** update local Node t
 
 **Gate:** everything above green. Merge to `main` and push only on the user's explicit go-ahead.
 **Commit:** `docs: dependency upgrade complete`.
+
+**Result:** version re-audit — every direct dependency is on its npm `latest` stable release (only
+mongoose 9.11.3 → 9.11.4 was behind; taken). Clean `npm ci` in both packages on Node 22.23.4; build
+and lint OK; full regression **741/741** (23 suites); `npm audit` (full, incl. dev) 0 on both. Docs:
+README stack table and Node requirement, `HISTORY.md`, vault (`Projects/The_Placement_Feed.md`,
+`Architecture/Dependencies_Map.md`, `System_Overview.md`, `Home.md`, new decision
+`TPF_Dependency_Upgrade_2026_10` and gotchas `TPF_Tailwind4_Cascade_And_Spacing`,
+`TPF_Express5_Query_Getter`; 49 links, 0 broken). Known, not actionable now: `glob@7` (deprecated, no
+advisory) under `exceljs@4.4.0`, the newest ExcelJS; oxlint's React-Compiler-style warnings.
+
+### Deploy checklist (for the user — nothing here has been executed)
+1. **Local machine:** update Node to 22.22+ (22.23.4 LTS) before running `npm install` / `npm run dev`.
+2. **Merge:** `upgrade/deps` → `main` (fast-forward), then push — only when you decide to.
+3. **Render (API):** open the first build log after deploy and confirm "Node.js 22.x". If a
+   `NODE_VERSION` env var is set, it must be `22` (it overrides `engines`).
+4. **Atlas:** confirm the cluster's MongoDB version is supported by driver 7 (Mongoose 9). Current
+   Atlas versions (7.0/8.0) are.
+5. **Order:** deploy the API first, smoke-test `/api/health`, an admin login at `/admin/login` and a
+   student login; then the client on Vercel (Project Settings → Node.js 22.x), smoke-test Home, a drive
+   page, signup, apply, and the icons/dialog widths.
+6. **Rollback:** redeploy the previous Render/Vercel build; in git, `git revert` the phase commit(s).
 
 ---
 

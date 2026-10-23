@@ -17,18 +17,19 @@
 
 | | Technology | Version |
 |---|---|---|
-| **Frontend** | React | 19.2 |
-| | Vite | 8.1 |
-| | Tailwind CSS | 3.4 |
-| | React Router | 7.18 |
-| | Axios | 1.18 |
-| | react-markdown + remark-gfm / rehype-raw / rehype-sanitize | 9.0 / 4.0 / 7.0 / 6.0 |
+| **Runtime** | Node.js | 22 LTS (client tooling needs ≥ 22.22; `engines` in both `package.json`s) |
+| **Frontend** | React | 19.3 |
+| | Vite | 8.3 |
+| | Tailwind CSS (via `@tailwindcss/vite`, theme in `src/index.css`) | 4.3 |
+| | React Router | 8.5 |
+| | Axios | 1.20 |
+| | react-markdown + remark-gfm / rehype-raw / rehype-sanitize | 10.1 / 4.0 / 7.0 / 6.0 |
 | | react-hot-toast | 2.6 |
-| **Backend** | Node.js | no version pinned in repo |
-| | Express | 4.21 |
-| | Mongoose | 8.6 |
+| **Backend** | Express | 5.3 |
+| | Mongoose | 9.11 |
+| | Helmet / express-rate-limit / express-validator | 8.3 / 8.7 / 7.3 |
 | | node-cron | 4.6 |
-| | JWT + bcryptjs | 9.0 / 2.4 |
+| | JWT + bcryptjs | 9.0 / 3.0 |
 | | ExcelJS (applicant export) | 4.4 |
 | **Database** | MongoDB (local dev) / MongoDB Atlas (prod) | — |
 | **Deployment** | Frontend → Vercel, Backend → Render | — |
@@ -52,13 +53,13 @@
 - **Admin students page** — search students, reset a password to the default, or delete an account (applications are kept with personal details removed)
 - Branches are shown by full name (e.g. *Information Technology*) and stored as short codes (`IT`)
 - Accessible by design: keyboard-friendly dialogs and menus, skip link, labelled forms with inline errors, 44 px touch targets, reduced-motion support, page titles; audited with axe-core (no serious/critical issues) on every page at desktop and phone widths
-- Security hardened: Helmet, CORS, rate-limiting, exact-origin CSRF checks, input validation + allowlists, separate admin/student sessions with token revocation, audit log for admin account/export actions, ReDoS-safe search
+- Security hardened: Helmet, CORS, rate-limiting, exact-origin CSRF checks, NoSQL-operator stripping (`middleware/sanitizeRequest.js`), input validation + allowlists, separate admin/student sessions with token revocation, audit log for admin account/export actions, ReDoS-safe search
 
 ---
 
 ## Local Setup
 
-> Requires Node.js (no specific version pinned in the repo; 18+ recommended) and a MongoDB instance (local or Atlas).
+> Requires Node.js 22 LTS, version 22.22 or newer (React Router 8 and Mongoose 9 need it; `engines` in both `package.json` files), and a MongoDB instance (local or Atlas).
 
 ```bash
 git clone https://github.com/MerLin027/ThePlacementFeed.git
