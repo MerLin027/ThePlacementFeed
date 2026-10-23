@@ -72,10 +72,14 @@ const Navbar = () => {
 
         {/* Left zone — logo, flex-1 so it balances the right zone */}
         <div className="flex-1 flex items-center">
-          <Link to="/" className="flex items-center gap-xs">
+          <Link
+            to="/"
+            aria-label="The Placement Feed — home"
+            className="flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
             <img
               src={logo}
-              alt="The Placement Feed"
+              alt=""
               className="h-9 w-auto object-contain"
             />
             <span className="font-headline-md text-headline-md font-semibold hidden sm:block">

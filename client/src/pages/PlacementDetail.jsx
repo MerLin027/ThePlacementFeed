@@ -9,6 +9,7 @@ import ApplyModal from '../components/ApplyModal';
 import { useApplyState } from '../hooks/useApplyState';
 import { useAuth } from '../context/AuthContext';
 import { formatBranches } from '../constants/branches';
+import { describeAcademicRequirement } from '../utils/eligibility';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -251,9 +252,7 @@ const PlacementDetail = () => {
                   Academic requirement
                 </span>
                 <span className="font-body-md text-body-md text-on-surface">
-                  {placement.eligibility?.cgpa != null
-                    ? `Min. CGPA ${placement.eligibility.cgpa}${placement.eligibility.backlog != null ? ` (Max ${placement.eligibility.backlog} Backlogs)` : ' (No Active Backlogs)'}`
-                    : 'Not specified'}
+                  {describeAcademicRequirement(placement.eligibility)}
                 </span>
               </div>
               <div className="flex flex-col bg-surface-container-low p-xs rounded-lg">

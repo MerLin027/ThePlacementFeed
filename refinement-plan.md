@@ -1,6 +1,6 @@
 # Refinement Plan — Status Logic, Notifications, Frontend Completeness & UI Polish
 
-> **Status: PLAN — awaiting go-ahead.** Written 2026-10-22 after auditing the code and capturing every page (desktop 1280px + mobile 390px) against a seeded local database.
+> **Status: IMPLEMENTED (2026-10-24).** Phases A–G committed (`5d6af4d`, `62e1da8`, `1b2f06d`, `3db0948`, `9ee22fb`, `ef97924` and the Phase G commit); decisions R1–R4 confirmed by the owner. Details per phase in `HISTORY.md`. Originally written 2026-10-22 after auditing the code and capturing every page (desktop 1280px + mobile 390px) against a seeded local database.
 > **Process:** each phase ends with its checks (lint, build, automated tests, before/after screenshots) → `HISTORY.md` entry → one git commit. Vault notes updated in the last phase.
 > **Skills used:** `secure-coding-practices` (server changes), `ui-ux-pro-max` (quick-reference + pro-rules checklists), `taste-skill/redesign-skill` (audit → fix order for an existing project), `genjutsu/design-audit` (motion/a11y/consistency greps), `taste-skill` (restraint: trust-first design read).
 

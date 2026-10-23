@@ -23,7 +23,7 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
     <div className="w-full md:max-w-2xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md">
       {/* Search bar + toggle */}
       <div className="flex items-center gap-sm">
-        <div className="flex-1 flex items-center gap-2 h-[46px] px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary transition-colors">
+        <div className="flex-1 flex items-center gap-2 h-[46px] px-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
           <span className="material-symbols-outlined flex-shrink-0 text-outline text-[20px]" aria-hidden="true">
             search
           </span>

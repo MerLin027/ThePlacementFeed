@@ -37,20 +37,21 @@
 
 ## Features
 
-- Browse, search, and filter placement drives by branch, status, CTC range, and keyword
+- **Home shows open drives first**, closest deadline first ("Closes in 3 days"), with completed drives in a collapsible *Past drives* section; search and filter by branch, status, CTC range and keyword
 - Drive detail pages with full JD rendered as Markdown (GFM + sanitized HTML)
 - Selection process steps shown per drive (round name + description)
 - Per-drive application mode: external form link (`formUrl`), **in-app application**, or both
-- Timeline view — drives grouped chronologically by month
-- Automatic status transitions (Upcoming → Ongoing → Completed) via daily cron at 00:05 IST; skipped if status was manually overridden
-- Postponed-drive handling — toggle `isPostponed`; status automation resettable per drive
-- Notification polling every 20 s via `GET /api/placements/changes` — toast alerts on new, edited, postponed, or status-changed drives; persisted in `localStorage`, synced across tabs
+- Timeline view — every drive grouped by month, with a "Today" marker
+- **Automatic status from dates** — *Completed* once the drive date has passed, *Ongoing* once applications close (or on drive day), otherwise *Upcoming* (whole IST days). Recomputed whenever a drive is saved, by the daily cron (00:05 IST) and on the first request of each day (Render sleeps). Admins can pin a status by hand ("fixed") and switch back to *Automatic*; postponed drives are frozen until un-postponed
+- **Notifications** — the bell polls `GET /api/placements/changes` every 30 s (paused in background tabs) for new drives, status changes ("Infosys is now Ongoing"), postponements and edits; logged-in students are also told when their application status changes. Nothing shown or dismissed comes back; works across tabs
+- **My applications** page for students, with each application's current status
 - **Student accounts** — sign up with email + roll number (one account each, can't be changed later), profile with academic details, change password; 7-day session in its own httpOnly cookie
 - **In-app applications** — eligibility checked server-side (status, postponed, deadline, branch, CGPA, backlogs, profile completeness); profile is snapshotted at submission; optional per-drive questions; students see their application status
 - Admin dashboard — create, edit, delete drives (deleting a drive also deletes its applications); protected by JWT in httpOnly cookie (3 h session)
 - **Admin applicants page** per drive — filter, sort, change status (single or bulk), private notes, and **Excel export** (formula-injection safe)
 - **Admin students page** — search students, reset a password to the default, or delete an account (applications are kept with personal details removed)
 - Branches are shown by full name (e.g. *Information Technology*) and stored as short codes (`IT`)
+- Accessible by design: keyboard-friendly dialogs and menus, skip link, labelled forms with inline errors, 44 px touch targets, reduced-motion support, page titles; audited with axe-core (no serious/critical issues) on every page at desktop and phone widths
 - Security hardened: Helmet, CORS, rate-limiting, exact-origin CSRF checks, input validation + allowlists, separate admin/student sessions with token revocation, audit log for admin account/export actions, ReDoS-safe search
 
 ---
