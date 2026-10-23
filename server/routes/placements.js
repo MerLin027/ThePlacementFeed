@@ -84,6 +84,12 @@ router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
     const { branch, status, ctcMin, ctcMax, search, sort, page, limit } =
       req.query;
 
+    // Every filter is a plain string. Repeated keys (arrays) and bracket syntax (objects) are rejected
+    // up front instead of crashing the handlers below or reaching the query builder.
+    if ([branch, status, ctcMin, ctcMax, search, sort, page, limit].some((v) => v !== undefined && typeof v !== 'string')) {
+      return res.status(400).json({ success: false, message: 'Invalid query parameter' });
+    }
+
     // --- Query param validation ---
     // status may be a single value or a comma-separated list ("Upcoming,Ongoing")
     const statuses = typeof status === 'string' && status ? [...new Set(status.split(',').map((s) => s.trim()))] : [];
@@ -201,7 +207,7 @@ router.get('/', apiLimiter, freshStatuses, async (req, res, next) => {
 router.get('/changes', apiLimiter, freshStatuses, async (req, res, next) => {
   try {
     const { since } = req.query;
-    if (!since) {
+    if (typeof since !== 'string' || !since) {
       return res.status(400).json({ success: false, message: 'since timestamp is required' });
     }
 

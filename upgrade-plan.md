@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-**Status:** IN PROGRESS — Phases 0–2 done; next: Phase 3 (Express 5).
+**Status:** IN PROGRESS — Phases 0–3 done (C1 used, C2 not needed); next: Phase 4 (Mongoose 9).
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
 **Rule:** one phase = one commit on branch `upgrade/deps`. A phase is only "done" when its gate
@@ -141,6 +141,12 @@ Done together because they are independent, low-risk and each has an obvious tes
 
 **Gate:** 619/619, injection tests pass, no 500s on empty/odd bodies, 404 handling unchanged.
 **Commit:** `chore(deps): express 5`.
+
+**Result:** `express-mongo-sanitize` crashed every request on Express 5 → **C1 done**: replaced by
+`middleware/sanitizeRequest.js`, which also pins `req.query` (so validator coercion persists — C2 not
+needed), defaults `req.body` to `{}`, and rejects bracketed query keys with 400. The new suite also
+found three pre-existing 500s on Express 4 (object username on admin login; object/array `branch` or
+`search` on the drive list) — fixed with string-only checks. Regression 696/696 + `upgrade3-test` 57.
 
 ## Phase 4 — Mongoose 9
 

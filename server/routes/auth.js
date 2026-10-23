@@ -27,7 +27,8 @@ router.post('/login', loginLimiter, csrfCheck, async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password) {
+    // Strings only: an object here (e.g. {"$ne": null}) must be a 400, not a crash or a query operator
+    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
       return res.status(400).json({
         success: false,
         message: 'Username and password are required',
