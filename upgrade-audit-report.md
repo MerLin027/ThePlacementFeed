@@ -2,7 +2,7 @@
 
 **Plan:** `upgrade-audit-plan.md` · **Subject:** branch `upgrade/deps` vs `main` (17 upgrade commits + audit-plan commit)
 **Started:** 2026-10-24 · **Runtime used:** Node 24.22.1 (target) and 22.23.4 (fallback), local MongoDB 8.0 on port 27099
-**Status:** COMPLETE (2026-10-24) — Pass 1, Pass 2 and Pass 3 done · fix plan below awaits approval
+**Status:** COMPLETE (2026-10-24) — Pass 1, Pass 2 and Pass 3 done · fix plan approved (M-1 option 1) · fixes in progress, see Fix log
 
 Severity: **C** Critical · **H** High · **M** Medium · **L** Low · **I** Info.
 Evidence files live in the session scratchpad `audit/` folder (command output, logs).
@@ -133,3 +133,15 @@ each fix, and its own commit on `upgrade/deps`.
 | **Tracked, not now** | I-3, I-11, I-12 | oxlint React-Compiler warnings; `exceljs` replacement; code-splitting. | — |
 
 Recommended order: A → B → D → C (C can run in parallel with D). Groups B–D do not block the merge; A does.
+
+---
+
+## Fix log
+
+Approved 2026-10-24 with **M-1 option 1** (accept Tailwind 4's floor, add cheap fallbacks).
+
+### Group A — done
+- **M-1:** the 26 default-palette shades the app uses are pinned to their Tailwind 3 hex values in `@theme` (v4's `oklch()` is unreadable before Chrome 111 / Safari 15.4). Opacity colours inside `@utility` (input/select focus rings, markdown link underline, blockquote) use named `rgb()` tokens — v4 emits no fallback there. Root cause of the missing focus rings, found by bisecting in Chromium 110: it rejects `var(--x,)` (empty fallback) when `--x` is a registered `@property`, which Tailwind uses in every ring, filter and transform; `client/vite.config.js` rewrites the 51 occurrences to `var(--x, )` in the built CSS. Result in Chromium 110: **0/49** probed colour/ring classes broken (was 12); Home and login identical to current Chromium. Chromium 98 (pre-2022) remains unsupported by decision. README gains a "Browser support" table.
+- **L-7:** the `app.listen` callback now exits with `Failed to start server: …` on errors (verified: EADDRINUSE → exit 1; normal start unchanged).
+- **L-2:** deploy checklist, Phase 7/9 notes, N6, user steps and vault corrected — Vercel follows `engines.node`; the runtime rollback is Render-only and Vercel needs none (byte-identical client builds).
+- **Verification:** lint 0 errors, build OK; full regression **767/767 on Node 24.22.1 and on 22.23.4**, no warnings; back-to-back visual comparison with `main`: 24/32 views pixel-identical, the other 8 the known anti-aliasing-only differences.

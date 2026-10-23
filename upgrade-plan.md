@@ -278,8 +278,9 @@ Verification: v3 and v4 captured back-to-back on the same data — 24/32 views p
 **Prerequisite:** react-router 8 requires **Node ≥ 22.22.0** (and React ≥ 19.2.7 ✔, ESM-only ✔
 under Vite). The local machine has Node 22.12.0 → the user upgrades local Node to the current 22.x
 LTS (22.23.4) — a patch-level update within the same LTS line. Client `engines` becomes `^22.22.0`
-(Vite 8's 20.19 support no longer applies once react-router needs 22.22). Vercel's "22.x" setting and
-Render's bounded range already resolve to 22.23.
+(Vite 8's 20.19 support no longer applies once react-router needs 22.22). Vercel (which
+follows `engines.node`, not its dashboard — corrected in the audit, L-2) and Render's bounded range
+already resolve to 22.23.
 
 **Code audit:** the client uses declarative mode only — `BrowserRouter`, `Routes`, `Route`,
 `Navigate`, `Link`, `useNavigate`, `useLocation`, `useParams`, `useSearchParams`, all imported
@@ -338,11 +339,12 @@ advisory) under `exceljs@4.4.0`, the newest ExcelJS; oxlint's React-Compiler-sty
 4. **Atlas:** confirm the cluster's MongoDB version is supported by driver 7 (Mongoose 9). Current
    Atlas versions (7.0/8.0) are.
 5. **Order:** deploy the API first, smoke-test `/api/health`, an admin login at `/admin/login` and a
-   student login; then the client on Vercel (Project Settings → Node.js 24.x), smoke-test Home, a drive
+   student login; then the client on Vercel (no Node setting needed — Vercel takes the Node version from `client/package.json` `engines.node` (it overrides the dashboard setting) and picks the highest allowed major — 24.x), smoke-test Home, a drive
    page, signup, apply, and the icons/dialog widths.
 6. **Rollback:** redeploy the previous Render/Vercel build; in git, `git revert` the phase commit(s).
-   Runtime-only rollback (Phase 9 N6): `NODE_VERSION=22` on Render / Node.js 22.x on Vercel — both `engines`
-   ranges still allow 22, and the full suite passes on 22.23.4.
+   Runtime-only rollback (Phase 9 N6): `NODE_VERSION=22` on Render (it overrides `engines`; the full suite
+   passes on 22.23.4). On Vercel the Node version can only be changed through `engines.node` (a code change);
+   it is not needed — the client build is byte-identical on Node 22 and 24.
 
 ---
 
@@ -385,12 +387,12 @@ LTS line needs time to settle — not chosen (version policy: stable LTS line, l
   - `resetAdmin.js` from the project root (prompt shown, no DB contact).
 - **9.6 Version ranges** (keep 22 allowed so it stays a one-click fallback):
   - server `engines.node`: `>=20.19.0 <25` → Render resolves 24.22.1;
-  - client `engines.node`: `^22.22.0 || ^24.0.0` → Vercel uses its Node 24.x setting;
+  - client `engines.node`: `^22.22.0 || ^24.0.0` → Vercel builds on 24.x (engines overrides its dashboard setting);
   - run `npm install` so the lockfiles' copy of `engines` is in sync (lesson from Phase 7);
   - re-run 9.4 quickly after the change (engines don't affect runtime, but the lockfiles changed).
 - **9.7 Docs.** README (Node 24 LTS), this plan, `HISTORY.md`, vault (decision note
   `TPF_Dependency_Upgrade_2026_10`, dependency map, project note), memory; update the deploy checklist
-  (Node 24 installer, Vercel 24.x, Render log shows 24.x).
+  (Node 24 installer, Render log shows 24.x).
 - **9.8 Commit:** `chore(runtime): node 24 lts` (+ docs commit). Not merged or pushed until the user says.
 
 **Gate for the phase:** 9.2–9.5 all green, no deprecation warnings, lockfiles reviewed, docs updated.
@@ -425,7 +427,7 @@ LTS line needs time to settle — not chosen (version policy: stable LTS line, l
 | N3 | The test harness (Playwright scripts) misbehaves on 24 while the app is fine | Run the harness on 22.23.4 against the app on 24.22.1 (the app is what is under test); record it |
 | N4 | npm 11 rewrites lockfiles | Review the diff; commit only metadata-only changes; dependency version changes are not allowed in this phase |
 | N5 | A blocker with no clean fix | Stop Phase 9, revert its commits, stay on Node 22.23.4 (valid until 2027-04-30) and record the blocker; everything from Phases 0–8 is unaffected |
-| N6 | Production-only problem after deploy (e.g. Atlas TLS, Render build) | Instant runtime rollback without code changes: set `NODE_VERSION=22` on Render / Vercel Node setting 22.x (both ranges still allow 22), redeploy; then investigate |
+| N6 | Production-only problem after deploy (e.g. Atlas TLS, Render build) | Instant runtime rollback without code changes: set `NODE_VERSION=22` on Render (the server range still allows 22), redeploy; then investigate. Vercel needs no runtime rollback — it only builds static files, identical on 22 and 24 (corrected in the audit, L-2) |
 
 ### Risks
 | Risk | Likelihood | Mitigation |
@@ -438,7 +440,7 @@ LTS line needs time to settle — not chosen (version policy: stable LTS line, l
 
 ### Changes to the user's deploy steps
 1. Install **Node 24.22.1**: https://nodejs.org/dist/v24.22.1/node-v24.22.1-x64.msi (`node -v` → v24.22.1).
-2. Vercel: Node.js Version **24.x**. Render: `NODE_VERSION` unset (or `24`); build log shows Node 24.22.x.
+2. Render: `NODE_VERSION` unset (or `24`); build log shows Node 24.22.x. Vercel: nothing to set — `engines.node` decides (24.x).
 3. Everything else unchanged. Fallback: N6.
 
 ---

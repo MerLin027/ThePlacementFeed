@@ -74,6 +74,41 @@
   --color-background: #f8f9fa;
   --color-on-background: #191c1d;
 
+  /* Tailwind's default palette, pinned to its v3 hex values (what the site showed before the upgrade).
+     v4 defines these in oklch(), which browsers older than Chrome 111 / Safari 15.4 cannot parse. */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-sky-100: #e0f2fe;
+  --color-sky-900: #0c4a6e;
+  --color-violet-100: #ede9fe;
+  --color-violet-900: #4c1d95;
+  --color-rose-100: #ffe4e6;
+  --color-rose-900: #881337;
+  --color-gray-200: #e5e7eb;
+  --color-gray-400: #9ca3af;
+
+  /* Translucent colours used by the component utilities below. Opacity modifiers (`primary/20`) inside
+     @utility compile to color-mix() with no fallback, so these are plain rgb() values instead. */
+  --color-focus-ring: rgb(0 74 198 / 0.2);
+  --color-primary-30: rgb(0 74 198 / 0.3);
+  --color-primary-fixed-20: rgb(219 225 255 / 0.2);
+
   --radius: 0.25rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
@@ -204,11 +239,11 @@
 }
 
 @utility input-field {
-  @apply w-full h-[44px] px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface placeholder-outline shadow-xs focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+  @apply w-full h-[44px] px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface placeholder-outline shadow-xs focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-focus-ring transition-all duration-200;
 }
 
 @utility select-field {
-  @apply w-full h-[44px] px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface shadow-xs focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 appearance-none cursor-pointer;
+  @apply w-full h-[44px] px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface shadow-xs focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-focus-ring transition-all duration-200 appearance-none cursor-pointer;
 }
 
 @utility card {
@@ -256,7 +291,7 @@
   }
 
   & a {
-    @apply text-primary hover:text-primary-container hover:underline underline-offset-2 decoration-primary/30;
+    @apply text-primary hover:text-primary-container hover:underline underline-offset-2 decoration-primary-30;
   }
 
   & strong {
@@ -264,7 +299,7 @@
   }
 
   & blockquote {
-    @apply border-l-4 border-primary/30 bg-primary-fixed/20 pl-4 py-3 pr-4 italic text-on-surface-variant my-5 rounded-r-lg;
+    @apply border-l-4 border-primary-30 bg-primary-fixed-20 pl-4 py-3 pr-4 italic text-on-surface-variant my-5 rounded-r-lg;
   }
 
   & code {

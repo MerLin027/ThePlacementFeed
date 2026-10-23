@@ -134,7 +134,12 @@ const startServer = async () => {
     // Initialize scheduled jobs
     initCronJobs();
 
-    app.listen(PORT, () => {
+    // Express 5 passes listen errors (e.g. EADDRINUSE) to this callback instead of throwing
+    app.listen(PORT, (error) => {
+      if (error) {
+        console.error(`Failed to start server: ${error.message}`);
+        process.exit(1);
+      }
       console.log(
         `Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
       );

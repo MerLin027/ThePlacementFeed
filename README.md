@@ -57,6 +57,16 @@
 
 ---
 
+## Browser support
+
+Built with Tailwind CSS 4, which relies on modern CSS (cascade layers, `@property`, `color-mix()`).
+
+| Browser | Support |
+|---|---|
+| Chrome / Edge 111+, Safari 16.4+, Firefox 128+ (2023 onwards) | Full |
+| Chrome / Edge 99–110, Safari 15.4–16.3, Firefox 97–127 (2022) | Full layout and colours; a few translucent tints are simplified. Colours and focus rings are kept through hex fallbacks (`client/src/index.css`) and a build step (`client/vite.config.js`) |
+| Older (before ~March 2022 — e.g. iOS 15.3 and earlier) | Not supported: styles do not load |
+
 ## Local Setup
 
 > Requires Node.js 24 LTS (Node 22.22+ also works — React Router 8 needs ≥ 22.22; `engines` in both `package.json` files), and a MongoDB instance (local or Atlas).
