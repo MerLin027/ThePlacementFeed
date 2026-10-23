@@ -1,7 +1,7 @@
 # Dependency Upgrade Plan
 
 **Status:** COMPLETE 2026-10-23 — Phases 0–8 done on branch `upgrade/deps` (C1 used, C2 not needed, C3 folded into Phase 6, C4 not needed). Not merged or pushed — awaiting the user.
-**Phase 9 (Node 24 LTS runtime): APPROVED, in progress.**
+**Phase 9 (Node 24 LTS runtime): COMPLETE 2026-10-24** — deploy target is now Node 24.22.1 (22.22+ kept as fallback).
 **Replanned 2026-10-23:** version policy added; react-router 8 added as Phase 7; final phase is now Phase 8.
 **Goal:** move every outdated dependency to its latest version with no regressions, no new
 vulnerabilities, and the existing regression suite (619 checks at the Phase 0 baseline) still green after every phase.
@@ -13,7 +13,7 @@ passes. Nothing is pushed or merged to `main` until the user says so.
 Only **stable releases**: the version npm publishes under the `latest` dist-tag, with no
 pre-release identifier (`-alpha`, `-beta`, `-rc`, `-pre`, `-next`, `-canary`, nightly or
 experimental builds). `package.json` keeps caret ranges; the lockfile pins the exact versions that
-were tested. Runtime: Node 22 LTS (Render resolves the bounded `engines` range to the latest 22.x).
+were tested. Runtime: Node 24 LTS since Phase 9 (Render resolves the bounded `engines` range to the latest 24.x; 22.22+ still allowed as a fallback).
 
 **Audit (2026-10-23, every direct dependency of client and server):** all installed versions are
 stable `latest` releases — no pre-releases. Two newer stable releases had appeared since the
@@ -330,21 +330,23 @@ README stack table and Node requirement, `HISTORY.md`, vault (`Projects/The_Plac
 `TPF_Express5_Query_Getter`; 49 links, 0 broken). Known, not actionable now: `glob@7` (deprecated, no
 advisory) under `exceljs@4.4.0`, the newest ExcelJS; oxlint's React-Compiler-style warnings.
 
-### Deploy checklist (for the user — nothing here has been executed)
-1. **Local machine:** update Node to 22.22+ (22.23.4 LTS) before running `npm install` / `npm run dev`.
+### Deploy checklist (for the user — nothing here has been executed; updated for Node 24 in Phase 9)
+1. **Local machine:** install Node **24.22.1** LTS (https://nodejs.org/dist/v24.22.1/node-v24.22.1-x64.msi) before running `npm install` / `npm run dev`; `node -v` → v24.22.1.
 2. **Merge:** `upgrade/deps` → `main` (fast-forward), then push — only when you decide to.
-3. **Render (API):** open the first build log after deploy and confirm "Node.js 22.x". If a
-   `NODE_VERSION` env var is set, it must be `22` (it overrides `engines`).
+3. **Render (API):** open the first build log after deploy and confirm "Node.js 24.x". If a
+   `NODE_VERSION` env var is set, it must be `24` or removed (it overrides `engines`).
 4. **Atlas:** confirm the cluster's MongoDB version is supported by driver 7 (Mongoose 9). Current
    Atlas versions (7.0/8.0) are.
 5. **Order:** deploy the API first, smoke-test `/api/health`, an admin login at `/admin/login` and a
-   student login; then the client on Vercel (Project Settings → Node.js 22.x), smoke-test Home, a drive
+   student login; then the client on Vercel (Project Settings → Node.js 24.x), smoke-test Home, a drive
    page, signup, apply, and the icons/dialog widths.
 6. **Rollback:** redeploy the previous Render/Vercel build; in git, `git revert` the phase commit(s).
+   Runtime-only rollback (Phase 9 N6): `NODE_VERSION=22` on Render / Node.js 22.x on Vercel — both `engines`
+   ranges still allow 22, and the full suite passes on 22.23.4.
 
 ---
 
-## Phase 9 — Node 24 LTS runtime  (APPROVED 2026-10-23 — in progress)
+## Phase 9 — Node 24 LTS runtime  (COMPLETE 2026-10-24)
 
 **Why:** Node 22 is in maintenance and reaches end-of-life on **2027-04-30** (≈ 6 months). Node 24
 ("Krypton") is LTS, maintained until **2028-04-30**. Node 26 becomes LTS only on 2026-10-28 and a new
@@ -392,6 +394,28 @@ LTS line needs time to settle — not chosen (version policy: stable LTS line, l
 - **9.8 Commit:** `chore(runtime): node 24 lts` (+ docs commit). Not merged or pushed until the user says.
 
 **Gate for the phase:** 9.2–9.5 all green, no deprecation warnings, lockfiles reviewed, docs updated.
+
+**Result (2026-10-24):**
+- 9.1 Official `node-v24.22.1-win-x64.zip`, SHA-256 verified, used portably (system Node untouched).
+- 9.2 `npm ci` in both packages on Node 24 / npm 11.19.1: OK, lockfiles unchanged. npm 11 lists more
+  deprecation notices than npm 10 (`inflight`, `lodash.isequal`, `rimraf@2`, `fstream`, `glob@7`) — all
+  under `exceljs@4.4.0`, already in the tree before this phase; no advisories.
+- 9.3 Build, lint, `npm audit` 0/0. Client `dist/` is **byte-identical** when built on Node 22.23.4 and 24.22.1.
+- 9.4 Full regression on Node 24 with `--trace-deprecation`: 741/741, no Node warnings — but it surfaced a
+  **Mongoose** deprecation (`new: true` in `findOneAndUpdate`, from Phase 4, missed then because logs
+  were scanned for errors only) → **N2**: replaced with `returnDocument: 'after'` (Mongoose's documented
+  equivalent) in `adminStudents.js` (password reset) and `applicants.js` (status/note update).
+- 9.5 New `upgrade9-test` (26): Excel export round-trip (valid xlsx, headers incl. custom prompt, rows,
+  formula payloads in cover note / answer / admin note escaped as text, no formula cells, dates, numbers,
+  branch names, filtered export); production-mode boot (`/api/health`, HttpOnly+Secure+SameSite=None
+  cookie, no stack traces, CSRF rejects foreign origin, no warnings); `resetAdmin` from the project root.
+- 9.6 `engines`: server `>=20.19.0 <25`, client `^22.22.0 || ^24.0.0`; lockfiles synced; both resolve to
+  24.22.1 and still allow 22.23.4.
+- Harness issue found and fixed (not an app bug): leftover drives from earlier runs (73) pushed newly
+  created test drives off Home's first page → two browser suites timed out; the summary also hid
+  crashes. The local cleanup now removes test drives, and crashes count as failures.
+- Final: **767/767 on Node 24.22.1** (24 suites, zero warnings in 24 API logs, Vite and runners) and
+  **767/767 on Node 22.23.4** (fallback verified).
 
 ### If something breaks (Phase 9 contingencies)
 | ID | Trigger | Response |

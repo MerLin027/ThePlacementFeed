@@ -17,7 +17,7 @@
 
 | | Technology | Version |
 |---|---|---|
-| **Runtime** | Node.js | 22 LTS (client tooling needs ≥ 22.22; `engines` in both `package.json`s) |
+| **Runtime** | Node.js | 24 LTS (22.22+ also supported; `engines` in both `package.json`s) |
 | **Frontend** | React | 19.3 |
 | | Vite | 8.3 |
 | | Tailwind CSS (via `@tailwindcss/vite`, theme in `src/index.css`) | 4.3 |
@@ -59,7 +59,7 @@
 
 ## Local Setup
 
-> Requires Node.js 22 LTS, version 22.22 or newer (React Router 8 and Mongoose 9 need it; `engines` in both `package.json` files), and a MongoDB instance (local or Atlas).
+> Requires Node.js 24 LTS (Node 22.22+ also works — React Router 8 needs ≥ 22.22; `engines` in both `package.json` files), and a MongoDB instance (local or Atlas).
 
 ```bash
 git clone https://github.com/MerLin027/ThePlacementFeed.git
