@@ -78,9 +78,10 @@ because it touches every page.
 - Capture **before screenshots** of all 32 audited page views (desktop + phone) into the scratchpad;
   Phase 6 compares against them.
 - Record `npm audit` (full, including dev) and `npm ls --depth=0` for both packages.
-- Add `engines.node` to both packages — server `>=20.19.0` (Mongoose 9), client
-  `^20.19.0 || >=22.12.0` (Vite 8). Render and Vercel both honour `engines`, so no `.node-version`
-  file is needed.
+- Add `engines.node` to both packages — server `>=20.19.0 <23` (Mongoose 9), client
+  `^20.19.0 || ^22.12.0` (Vite 8). Upper bounds matter: Render resolves an open range such as
+  `>=20.19.0` to the newest Node release (a future, untested major). With the bound it resolves to
+  the latest 22.x — the version all checks run on. `NODE_VERSION` on Render overrides this if set.
   **Deploy note:** set Node 22 on Render before deploying anything from this branch.
 
 **Gate:** baseline 619/619 on untouched code; screenshots saved; engines committed.
