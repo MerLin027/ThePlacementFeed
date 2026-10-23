@@ -118,7 +118,7 @@ router.post(
           // Ends every existing session for this account
           $inc: { tokenVersion: 1 },
         },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (!student) {

@@ -317,7 +317,7 @@ router.patch(
       const app = await Application.findOneAndUpdate(
         { _id: req.params.appId, driveId: req.params.driveId },
         { $set: update },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       ).lean();
 
       if (!app) {
