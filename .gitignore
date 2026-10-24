@@ -39,3 +39,6 @@ server/.eslintrc.json
 client/public/icons.svg
 client/public/logo192.png
 client/public/logo512.png
+# Previous READMEs, kept locally
+README.old.md
+tests/README.md
