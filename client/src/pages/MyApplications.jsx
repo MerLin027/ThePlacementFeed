@@ -16,27 +16,25 @@ const formatDate = (d) =>
 // Every in-app application the student has made, newest first, with its current status
 const MyApplications = () => {
   usePageTitle('My applications');
-  const [applications, setApplications] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 0, total: 0 });
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // The last response, tagged with the page it answers: while it is for another page, that page is
+  // still loading (derived, so the effect never has to reset state before fetching)
+  const [result, setResult] = useState({ page: null, applications: [], pagination: { page: 1, totalPages: 0, total: 0 }, error: '' });
+  const loading = result.page !== page;
+  const { applications, pagination } = result;
+  const error = loading ? '' : result.error;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError('');
     api
       .get('/api/applications/my', { params: { page, limit: PAGE_SIZE }, signal: controller.signal })
       .then((res) => {
-        setApplications(res.data.data);
-        setPagination(res.data.pagination);
-        setLoading(false);
+        setResult({ page, applications: res.data.data, pagination: res.data.pagination, error: '' });
       })
       .catch((err) => {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-        setError(parseApiError(err, "We couldn't load your applications.").message);
-        setLoading(false);
+        const message = parseApiError(err, "We couldn't load your applications.").message;
+        setResult((prev) => ({ ...prev, page, error: message }));
       });
     return () => controller.abort();
   }, [page]);
