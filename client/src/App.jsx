@@ -12,15 +12,17 @@ import RouteEffects from './components/RouteEffects';
 import PageTransition from './components/PageTransition';
 import Backdrop from './components/backdrop/Backdrop';
 import Home from './pages/Home';
-import PlacementDetail from './pages/PlacementDetail';
-import Timeline from './pages/Timeline';
-import AdminLogin from './pages/AdminLogin';
-import NotFound from './pages/NotFound';
-import StudentLogin from './pages/StudentLogin';
-import StudentSignup from './pages/StudentSignup';
-import StudentProfile from './pages/StudentProfile';
-import ChangePassword from './pages/ChangePassword';
-import MyApplications from './pages/MyApplications';
+
+// Only Home is in the first download; every other page loads when it is first visited
+const PlacementDetail = lazy(() => import('./pages/PlacementDetail'));
+const Timeline = lazy(() => import('./pages/Timeline'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const StudentLogin = lazy(() => import('./pages/StudentLogin'));
+const StudentSignup = lazy(() => import('./pages/StudentSignup'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
+const ChangePassword = lazy(() => import('./pages/ChangePassword'));
+const MyApplications = lazy(() => import('./pages/MyApplications'));
 
 // Admin pages load on demand: students never download them
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));

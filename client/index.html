@@ -20,15 +20,10 @@
     <meta property="og:image" content="https://theplacementfeed.vercel.app/logo-mark.png" />
     <meta name="twitter:card" content="summary" />
 
-    <!-- Preconnect to Google Fonts origins so the TCP/TLS handshake is done early -->
+    <!-- Inter and Geist are self-hosted (@fontsource, imported in src/main.jsx), so text needs no
+         third-party stylesheet. Only the icon font comes from Google: connect early. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Font stylesheets as <link> tags — loaded in parallel with the page,
-         not blocked behind CSS @import parsing.
-         display=swap ensures text is visible in a fallback font immediately. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" />
     <!-- The icon stylesheet is applied from src/index.css inside a low cascade layer (see the
          note there); preloading it keeps the download parallel. -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,add_circle,archive,arrow_back,arrow_forward,assignment_late,bar_chart,block,calendar_month,cards,celebration,check,check_circle,chevron_left,chevron_right,close,cloud_off,dashboard,delete,done_all,download,edit,edit_note,error,event,event_available,event_busy,event_upcoming,expand_more,explore_off,folder_delete,forum,function,group,help,history,home,hourglass_top,how_to_reg,info,key,label,lock,lock_reset,login,logout,menu,notifications,open_in_new,password,pause_circle,payments,person,person_add,person_remove,play_circle,push_pin,radio,restart_alt,schedule,school,search,search_off,send,settings,sort,star,storage,sync,table,timeline,tune,unarchive,undo,verified_user,visibility,visibility_off,warning,work_history&display=swap" />
