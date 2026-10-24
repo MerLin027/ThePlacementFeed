@@ -21,6 +21,16 @@ export const MyApplicationsProvider = ({ children }) => {
   const [loadedFor, setLoadedFor] = useState(null);
   const inFlight = useRef(false);
 
+  // A different (or no longer restricted) student starts from an empty map. Reset during render when
+  // the session changes, so the polling effect below only has to start and stop the polling.
+  const sessionKey = studentId && !restricted ? studentId : null;
+  const [dataFor, setDataFor] = useState(sessionKey);
+  if (dataFor !== sessionKey) {
+    setDataFor(sessionKey);
+    setByDrive(new Map());
+    setLoadedFor(null);
+  }
+
   const refresh = useCallback(async () => {
     if (!studentId || restricted || inFlight.current) return;
     inFlight.current = true;
@@ -36,10 +46,11 @@ export const MyApplicationsProvider = ({ children }) => {
   }, [studentId, restricted]);
 
   useEffect(() => {
-    setByDrive(new Map());
-    setLoadedFor(null);
     if (!studentId || restricted) return undefined;
 
+    // Subscribing to an external system (the server, on a timer and on tab focus): the first
+    // refresh runs right away by design.
+    // oxlint-disable-next-line react/set-state-in-effect -- polling subscription, see above
     refresh();
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') refresh();

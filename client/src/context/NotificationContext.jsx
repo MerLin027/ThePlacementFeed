@@ -134,6 +134,9 @@ export const NotificationProvider = ({ children }) => {
   }, [deliver]);
 
   useEffect(() => {
+    // Subscribing to an external system (the server, on a timer and on tab focus): the first poll
+    // runs right away by design.
+    // oxlint-disable-next-line react/set-state-in-effect -- polling subscription, see above
     pollDrives();
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') pollDrives();
@@ -175,6 +178,8 @@ export const NotificationProvider = ({ children }) => {
           });
         }
       });
+      // Syncs with localStorage (the statuses this browser saw last), which is the source of truth here
+      // oxlint-disable-next-line react/set-state-in-effect -- external-storage sync, see above
       deliver(claimUnseen(changes));
     }
     writeJSON(key, current);
