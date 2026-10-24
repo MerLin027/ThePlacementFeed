@@ -144,8 +144,10 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
   console.log('# routing and errors');
   const n1 = await req('GET', '/api/nope');
   ok(n1.status === 404, `unknown API route → ${n1.status}`);
-  const n2 = await req('GET', '/api/auth/check');
-  ok(n2.status === 401 && n2.json?.success === false, 'admin check without cookie → 401 JSON');
+  const n2 = await req('GET', '/api/auth/check', { cookie: 'admin_token=garbage' });
+  ok(n2.status === 401 && n2.json?.success === false, 'admin check with a bad cookie → 401 JSON');
+  const n2b = await req('GET', '/api/auth/check');
+  ok(n2b.status === 200 && n2b.json?.authenticated === false, 'admin check without cookie → 200, logged out');
   const n3 = await req('GET', '/api/placements/not-an-id');
   ok(n3.status === 400 && n3.json?.success === false && !/stack|\bat /.test(n3.text), `bad id → ${n3.status} JSON, no stack`, n3.text.slice(0, 100));
   const n4 = await req('GET', `/api/placements/${drive._id}`);

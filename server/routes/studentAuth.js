@@ -4,6 +4,7 @@ const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const Student = require('../models/Student');
 const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudentAllowPending } = require('../middleware/requireStudent');
+const noSessionShortcut = require('../middleware/noSessionShortcut');
 const { studentSignupRules, studentLoginRules, validate } = require('../middleware/validate');
 const { getClearCookieOptions } = require('../utils/cookies');
 const { issueStudentSession } = require('../utils/studentSession');
@@ -152,8 +153,9 @@ router.post('/logout', sessionLimiter, csrfCheck, (req, res) => {
   });
 });
 
-// GET /api/students/auth/check — allowed while a password change is pending
-router.get('/check', sessionLimiter, requireStudentAllowPending, async (req, res, next) => {
+// GET /api/students/auth/check — allowed while a password change is pending.
+// No cookie → 200 { authenticated: false } (still rate-limited); a bad cookie → 401.
+router.get('/check', sessionLimiter, noSessionShortcut(STUDENT_COOKIE), requireStudentAllowPending, async (req, res, next) => {
   try {
     const student = await Student.findById(req.student.id);
     if (!student) {

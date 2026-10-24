@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const Admin = require('../models/Admin');
 const requireAdmin = require('../middleware/requireAdmin');
+const noSessionShortcut = require('../middleware/noSessionShortcut');
 const csrfCheck = require('../middleware/csrfCheck');
 const { getCookieOptions, getClearCookieOptions } = require('../utils/cookies');
 const { ADMIN_COOKIE, ADMIN_SESSION_MS, JWT_ALGORITHM } = require('../constants/auth');
@@ -84,8 +85,9 @@ router.post('/logout', csrfCheck, (req, res) => {
   });
 });
 
-// GET /api/auth/check — verify if current cookie is valid
-router.get('/check', requireAdmin, (req, res) => {
+// GET /api/auth/check — verify if current cookie is valid.
+// No cookie → 200 { authenticated: false }; a bad cookie → 401.
+router.get('/check', noSessionShortcut(ADMIN_COOKIE), requireAdmin, (req, res) => {
   res.json({
     success: true,
     authenticated: true,

@@ -38,8 +38,13 @@ r = await req('GET', '/api/auth/check', { cookie: adminCookie });
 ok(r.status === 200 && r.json.authenticated, 'admin check with admin_token');
 
 const legacy = jwt.sign({ id: 'x', username: 'testadmin' }, SECRET, { expiresIn: '1h' });
+// No admin_token at all (a legacy 'token' cookie is just an unknown cookie): logged out, not an error
 r = await req('GET', '/api/auth/check', { cookie: `token=${legacy}` });
-ok(r.status === 401, 'legacy token cookie rejected');
+ok(r.status === 200 && r.json.authenticated === false, 'legacy token cookie not accepted (logged out)');
+r = await req('GET', '/api/auth/check');
+ok(r.status === 200 && r.json.success === true && r.json.authenticated === false, 'admin check without cookie: 200, logged out');
+r = await req('GET', '/api/auth/check', { cookie: 'admin_token=garbage' });
+ok(r.status === 401 && r.json.success === false, 'garbage admin_token still 401');
 r = await req('GET', '/api/auth/check', { cookie: `admin_token=${legacy}` });
 ok(r.status === 401, 'role-less token in admin_token rejected');
 const noneAlg = jwt.sign({ sub: 'x', role: 'admin' }, '', { algorithm: 'none' });
@@ -113,7 +118,9 @@ ok(r.status === 401, 'student JWT cannot create placement');
 r = await req('GET', '/api/students/auth/check', { cookie: adminCookie.replace('admin_token', 'student_token') });
 ok(r.status === 401, 'admin JWT in student_token rejected');
 r = await req('GET', '/api/students/auth/check');
-ok(r.status === 401, 'check without cookie 401');
+ok(r.status === 200 && r.json.success === true && r.json.authenticated === false && !('student' in r.json), 'student check without cookie: 200, logged out');
+r = await req('GET', '/api/students/auth/check', { cookie: 'student_token=garbage' });
+ok(r.status === 401 && r.json.success === false, 'garbage student_token still 401');
 
 console.log('# Revocation & restricted session (DB flips via mongosh helper)');
 // export state for the DB step
