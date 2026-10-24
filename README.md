@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="client/public/logo.png" alt="" width="120" />
+  <img src="client/public/logo.png" alt="The Placement Feed logo" width="110" />
   <h1>The Placement Feed</h1>
   <p>Campus placement drives for CHARUSAT students, in one place.</p>
   <p><a href="https://theplacementfeed.vercel.app"><strong>theplacementfeed.vercel.app</strong></a></p>
@@ -95,14 +95,21 @@ credentials later, run `node server/scripts/resetAdmin.js`.
 
 ## Tests
 
-The `tests/` folder holds about 770 automated checks. They cover the API, the website in a real
-browser (Playwright) and accessibility (axe-core) at desktop and phone sizes. They only run against
-a local MongoDB on port 27099 and refuse any other database.
+The `tests/` folder holds 772 automated checks in 25 suites. They cover the API, the website in a
+real browser (Playwright) and accessibility (axe-core) at desktop and phone sizes. They only run
+against a local, throwaway MongoDB on port 27099 and refuse any other database, so your real data
+is never touched.
 
 ```bash
+# 1. In its own terminal, start a scratch MongoDB (7 or 8) for the tests
+mkdir -p tests/output/db
+mongod --dbpath tests/output/db --port 27099 --bind_ip 127.0.0.1
+
+# 2. In another terminal (after npm install in client/ and server/)
 cd tests
-npm run setup    # once: installs Playwright, axe-core and a Chromium build
-npm test         # starts the API and the website itself, then runs every suite
+npm run setup                 # once: installs Playwright, axe-core and a Chromium build
+npm test                      # starts the API and the website itself, then runs every suite
+node run.mjs phaseE-test      # or run selected suites by file name
 ```
 
 ## Deployment
