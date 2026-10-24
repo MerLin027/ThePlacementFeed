@@ -1,8 +1,9 @@
-import { BRANCHES, branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { APPLICATION_STATUSES, APPLICANT_SORTS } from '../constants/applications';
 
 // Filter + sort controls for the applicant table. Fully controlled by the parent.
 const ApplicantFilters = ({ filters, onChange }) => {
+  const { branches } = useCatalog();
   const set = (field) => (e) => onChange({ ...filters, [field]: e.target.value });
 
   return (
@@ -27,8 +28,8 @@ const ApplicantFilters = ({ filters, onChange }) => {
       </select>
       <select value={filters.branch} onChange={set('branch')} aria-label="Filter by branch" className="select-field">
         <option value="">All branches</option>
-        {BRANCHES.map((b) => (
-          <option key={b} value={b}>{branchLabel(b)}</option>
+        {branches.map((b) => (
+          <option key={b.code} value={b.code}>{b.name}{b.active ? '' : ' (archived)'}</option>
         ))}
       </select>
       <div className="flex items-center gap-xs">

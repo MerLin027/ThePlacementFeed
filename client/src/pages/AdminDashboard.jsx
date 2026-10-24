@@ -10,12 +10,15 @@ import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 import Spinner from '../components/Spinner';
 import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { FormAlert } from '../components/AuthCard';
+import { useCatalog } from '../stores/catalog';
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 const iconButton =
   'inline-flex items-center justify-center w-[44px] h-[44px] rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
 
 const AdminDashboard = () => {
+  const catalog = useCatalog();
   usePageTitle('Admin dashboard');
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -256,6 +259,19 @@ const AdminDashboard = () => {
           Add placement
         </button>
       </div>
+
+      {/* Students need an institute to apply, and none exist until the admin adds them */}
+      {catalog.loaded && catalog.institutes.length === 0 && (
+        <div className="mb-md">
+          <FormAlert tone="warning" icon="warning">
+            <p className="font-semibold">Students can&apos;t apply in-app yet</p>
+            <p className="mt-[2px]">
+              Every student needs an institute before applying, and there are none to choose from.{' '}
+              <Link to="/admin/settings" className="font-semibold underline underline-offset-2">Add institutes in Settings</Link>.
+            </p>
+          </FormAlert>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-md">

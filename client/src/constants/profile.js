@@ -2,6 +2,7 @@
 export const PROFILE_FIELD_LABELS = {
   firstName: 'First name',
   lastName: 'Last name',
+  instituteId: 'Institute',
   branch: 'Branch',
   cgpa: 'CGPA',
   graduationYear: 'Graduation year',

@@ -101,6 +101,7 @@ const resetAndLogin = async (s, admin) => {
     ['POST', '/api/admin/catalog/branches', { code: 'QQ', name: 'Quux' }], ['PATCH', `/api/admin/catalog/branches/${someId}`, { name: 'Quux' }],
     ['DELETE', `/api/admin/catalog/branches/${someId}`], ['POST', '/api/admin/catalog/institutes', { name: 'Quux' }],
     ['PATCH', `/api/admin/catalog/institutes/${someId}`, { name: 'Quux' }], ['DELETE', `/api/admin/catalog/institutes/${someId}`],
+    ['GET', `/api/admin/catalog/branches/${someId}/usage`],
     ['POST', `/api/admin/students/${a.id}/reset-institute`], ['GET', `/api/admin/students/${a.id}/application-count`],
   ];
   for (const [method, url, body] of adminRoutes) {
@@ -236,6 +237,8 @@ const resetAndLogin = async (s, admin) => {
   r = await call('GET', '/api/admin/catalog', { cookie: admin });
   const row = r.json.data.branches.find((x) => x.code === code);
   ok(row && row.students === 1 && row.openDrives === 2 && row.completedDrives === 1, 'settings list shows usage counts', JSON.stringify(row));
+  r = await call('GET', `/api/admin/catalog/branches/${br.id}/usage`, { cookie: admin });
+  ok(r.status === 200 && r.json.data.students === 1 && r.json.data.onlyBranchDrives.length === 1, 'usage endpoint lists what a delete would touch');
   r = await call('DELETE', `/api/admin/catalog/branches/${br.id}`, { cookie: admin });
   ok(r.status === 409 && r.json.code === 'IN_USE' && r.json.usage.students === 1 && r.json.usage.openDrives === 2, 'in use -> 409 IN_USE');
   r = await call('DELETE', `/api/admin/catalog/branches/${br.id}?force=true`, { cookie: admin });

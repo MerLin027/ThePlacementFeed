@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import { ApplicationStatusPill } from './ApplyButton';
-import { branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { APPLICATION_STATUSES } from '../constants/applications';
 import { parseApiError } from '../utils/formErrors';
 
@@ -19,6 +19,7 @@ const Row = ({ label, children }) => (
  * All student text is rendered as plain text (React escapes it).
  */
 const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
+  const { branchLabel } = useCatalog();
   const [status, setStatus] = useState(applicant?.status ?? 'Applied');
   const [adminNote, setAdminNote] = useState(applicant?.adminNote || '');
   const [error, setError] = useState('');

@@ -15,7 +15,8 @@ const catalogLimiter = rateLimit({
 // GET /api/catalog — public: the university name, branches (archived ones flagged, so old drives
 // keep their labels) and the institutes a student can choose. No personal data.
 router.get('/', catalogLimiter, (req, res) => {
-  res.set('Cache-Control', 'public, max-age=60');
+  // Revalidate every time (a cheap 304 via the ETag): admin changes must show up straight away
+  res.set('Cache-Control', 'no-cache');
   res.json({ success: true, data: catalog.toPublicCatalog() });
 });
 

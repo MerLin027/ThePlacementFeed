@@ -8,7 +8,7 @@ import { DetailApplyPanel } from '../components/ApplyButton';
 import ApplyModal from '../components/ApplyModal';
 import { useApplyState } from '../hooks/useApplyState';
 import { useAuth } from '../context/auth';
-import { formatBranches } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { describeAcademicRequirement } from '../utils/eligibility';
 import { DetailSkeleton, Skeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -18,6 +18,7 @@ const JobDescription = lazy(() => import('../components/JobDescription'));
 
 
 const PlacementDetail = () => {
+  const { formatBranches } = useCatalog();
   const { id } = useParams();
   const navigate = useNavigate();
   const [placement, setPlacement] = useState(null);

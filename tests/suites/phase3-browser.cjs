@@ -1,6 +1,6 @@
 // Phase 3 browser verification — apply flow, button states, admin config. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
-const { chooseInstitute } = require('../lib/institute.cjs');
+const { chooseInstitute, pickInstituteInUi } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -157,6 +157,7 @@ const login = async (page, email, password = 'goodpass123') => {
   ok(await until(async () => (await card(page, `${TAG} InApp`).innerText()).includes('Complete profile to apply')), 'incomplete student card: Complete profile');
   await card(page, `${TAG} InApp`).getByRole('button', { name: 'Complete profile to apply' }).click();
   await page.waitForURL(/\/profile\?returnTo=/);
+  await pickInstituteInUi(page);
   await page.fill('#firstName', 'Mira');
   await page.fill('#lastName', 'Shah');
   await page.selectOption('#branch', 'IT');

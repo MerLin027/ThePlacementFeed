@@ -1,4 +1,4 @@
-import { branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { APPLICATION_STATUSES } from '../constants/applications';
 import { TableRowsSkeleton } from './Skeleton';
 
@@ -12,6 +12,7 @@ const formatDate = (d) =>
  * "View" button for the full application. Deleted accounts show a scrubbed name.
  */
 const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, onStatusChange, onView, busyIds }) => {
+  const { branchLabel } = useCatalog();
   const allSelected = applicants.length > 0 && applicants.every((a) => selected.has(a.id));
 
   return (

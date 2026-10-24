@@ -1,6 +1,9 @@
-import { BRANCHES, branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 
 const BranchSelect = ({ selected = [], onChange }) => {
+  const { activeBranches, branchLabel } = useCatalog();
+  // Archived branches stay listed on a drive that already has them, so they can be unticked
+  const codes = [...activeBranches.map((b) => b.code), ...selected.filter((c) => !activeBranches.some((b) => b.code === c))];
   const toggle = (branch) => {
     if (selected.includes(branch)) {
       onChange(selected.filter((b) => b !== branch));
@@ -9,7 +12,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
     }
   };
 
-  const selectAll = () => onChange([...BRANCHES]);
+  const selectAll = () => onChange(activeBranches.map((b) => b.code));
   const clearAll = () => onChange([]);
 
   return (
@@ -32,7 +35,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
-        {BRANCHES.map((branch) => (
+        {codes.map((branch) => (
           <label
             key={branch}
             className={`flex items-center gap-xs px-3 py-2 rounded-lg border cursor-pointer font-body-sm text-body-sm transition-colors

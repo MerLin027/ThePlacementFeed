@@ -8,7 +8,7 @@ import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import FormField from './FormField';
 import { parseApiError } from '../utils/formErrors';
-import { branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
 
 const SummaryRow = ({ label, value }) => (
@@ -24,6 +24,7 @@ const SummaryRow = ({ label, value }) => (
  * an optional note, answers to the drive's questions, and consent.
  */
 const ApplyModal = ({ drive, isOpen, onClose }) => {
+  const { branchLabel } = useCatalog();
   const { refreshStudent } = useAuth();
   const { markApplied } = useMyApplications();
   const prompts = drive.customPrompts || [];

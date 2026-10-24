@@ -52,7 +52,8 @@ const Navbar = () => {
   if (role === 'admin') {
     navLinks.push(
       { to: '/admin/dashboard', label: 'Dashboard' },
-      { to: '/admin/students', label: 'Students' }
+      { to: '/admin/students', label: 'Students' },
+      { to: '/admin/settings', label: 'Settings' }
     );
   } else if (role === 'student') {
     navLinks.push(

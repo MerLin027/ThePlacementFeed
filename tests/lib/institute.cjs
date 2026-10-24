@@ -28,4 +28,13 @@ const chooseInstitute = async (cookie) => {
   if (!res.ok && res.status !== 409) throw new Error(`chooseInstitute failed with ${res.status}`);
 };
 
-module.exports = { TEST_INSTITUTE, testInstituteId, chooseInstitute };
+// The same choice made the way a student does it: the profile page's picker and its confirm dialog
+const pickInstituteInUi = async (page) => {
+  await page.waitForSelector('#instituteId');
+  await page.selectOption('#instituteId', { label: TEST_INSTITUTE });
+  await page.click('button:has-text("Confirm institute")');
+  await page.click('[role=alertdialog] button:has-text("Yes, that\'s my institute")');
+  await page.locator('#instituteId').waitFor({ state: 'detached' });
+};
+
+module.exports = { TEST_INSTITUTE, testInstituteId, chooseInstitute, pickInstituteInUi };

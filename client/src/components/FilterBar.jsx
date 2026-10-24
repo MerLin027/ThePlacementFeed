@@ -1,5 +1,5 @@
 import { useState, useId, useRef, useEffect } from 'react';
-import { BRANCHES, branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 
 const SORT_LABELS = {
   closing_soon: 'Closing soon',
@@ -16,6 +16,7 @@ const isTypingTarget = (el) =>
   el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
 
 const FilterBar = ({ filters, onFilterChange, onReset }) => {
+  const { branches, branchLabel } = useCatalog();
   const [isExpanded, setIsExpanded] = useState(false);
   const uid = useId();
   const fid = (name) => `${uid}-${name}`;
@@ -194,8 +195,8 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
                 className="select-field"
               >
                 <option value="">All branches</option>
-                {BRANCHES.map((b) => (
-                  <option key={b} value={b}>{branchLabel(b)}</option>
+                {branches.map((b) => (
+                  <option key={b.code} value={b.code}>{b.name}{b.active ? '' : ' (archived)'}</option>
                 ))}
               </select>
             </div>

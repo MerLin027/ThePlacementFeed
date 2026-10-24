@@ -1,6 +1,5 @@
-// Canonical branch codes — mirrored in server/constants/branches.js.
-// Student branches and drive eligibility branches are stored and matched as these
-// codes; the UI always shows the full name from BRANCH_LABELS instead.
+// The original branch list, used only until GET /api/catalog loads (stores/catalog.js). Branches
+// are managed by the admin now; codes are what's stored and matched, names are what's shown.
 export const BRANCHES = [
   'CE', 'IT', 'CS', 'EC', 'EE', 'ME', 'CL', 'IC', 'BME', 'AI/ML', 'CSE', 'Other',
 ];
@@ -19,8 +18,3 @@ export const BRANCH_LABELS = {
   CSE: 'Computer Science & Engineering',
   Other: 'Other',
 };
-
-// Full name for a stored branch code; unknown values (e.g. older data) are shown as-is
-export const branchLabel = (code) => BRANCH_LABELS[code] || code;
-
-export const formatBranches = (codes = []) => codes.map(branchLabel).join(', ');

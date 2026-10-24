@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import StatusBadge from './StatusBadge';
 import CompanyMonogram from './CompanyMonogram';
 import { CardApplyButton } from './ApplyButton';
-import { formatBranches } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { deadlineInfo, DEADLINE_TONE_CLASS, formatDay } from '../utils/deadline';
 
 const Row = ({ icon, children, title }) => (
@@ -18,6 +18,7 @@ const Row = ({ icon, children, title }) => (
  * (no interactive element nested inside another).
  */
 const PlacementCard = ({ placement, index = 0 }) => {
+  const { formatBranches } = useCatalog();
   const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
   const branches = eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'All branches';
   const closing = status === 'Upcoming' && !isPostponed ? deadlineInfo(deadline) : null;

@@ -1,5 +1,6 @@
 // Phase 2 browser + API verification against local throwaway server (5099) and Vite (5173).
 const TEST = require('../lib/env.cjs');
+const { pickInstituteInUi } = require('../lib/institute.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -65,7 +66,8 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
 
   console.log('# Profile');
   await page.waitForSelector('text=Finish your profile');
-  ok(await page.locator('text=Still needed: First name, Last name, Branch, CGPA').isVisible(), 'completion banner lists missing fields');
+  ok(await page.locator('text=Still needed: First name, Last name, Institute, Branch, CGPA').isVisible(), 'completion banner lists missing fields');
+  await pickInstituteInUi(page);
   ok(await hasText(page, roll), 'roll number shown (locked)');
   await page.fill('#firstName', 'Asha');
   await page.fill('#lastName', "D'Souza");

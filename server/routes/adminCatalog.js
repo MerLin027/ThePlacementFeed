@@ -166,6 +166,17 @@ router.patch(
   }
 );
 
+// GET /api/admin/catalog/branches/:id/usage — what a delete would touch (for the two-step prompt)
+router.get('/branches/:id/usage', readLimiter, mongoIdParam('id'), validate, async (req, res, next) => {
+  try {
+    const branch = await Branch.findById(req.params.id).select('code').lean();
+    if (!branch) return notFound(res, 'Branch');
+    res.json({ success: true, data: await branchUsage(branch.code) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // DELETE /api/admin/catalog/branches/:id[?force=true]
 // Unused branches are deleted. One in use answers 409 IN_USE with the counts, unless forced: then
 // its students choose a branch again, it is removed from open drives (completed drives keep it as

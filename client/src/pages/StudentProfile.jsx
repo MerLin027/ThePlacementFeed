@@ -6,8 +6,9 @@ import { useAuth } from '../context/auth';
 import { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { PageSpinner } from '../components/RequireRole';
-import { BRANCHES, branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
@@ -60,6 +61,7 @@ const ReadOnlyRow = ({ label, value }) => (
 const StudentProfile = () => {
   usePageTitle('My profile');
   const { refreshStudent } = useAuth();
+  const { activeBranches, institutes, branchLabel } = useCatalog();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawReturnTo = searchParams.get('returnTo');
@@ -73,6 +75,11 @@ const StudentProfile = () => {
   useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  // One-time institute choice (the server locks it; only the CDPC admin can reset it)
+  const [instituteChoice, setInstituteChoice] = useState('');
+  const [confirmInstitute, setConfirmInstitute] = useState(false);
+  const [isSavingInstitute, setIsSavingInstitute] = useState(false);
+  const [instituteError, setInstituteError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -91,6 +98,26 @@ const StudentProfile = () => {
   }, []);
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const saveInstitute = async () => {
+    setIsSavingInstitute(true);
+    setInstituteError('');
+    try {
+      const res = await api.put('/api/students/me/institute', { instituteId: instituteChoice });
+      setProfile(res.data.data);
+      await refreshStudent();
+      toast.success('Institute saved');
+    } catch (err) {
+      setInstituteError(parseApiError(err, 'Could not save your institute. Please try again.').message);
+      // Already set (e.g. in another tab): show what the server has
+      if (err.response?.status === 409) {
+        const res = await api.get('/api/students/me').catch(() => null);
+        if (res) setProfile(res.data.data);
+      }
+    } finally {
+      setIsSavingInstitute(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,6 +153,13 @@ const StudentProfile = () => {
 
   if (!profile) return <PageSpinner />;
 
+  // Active branches, plus the student's own if it has since been archived (they may keep it)
+  const branchOptions =
+    profile.branch && !activeBranches.some((b) => b.code === profile.branch)
+      ? [...activeBranches, { code: profile.branch, name: branchLabel(profile.branch) }]
+      : activeBranches;
+  const chosenInstituteName = institutes.find((i) => i.id === instituteChoice)?.name;
+
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
       <div className="mb-md">
@@ -144,11 +178,59 @@ const StudentProfile = () => {
           <dl>
             <ReadOnlyRow label="Email" value={profile.email} />
             <ReadOnlyRow label="Roll number" value={profile.rollNumber} />
-            <ReadOnlyRow label="Institute" value={profile.institute} />
+            <ReadOnlyRow
+              label="College / University"
+              value={profile.university || <span className="italic text-on-surface-variant">Not set by the CDPC yet</span>}
+            />
+            {profile.instituteLocked && profile.institute && <ReadOnlyRow label="Institute" value={profile.institute.name} />}
           </dl>
           <p className="mt-xs font-body-sm text-body-sm text-on-surface-variant">
-            Your email and roll number can&apos;t be changed. If something here looks wrong, the CDPC admin can help you out.
+            Your email, roll number and institute can&apos;t be changed. If something here looks wrong, the CDPC admin can help you out.
           </p>
+
+          {!profile.instituteLocked && (
+            <div className="mt-sm p-sm rounded-xl border border-primary-30 bg-primary-fixed-20" role="group" aria-labelledby="institute-label">
+              <p id="institute-label" className="label">Institute</p>
+              {institutes.length === 0 ? (
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  The CDPC hasn&apos;t added institutes yet. Check back soon. You&apos;ll need one before you can apply.
+                </p>
+              ) : (
+                <>
+                  <div className="flex flex-col sm:flex-row gap-xs">
+                    <select
+                      id="instituteId"
+                      aria-labelledby="institute-label"
+                      aria-describedby="institute-help"
+                      aria-invalid={Boolean(instituteError) || undefined}
+                      value={instituteChoice}
+                      onChange={(e) => setInstituteChoice(e.target.value)}
+                      className="select-field sm:flex-1"
+                    >
+                      <option value="">Select your institute</option>
+                      {institutes.map((i) => (
+                        <option key={i.id} value={i.id}>{i.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmInstitute(true)}
+                      disabled={!instituteChoice || isSavingInstitute}
+                      aria-busy={isSavingInstitute}
+                      className="btn-primary min-h-[44px] gap-xs"
+                    >
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">lock</span>
+                      {isSavingInstitute ? 'Saving...' : 'Confirm institute'}
+                    </button>
+                  </div>
+                  <p id="institute-help" className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                    You can choose this once. After that only the CDPC admin can change it.
+                  </p>
+                  {instituteError && <p className="mt-1 font-body-sm text-body-sm text-error" role="alert">{instituteError}</p>}
+                </>
+              )}
+            </div>
+          )}
           <Link
             to="/change-password"
             className="btn-secondary mt-sm min-h-[44px] gap-xs"
@@ -180,8 +262,8 @@ const StudentProfile = () => {
               {(controlProps) => (
                 <select {...controlProps} value={form.branch} onChange={update('branch')} className="select-field">
                   <option value="">Select your branch</option>
-                  {BRANCHES.map((b) => (
-                    <option key={b} value={b}>{branchLabel(b)}</option>
+                  {branchOptions.map((b) => (
+                    <option key={b.code} value={b.code}>{b.name}</option>
                   ))}
                 </select>
               )}
@@ -222,6 +304,17 @@ const StudentProfile = () => {
           </div>
         </form>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmInstitute}
+        onClose={() => setConfirmInstitute(false)}
+        onConfirm={saveInstitute}
+        title="Confirm your institute?"
+        message={`You're choosing ${chosenInstituteName}. You can only choose once; after that, only the CDPC admin can change it.`}
+        confirmLabel="Yes, that's my institute"
+        tone="primary"
+        icon="school"
+      />
     </div>
   );
 };

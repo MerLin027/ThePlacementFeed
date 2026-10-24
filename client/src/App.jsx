@@ -24,6 +24,7 @@ import MyApplications from './pages/MyApplications';
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminStudents = lazy(() => import('./pages/AdminStudents'));
 const AdminApplicants = lazy(() => import('./pages/AdminApplicants'));
+const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 
 function App() {
   return (
@@ -110,6 +111,14 @@ function App() {
                 element={
                   <RequireRole role="admin">
                     <AdminStudents />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <RequireRole role="admin">
+                    <AdminSettings />
                   </RequireRole>
                 }
               />

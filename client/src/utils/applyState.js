@@ -1,5 +1,5 @@
 import { isDeadlinePassed } from './dates';
-import { branchLabel, formatBranches } from '../constants/branches';
+import { branchLabel, formatBranches } from '../stores/catalog';
 
 /**
  * Decides what the "Apply" control shows for a drive. UX only — the server

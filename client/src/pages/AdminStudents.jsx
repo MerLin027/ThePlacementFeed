@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import ConfirmDialog from '../components/ConfirmDialog';
+import TwoStepConfirmDialog from '../components/TwoStepConfirmDialog';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
-import { BRANCHES, branchLabel } from '../constants/branches';
+import { useCatalog } from '../stores/catalog';
 import { parseApiError } from '../utils/formErrors';
 import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -37,6 +38,7 @@ const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
 );
 
 const AdminStudents = () => {
+  const { branches, branchLabel } = useCatalog();
   usePageTitle('Students');
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
@@ -45,7 +47,7 @@ const AdminStudents = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [branch, setBranch] = useState('');
   const [busyId, setBusyId] = useState(null);
-  const [confirm, setConfirm] = useState(null); // { type: 'reset' | 'delete', student }
+  const [confirm, setConfirm] = useState(null); // { type: 'reset' | 'resetInstitute' | 'delete', student, applications? }
   const [reloadKey, setReloadKey] = useState(0);
   // Each finished request records the key of the parameters it answered; until the latest one
   // matches the current parameters the list is loading (derived instead of reset in the effect)
@@ -99,11 +101,44 @@ const AdminStudents = () => {
     }
   };
 
-  const handleDelete = async (student) => {
+  const handleResetInstitute = async (student) => {
     setBusyId(student.id);
     try {
-      await api.delete(`/api/admin/students/${student.id}`);
-      toast.success(`${displayName(student)}'s account was deleted.`);
+      const res = await api.post(`/api/admin/students/${student.id}/reset-institute`);
+      setStudents((prev) => prev.map((s) => (s.id === student.id ? res.data.data : s)));
+      toast.success(`${displayName(student)} can choose their institute again.`);
+    } catch (err) {
+      toast.error(parseApiError(err, 'Could not reset the institute.').message || 'Could not reset the institute.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // The second prompt needs the number of applications, so it is fetched before the dialog opens
+  const openDelete = async (student) => {
+    setBusyId(student.id);
+    let applications = null;
+    try {
+      const res = await api.get(`/api/admin/students/${student.id}/application-count`);
+      applications = res.data.data.count;
+    } catch {
+      // Unknown count: still ask what to do with any applications
+    } finally {
+      setBusyId(null);
+    }
+    setConfirm({ type: 'delete', student, applications });
+  };
+
+  // mode: 'retain' keeps the applications (personal details removed), 'delete' removes them too
+  const handleDelete = async (student, mode) => {
+    setBusyId(student.id);
+    try {
+      await api.delete(`/api/admin/students/${student.id}`, { params: { applications: mode } });
+      toast.success(
+        mode === 'delete'
+          ? `${displayName(student)}'s account and applications were deleted.`
+          : `${displayName(student)}'s account was deleted. Their applications were kept without personal details.`
+      );
       // Step back a page if this was the last row on it
       if (students.length === 1 && page > 1) setPage(page - 1);
       else setReloadKey((k) => k + 1);
@@ -124,15 +159,43 @@ const AdminStudents = () => {
           icon: 'key',
           onConfirm: () => handleReset(confirm.student),
         }
-      : confirm?.type === 'delete'
+      : confirm?.type === 'resetInstitute'
         ? {
-            title: 'Delete account?',
-            message: `Delete ${displayName(confirm.student)}'s account (${confirm.student.rollNumber})? Their applications are kept for your records, but their personal details are removed. They can sign up again afterwards. This can't be undone.`,
-            confirmLabel: 'Delete account',
-            tone: 'danger',
-            onConfirm: () => handleDelete(confirm.student),
+            title: 'Reset institute?',
+            message: `${displayName(confirm.student)} chose ${confirm.student.institute?.name}. Resetting lets them choose again from their profile. They can't apply to drives until they do.`,
+            confirmLabel: 'Reset institute',
+            tone: 'primary',
+            icon: 'restart_alt',
+            onConfirm: () => handleResetInstitute(confirm.student),
           }
         : null;
+
+  const deleteTarget = confirm?.type === 'delete' ? confirm : null;
+  const appCount = deleteTarget?.applications;
+  const appsNoun = appCount == null ? 'their applications' : `their ${appCount} application${appCount === 1 ? '' : 's'}`;
+  const deleteFirst = deleteTarget && {
+    title: 'Delete account?',
+    message: `Delete ${displayName(deleteTarget.student)}'s account (${deleteTarget.student.rollNumber})? They can sign up again afterwards. This can't be undone.`,
+    confirmLabel: 'Delete account',
+    icon: 'person_remove',
+    // Used only when there are no applications, so there is nothing to choose between
+    onConfirm: () => handleDelete(deleteTarget.student, 'retain'),
+  };
+  const deleteSecond = deleteTarget && appCount !== 0 ? {
+    title: 'What about their applications?',
+    icon: 'folder_delete',
+    message: (
+      <>
+        <p>Choose what happens to {appsNoun}.</p>
+        <p><strong className="text-on-surface">Keep the records:</strong> drive lists, counts and exports keep them, marked as a deleted account, without name, email, phone, resume or answers.</p>
+        <p><strong className="text-on-surface">Delete the records:</strong> they are removed from every drive for good.</p>
+      </>
+    ),
+    actions: [
+      { label: 'Keep the records', tone: 'primary', onClick: () => handleDelete(deleteTarget.student, 'retain') },
+      { label: 'Delete the records', tone: 'danger', onClick: () => handleDelete(deleteTarget.student, 'delete') },
+    ],
+  } : null;
 
   return (
     <div className="max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
@@ -168,8 +231,8 @@ const AdminStudents = () => {
           className="select-field sm:max-w-(--container-xs)"
         >
           <option value="">All branches</option>
-          {BRANCHES.map((b) => (
-            <option key={b} value={b}>{branchLabel(b)}</option>
+          {branches.map((b) => (
+            <option key={b.code} value={b.code}>{b.name}{b.active ? '' : ' (archived)'}</option>
           ))}
         </select>
       </div>
@@ -185,6 +248,7 @@ const AdminStudents = () => {
                 <th className={thClass}>Student</th>
                 <th className={`${thClass} hidden md:table-cell`}>Email</th>
                 <th className={`${thClass} hidden sm:table-cell`}>Branch</th>
+                <th className={`${thClass} hidden md:table-cell`}>Institute</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Grad year</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Joined</th>
                 <th className={`${thClass} text-right`}>Actions</th>
@@ -192,10 +256,10 @@ const AdminStudents = () => {
             </thead>
             <tbody className="divide-y divide-surface-variant">
               {loading ? (
-                <TableRowsSkeleton columns={6} label="Loading students" />
+                <TableRowsSkeleton columns={7} label="Loading students" />
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
+                  <td colSpan={7} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
                     {debouncedSearch || branch ? 'No students match these filters.' : 'No students have signed up yet.'}
                   </td>
                 </tr>
@@ -219,6 +283,9 @@ const AdminStudents = () => {
                     <td className="px-sm py-xs hidden sm:table-cell font-body-sm text-body-sm text-on-surface">
                       {s.branch ? branchLabel(s.branch) : '—'}
                     </td>
+                    <td className="px-sm py-xs hidden md:table-cell font-body-sm text-body-sm text-on-surface">
+                      {s.institute ? s.institute.name : <span className="text-on-surface-variant italic">Not chosen yet</span>}
+                    </td>
                     <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface">{s.graduationYear ?? '—'}</td>
                     <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{formatDate(s.createdAt)}</td>
                     <td className="px-sm py-xs">
@@ -229,12 +296,20 @@ const AdminStudents = () => {
                           disabled={busyId === s.id}
                           onClick={() => setConfirm({ type: 'reset', student: s })}
                         />
+                        {s.institute && (
+                          <ActionButton
+                            icon="restart_alt"
+                            label="Reset institute"
+                            disabled={busyId === s.id}
+                            onClick={() => setConfirm({ type: 'resetInstitute', student: s })}
+                          />
+                        )}
                         <ActionButton
                           icon="delete"
                           label="Delete account"
                           danger
                           disabled={busyId === s.id}
-                          onClick={() => setConfirm({ type: 'delete', student: s })}
+                          onClick={() => openDelete(s)}
                         />
                       </div>
                     </td>
@@ -249,6 +324,7 @@ const AdminStudents = () => {
       <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
 
       <ConfirmDialog isOpen={Boolean(confirmProps)} onClose={closeConfirm} {...(confirmProps || {})} />
+      <TwoStepConfirmDialog isOpen={Boolean(deleteTarget)} onClose={closeConfirm} first={deleteFirst} second={deleteSecond} />
     </div>
   );
 };
