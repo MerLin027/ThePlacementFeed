@@ -1,6 +1,7 @@
 // Phase F verification — admin pages. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
+const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -14,7 +15,6 @@ const API = TEST.API;
 let pass = 0, fail = 0;
 const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS' : '  FAIL', l, c ? '' : extra); };
 const hasText = (scope, t, timeout = 8000) => scope.getByText(t, { exact: false }).first().waitFor({ timeout }).then(() => true, () => false);
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const istDate = (n) => new Date(Date.now() + 5.5 * 3600e3 + n * 86400e3).toISOString().slice(0, 10);
 const TAG = `PF${Date.now() % 100000}`;
 
@@ -54,10 +54,11 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);
   await page.getByLabel('Search drives').fill(TAG);
-  await wait(1200);
 
   console.log('# Dashboard');
   const row = page.locator('tr', { hasText: `${TAG} Pinned` });
+  await row.waitFor();
+  await settled(page);
   ok(await hasText(row, 'Fixed status'), 'pinned drive shows "Fixed status"');
   let small = await smallTargets(page);
   ok(small.length === 0, 'dashboard targets >= 44px', small.join(', '));
@@ -65,11 +66,10 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   const postpone = row.getByRole('button', { name: `Postpone ${TAG} Pinned` });
   await postpone.focus();
   await page.keyboard.press('Enter');
-  await wait(1200);
-  ok(await page.evaluate(() => document.activeElement?.getAttribute('title') === 'Un-postpone'), 'keyboard focus stays on the toggle after postponing');
-  ok((await Placement.findById(pinned._id).lean()).isPostponed === true, 'postponed in DB');
+  ok(await until(() => page.evaluate(() => document.activeElement?.getAttribute('title') === 'Un-postpone')), 'keyboard focus stays on the toggle after postponing');
+  ok(await until(async () => (await Placement.findById(pinned._id).lean()).isPostponed === true), 'postponed in DB');
   await page.keyboard.press('Enter');
-  await wait(1200);
+  await until(async () => (await Placement.findById(pinned._id).lean()).isPostponed === false);
 
   console.log('# Drive form');
   await page.getByRole('button', { name: 'Add placement' }).click();
@@ -81,10 +81,9 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   ok(await dialog.getByLabel('Company').isVisible() && await dialog.getByLabel('Role').isVisible() && await dialog.getByLabel('CTC (LPA)').isVisible(), 'fields are labelled');
   ok(await dialog.getByLabel('Drive date').isVisible() && await dialog.getByLabel('Application deadline').isVisible() && await dialog.getByLabel('Minimum CGPA').isVisible(), 'dates and eligibility labelled');
   await dialog.getByRole('button', { name: 'Add placement' }).click();
-  await wait(300);
   ok(await hasText(dialog, 'Please fix the 3 highlighted fields below.'), 'error summary counts the problems');
   ok(await hasText(dialog, 'Enter the company name') && await hasText(dialog, 'Enter the role') && await hasText(dialog, 'Enter the CTC'), 'errors shown under each field');
-  ok(await page.evaluate(() => document.activeElement?.id === 'pf-company'), 'focus moves to the first invalid field');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'pf-company')), 'focus moves to the first invalid field');
   await dialog.getByLabel('Company').fill(`${TAG} FormCo`);
   ok(!(await dialog.getByText('Enter the company name').count()), 'fixing a field clears its error');
   await dialog.getByLabel('Role').fill('Engineer');
@@ -93,9 +92,8 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await dialog.getByLabel('Application deadline').fill(istDate(9));
   await dialog.getByLabel('Minimum CGPA').fill('11');
   await dialog.getByRole('button', { name: 'Add placement' }).click();
-  await wait(300);
   ok(await hasText(dialog, 'The deadline must be on or before the drive date') && await hasText(dialog, 'CGPA must be between 0 and 10'), 'date order and CGPA range checked before sending');
-  ok(await page.evaluate(() => document.activeElement?.id === 'pf-deadline'), 'focus on the first of those');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'pf-deadline')), 'focus on the first of those');
   await dialog.getByLabel('Application deadline').fill(istDate(2));
   await dialog.getByLabel('Minimum CGPA').fill('7');
 
@@ -122,32 +120,29 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
     await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ success: false, message: 'Validation failed', errors: [{ field: 'customPrompts[0].question', message: 'Questions cannot exceed 500 characters' }] }) });
   });
   await dialog.getByRole('button', { name: 'Add placement' }).click();
-  await wait(600);
   ok(await hasText(dialog, 'Questions cannot exceed 500 characters'), 'server error mapped to the question field');
-  ok(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === 'Question 1'), 'focus moved to that field');
+  ok(await until(() => page.evaluate(() => document.activeElement?.getAttribute('aria-label') === 'Question 1')), 'focus moved to that field');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   small = await smallTargets(page, '[role=dialog]');
   ok(small.length === 0, 'form targets >= 44px', small.join(', '));
   await axeScan(page, 'drive form');
   await dialog.getByRole('button', { name: 'Add placement' }).click();
-  await wait(1500);
-  const made = await Placement.findOne({ company: `${TAG} FormCo` }).lean();
+  const made = await until(() => Placement.findOne({ company: `${TAG} FormCo` }).lean());
   ok(made && made.tags.length === 6 && made.eligibility.cgpa === 7 && made.customPrompts[0].question === 'Fine with Pune?', 'drive saved with tags, eligibility and question');
-  ok(!(await page.getByRole('dialog').count()), 'dialog closes on success');
+  ok(await until(async () => !(await page.getByRole('dialog').count())), 'dialog closes on success');
 
   console.log('# Phone layout');
   await page.setViewportSize({ width: 390, height: 844 });
-  await wait(600);
-  ok(!(await page.locator('table').isVisible()), 'table hidden on phones');
+  ok(await until(async () => !(await page.locator('table').isVisible())), 'table hidden on phones');
   const card = page.locator('main ul[aria-label=Drives] li', { hasText: `${TAG} Pinned` });
-  ok(await card.isVisible(), 'drive shown as a card');
+  ok(await until(() => card.isVisible()), 'drive shown as a card');
+  await settled(page);
   small = await smallTargets(page);
   ok(small.length === 0, 'phone dashboard targets >= 44px', small.join(', '));
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth && document.getElementById('main-content').scrollWidth <= document.getElementById('main-content').clientWidth), 'no horizontal scroll');
   await page.screenshot({ path: path.join(TEST.OUT, 'shots', 'F-dashboard-mobile.png'), fullPage: true });
   await card.getByRole('button', { name: `Postpone ${TAG} Pinned` }).click();
-  await wait(1200);
-  ok((await Placement.findById(pinned._id).lean()).isPostponed === true, 'postpone works from the card');
+  ok(await until(async () => (await Placement.findById(pinned._id).lean()).isPostponed === true), 'postpone works from the card');
   await axeScan(page, 'dashboard (phone)');
   await page.setViewportSize({ width: 1280, height: 900 });
 
@@ -161,7 +156,8 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   const ap = await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: pinned._id, consentGiven: true }) });
   ok(ap.status === 201, 'seeded an application');
   await page.goto(`${APP}/admin/drives/${pinned._id}/applicants`);
-  await wait(1500);
+  await page.getByLabel('Select Ira Das').waitFor();
+  await settled(page);
   small = await smallTargets(page);
   ok(small.length === 0, 'applicants page targets >= 44px', small.join(', '));
   const cb = await page.getByLabel('Select Ira Das').locator('xpath=..').boundingBox();
@@ -169,7 +165,8 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await axeScan(page, 'applicants');
   await page.goto(`${APP}/admin/students`);
   await page.getByLabel('Search students').fill(TAG);
-  await wait(1200);
+  await page.locator('tbody tr', { hasText: email }).waitFor();
+  await settled(page);
   small = await smallTargets(page);
   ok(small.length === 0, 'students page targets >= 44px', small.join(', '));
   await axeScan(page, 'students');
