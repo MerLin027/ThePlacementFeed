@@ -1,5 +1,6 @@
 // Phase 5 browser verification — admin applicants page. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -74,28 +75,24 @@ const TAG = `P5B${Date.now() % 100000}`;
   console.log('# Inline status + stats');
   await page.getByLabel('Status for Asha Iyer').selectOption('Shortlisted');
   ok(await hasText(page, 'Asha marked as Shortlisted'), 'inline status toast');
-  await page.waitForTimeout(800);
-  ok((await page.getByRole('button', { name: /^Shortlisted/ }).innerText()).includes('1'), 'Shortlisted chip count = 1');
+  const rowCount = () => page.locator('tbody tr').count();
+  ok(await until(async () => (await page.getByRole('button', { name: /^Shortlisted/ }).innerText()).includes('1')), 'Shortlisted chip count = 1');
   await page.getByRole('button', { name: /^Shortlisted/ }).click();
-  await page.waitForTimeout(800);
-  ok(await page.locator('tbody tr').count() === 1 && (await page.getByRole('button', { name: /^Shortlisted/ }).getAttribute('aria-pressed')) === 'true', 'chip filters list');
+  ok(await until(async () => (await rowCount()) === 1 && (await page.getByRole('button', { name: /^Shortlisted/ }).getAttribute('aria-pressed')) === 'true'), 'chip filters list');
   await page.getByRole('button', { name: /^Shortlisted/ }).click();
-  await page.waitForTimeout(800);
+  await until(async () => (await rowCount()) === 3);
 
   console.log('# Filters');
   await page.getByLabel('Filter by branch').selectOption('IT');
-  await page.waitForTimeout(800);
-  ok(await page.locator('tbody tr').count() === 2, 'branch filter');
+  ok(await until(async () => (await rowCount()) === 2), 'branch filter');
   await page.getByLabel('Minimum CGPA').fill('8');
-  await page.waitForTimeout(800);
-  ok(await page.locator('tbody tr').count() === 1 && await hasText(page.locator('tbody'), 'Chirag Modi'), 'CGPA filter');
+  ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Chirag Modi'), 'CGPA filter');
   await page.getByLabel('Minimum CGPA').fill('');
   await page.getByLabel('Filter by branch').selectOption('');
   await page.getByLabel('Search applicants').fill(`${TAG}b`);
-  await page.waitForTimeout(900);
-  ok(await page.locator('tbody tr').count() === 1 && await hasText(page.locator('tbody'), 'Bharat Shah'), 'search');
+  ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Bharat Shah'), 'search');
   await page.getByLabel('Search applicants').fill('');
-  await page.waitForTimeout(900);
+  await until(async () => (await rowCount()) === 3);
 
   console.log('# Bulk update');
   await page.getByLabel('Select Bharat Shah').check();
@@ -104,10 +101,8 @@ const TAG = `P5B${Date.now() % 100000}`;
   await page.selectOption('#bulk-status', 'Interviewing');
   await page.getByRole('region', { name: 'Bulk actions' }).getByRole('button', { name: 'Apply' }).click();
   ok(await hasText(page, '2 applicants set to Interviewing'), 'bulk toast');
-  await page.waitForTimeout(800);
-  const interviewing = await Application.countDocuments({ driveId: drive._id, status: 'Interviewing' });
-  ok(interviewing === 2, 'DB: 2 interviewing');
-  ok(!(await page.getByText('selected', { exact: false }).count()), 'selection cleared after update');
+  ok(await until(async () => (await Application.countDocuments({ driveId: drive._id, status: 'Interviewing' })) === 2), 'DB: 2 interviewing');
+  ok(await until(async () => !(await page.getByText('selected', { exact: false }).count())), 'selection cleared after update');
 
   console.log('# Details modal');
   await page.getByLabel('View application from Asha Iyer').click();
@@ -151,7 +146,7 @@ const TAG = `P5B${Date.now() % 100000}`;
 
   console.log('# Mobile + access');
   await page.setViewportSize({ width: 375, height: 800 });
-  await page.waitForTimeout(300);
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // re-layout done
   ok(await noHorizontalScroll(page), 'no page-level horizontal scroll at 375px');
   await page.screenshot({ path: path.join(SHOTS, 'applicants-mobile.png'), fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
