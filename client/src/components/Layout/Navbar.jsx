@@ -81,6 +81,8 @@ const Navbar = () => {
             <img
               src={logo}
               alt=""
+              width={90}
+              height={108}
               className="h-9 w-auto object-contain"
             />
             <span className="font-headline-md text-headline-md font-semibold hidden sm:block">

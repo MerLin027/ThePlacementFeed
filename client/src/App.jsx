@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -5,22 +6,24 @@ import { MyApplicationsProvider } from './context/MyApplicationsContext';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
-import RequireRole from './components/RequireRole';
+import RequireRole, { PageSpinner } from './components/RequireRole';
 import RouteEffects from './components/RouteEffects';
 import PageTransition from './components/PageTransition';
 import Home from './pages/Home';
 import PlacementDetail from './pages/PlacementDetail';
 import Timeline from './pages/Timeline';
 import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import StudentLogin from './pages/StudentLogin';
 import StudentSignup from './pages/StudentSignup';
 import StudentProfile from './pages/StudentProfile';
 import ChangePassword from './pages/ChangePassword';
-import AdminStudents from './pages/AdminStudents';
-import AdminApplicants from './pages/AdminApplicants';
 import MyApplications from './pages/MyApplications';
+
+// Admin pages load on demand: students never download them
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminStudents = lazy(() => import('./pages/AdminStudents'));
+const AdminApplicants = lazy(() => import('./pages/AdminApplicants'));
 
 function App() {
   return (
@@ -54,6 +57,7 @@ function App() {
             <Navbar />
           <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto content-scrollbar focus:outline-hidden">
             <PageTransition>
+            <Suspense fallback={<PageSpinner />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/placement/:id" element={<PlacementDetail />} />
@@ -111,6 +115,7 @@ function App() {
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </PageTransition>
           </main>
           <Footer />

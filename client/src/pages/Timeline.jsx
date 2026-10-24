@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import ColdStartLoader from '../components/ColdStartLoader';
-import EmptyState from '../components/EmptyState';
+import EmptyState, { LoadError } from '../components/EmptyState';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { getStartOfTodayIST } from '../utils/dates';
@@ -19,6 +19,8 @@ const monthKey = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).pad
 const Timeline = () => {
   usePageTitle('Timeline');
   const [drives, setDrives] = useState([]);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const { loading, isColdStart, fetchPlacements } = usePlacementsFetch();
 
   // The list endpoint caps pages at 50, so fetch every page (previously the
@@ -27,20 +29,31 @@ const Timeline = () => {
     let cancelled = false;
     const fetchAll = async () => {
       const first = await fetchPlacements({ limit: PAGE_LIMIT, sort: 'date_desc', page: 1 });
-      if (!first?.data || cancelled) return;
+      if (cancelled) return;
+      if (first?.error) {
+        setLoadError(true);
+        return;
+      }
+      if (!first?.data) return;
       let all = first.data;
       const totalPages = Math.min(first.pagination.totalPages, MAX_PAGES);
       for (let page = 2; page <= totalPages && !cancelled; page++) {
         const res = await api.get('/api/placements', { params: { limit: PAGE_LIMIT, sort: 'date_desc', page } });
         all = all.concat(res.data.data);
       }
-      if (!cancelled) setDrives(all);
+      if (!cancelled) {
+        setLoadError(false);
+        setDrives(all);
+      }
     };
-    fetchAll().catch(() => {});
+    // A later page failing also counts: a partial timeline would hide drives without saying so
+    fetchAll().catch(() => {
+      if (!cancelled) setLoadError(true);
+    });
     return () => {
       cancelled = true;
     };
-  }, [fetchPlacements]);
+  }, [fetchPlacements, reloadKey]);
 
   if (loading) {
     return (
@@ -80,7 +93,9 @@ const Timeline = () => {
         <p className="font-body-lg text-body-lg text-on-surface-variant">Every drive by month, latest first.</p>
       </div>
 
-      {groups.length === 0 ? (
+      {loadError ? (
+        <LoadError onRetry={() => setReloadKey((k) => k + 1)} className="max-w-(--container-xl) mx-auto" />
+      ) : groups.length === 0 ? (
         <EmptyState
           icon="calendar_month"
           title="No drives yet"

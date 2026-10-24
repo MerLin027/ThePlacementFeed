@@ -14,4 +14,19 @@ const EmptyState = ({ icon, title, description, action, className = '' }) => (
   </div>
 );
 
+// Shown when the drive list could not be fetched, so a failure never reads as "no drives"
+export const LoadError = ({ onRetry, className = '' }) => (
+  <EmptyState
+    icon="cloud_off"
+    title="Couldn't load the drives"
+    description="We couldn't reach the server. Check your connection and try again."
+    action={
+      <button type="button" onClick={onRetry} className="btn-primary">
+        Try again
+      </button>
+    }
+    className={className}
+  />
+);
+
 export default EmptyState;

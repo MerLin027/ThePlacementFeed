@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
@@ -10,12 +10,10 @@ import { useApplyState } from '../hooks/useApplyState';
 import { useAuth } from '../context/AuthContext';
 import { formatBranches } from '../constants/branches';
 import { describeAcademicRequirement } from '../utils/eligibility';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
-import { DetailSkeleton } from '../components/Skeleton';
+import { DetailSkeleton, Skeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
+
+const JobDescription = lazy(() => import('../components/JobDescription'));
 
 
 
@@ -274,19 +272,9 @@ const PlacementDetail = () => {
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
                 Job description
               </h2>
-              <div className="markdown-body">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                  components={{
-                    a: ({ node: _node, ...props }) => (
-                      <a {...props} target="_blank" rel="noopener noreferrer" />
-                    ),
-                  }}
-                >
-                  {placement.jdDescription}
-                </ReactMarkdown>
-              </div>
+              <Suspense fallback={<div className="space-y-xs" aria-hidden="true"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" /></div>}>
+                <JobDescription source={placement.jdDescription} />
+              </Suspense>
             </section>
           )}
 

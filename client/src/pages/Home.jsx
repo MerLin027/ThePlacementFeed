@@ -4,7 +4,7 @@ import PlacementCard from '../components/PlacementCard';
 import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import ColdStartLoader from '../components/ColdStartLoader';
-import EmptyState from '../components/EmptyState';
+import EmptyState, { LoadError } from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -55,6 +55,7 @@ const Home = () => {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const { loading, isColdStart, fetchPlacements } = usePlacementsFetch();
+  const [loadError, setLoadError] = useState(false);
 
   // With no status filter, open drives come first and completed ones live in their own section
   const splitView = !filters.status;
@@ -70,7 +71,9 @@ const Home = () => {
       status: filters.status || 'Upcoming,Ongoing',
     };
     const res = await fetchPlacements(params);
+    if (res?.error) setLoadError(true);
     if (res && res.data) {
+      setLoadError(false);
       setPlacements(res.data);
       setPagination(res.pagination);
     }
@@ -142,7 +145,7 @@ const Home = () => {
         onReset={() => setFilters(DEFAULT_FILTERS)}
       />
 
-      {!loading && (
+      {!loading && !loadError && (
         <p className="font-body-sm text-body-sm text-on-surface-variant mb-sm tabular-nums" role="status" aria-live="polite">
           {pagination.total === 0
             ? `No ${splitView ? 'open ' : ''}drives found`
@@ -152,6 +155,8 @@ const Home = () => {
 
       {loading ? (
         <ColdStartLoader isColdStart={isColdStart} />
+      ) : loadError ? (
+        <LoadError onRetry={() => loadPlacements(pagination.page || 1)} />
       ) : placements.length === 0 ? (
         filtersActive || !splitView ? (
           <EmptyState
@@ -173,12 +178,14 @@ const Home = () => {
         )
       ) : (
         <>
+          {/* Keeps the outline h1 → h2 → card h3 (cards are h3 so past drives can share them) */}
+          <h2 className="sr-only">{splitView ? 'Open drives' : heading.title}</h2>
           <DriveGrid drives={placements} />
           <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
         </>
       )}
 
-      {splitView && !loading && past.total > 0 && (
+      {splitView && !loading && !loadError && past.total > 0 && (
         <section className="mt-xl" aria-labelledby="past-drives-heading">
           <h2 id="past-drives-heading" className="sr-only">Past drives</h2>
           <button
