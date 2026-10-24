@@ -3,11 +3,12 @@ import { Link, useParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import AdminFilterPanel from '../components/AdminFilterPanel';
+import StatusStrip from '../components/charts/StatusStrip';
 import ApplicantTable from '../components/ApplicantTable';
 import ApplicantDetailsModal from '../components/ApplicantDetailsModal';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
-import { APPLICATION_STATUSES, APPLICANT_SORTS, statusLabel } from '../constants/applications';
+import { APPLICATION_STATUSES, APPLICANT_SORTS, STATUS_META, statusLabel } from '../constants/applications';
 import { useCatalog } from '../stores/catalog';
 import { useUrlFilters } from '../hooks/useUrlFilters';
 import { addNumber, addDay, addList, addOne } from '../utils/filterParams';
@@ -132,7 +133,7 @@ const AdminApplicants = () => {
     setBusyIds((prev) => new Set(prev).add(applicant.id));
     try {
       await saveApplicant(applicant, { status });
-      toast.success(`${applicant.snapshot.firstName} marked as ${status}`);
+      toast.success(`${applicant.snapshot.firstName} marked as ${statusLabel(status)}`);
     } catch (err) {
       toast.error(parseApiError(err, 'Could not update status.').message || 'Could not update status.');
     } finally {
@@ -151,7 +152,7 @@ const AdminApplicants = () => {
         applicationIds: [...selected],
         status: bulkStatus,
       });
-      toast.success(`${res.data.matched} applicant${res.data.matched === 1 ? '' : 's'} set to ${bulkStatus}`);
+      toast.success(`${res.data.matched} applicant${res.data.matched === 1 ? '' : 's'} set to ${statusLabel(bulkStatus)}`);
       reload();
     } catch (err) {
       toast.error(parseApiError(err, 'Could not update applicants.').message || 'Could not update applicants.');
@@ -228,6 +229,8 @@ const AdminApplicants = () => {
         </button>
       </div>
 
+      <StatusStrip stats={stats} />
+
       {/* Status counts — click to filter */}
       <div className="flex flex-wrap gap-xs mb-md" role="group" aria-label="Filter by status">
         {APPLICATION_STATUSES.map((s) => {
@@ -238,14 +241,15 @@ const AdminApplicants = () => {
               type="button"
               aria-pressed={active}
               onClick={() => setFilter('status', active ? filters.status.filter((x) => x !== s) : [...filters.status, s])}
-              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
                 active
-                  ? 'bg-primary-container text-on-primary border-primary-container'
+                  ? `${STATUS_META[s].pill} border-transparent shadow-soft`
                   : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
               }`}
             >
-              {s}
-              <span className={`px-2 rounded-full ${active ? 'bg-white/20' : 'bg-surface-container-high'}`}>{stats[s] ?? 0}</span>
+              <span className={`w-2 h-2 rounded-full ${STATUS_META[s].dot}`} aria-hidden="true" />
+              {statusLabel(s)}
+              <span className={`px-2 rounded-full tabular-nums ${active ? 'bg-white/60' : 'bg-surface-container-high'}`}>{stats[s] ?? 0}</span>
             </button>
           );
         })}
@@ -299,7 +303,7 @@ const AdminApplicants = () => {
             className="select-field sm:w-auto"
           >
             {APPLICATION_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{statusLabel(s)}</option>
             ))}
           </select>
           <button

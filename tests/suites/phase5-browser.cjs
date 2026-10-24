@@ -146,7 +146,7 @@ const TAG = `P5B${Date.now() % 100000}`;
   await spage.click('button[type=submit]');
   await spage.waitForURL(APP + '/');
   await spage.goto(`${APP}/placement/${drive._id}`);
-  ok(await hasText(spage, "You've applied") && await hasText(spage, 'Offered'), 'student detail shows Offered');
+  ok(await hasText(spage, "You've applied") && await hasText(spage, 'Selected'), 'student detail shows Offered as "Selected"');
   ok(!(await spage.getByText('Call for round 2').count()), 'admin note not shown to student');
   await sctx.close();
 

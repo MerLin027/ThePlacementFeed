@@ -6,7 +6,7 @@
    at the one style it uses (weight 400, unfilled). Adding an icon: add its name to this URL AND to
    the preload in index.html — tests/suites/icons-test.cjs fails if a rendered icon is missing. */
 @layer vendor, theme, base, components, utilities;
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,add_circle,archive,arrow_back,arrow_forward,assignment_late,calendar_month,cards,check,check_circle,chevron_left,chevron_right,close,cloud_off,delete,done_all,download,edit,edit_note,error,event,event_available,event_busy,event_upcoming,expand_more,explore_off,folder_delete,function,group,help,history,hourglass_top,how_to_reg,info,key,label,lock,lock_reset,login,menu,notifications,open_in_new,password,pause_circle,payments,person_add,person_remove,play_circle,push_pin,radio,restart_alt,schedule,school,search,search_off,sort,storage,sync,timeline,tune,unarchive,undo,verified_user,visibility,visibility_off,warning,work_history&display=swap')
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,add_circle,archive,arrow_back,arrow_forward,assignment_late,bar_chart,block,calendar_month,cards,celebration,check,check_circle,chevron_left,chevron_right,close,cloud_off,dashboard,delete,done_all,download,edit,edit_note,error,event,event_available,event_busy,event_upcoming,expand_more,explore_off,folder_delete,forum,function,group,help,history,home,hourglass_top,how_to_reg,info,key,label,lock,lock_reset,login,logout,menu,notifications,open_in_new,password,pause_circle,payments,person,person_add,person_remove,play_circle,push_pin,radio,restart_alt,schedule,school,search,search_off,send,settings,sort,star,storage,sync,table,timeline,tune,unarchive,undo,verified_user,visibility,visibility_off,warning,work_history&display=swap')
   layer(vendor);
 @import 'tailwindcss';
 
@@ -27,6 +27,36 @@
   --shadow-lift: 0 2px 4px rgb(3 21 54 / 0.04), 0 14px 28px -10px rgb(3 21 54 / 0.16);
   --shadow-glow: 0 0 0 4px rgb(0 74 198 / 0.12), 0 10px 28px -12px rgb(0 74 198 / 0.4);
   --shadow-pop: 0 4px 10px -2px rgb(3 21 54 / 0.08), 0 20px 40px -12px rgb(3 21 54 / 0.22);
+
+  /* Colour coding. One hue per application status and per drive type, used by pills, filters,
+     charts and the status stepper alike: a solid accent, a soft background and the ink (text) that
+     reads on that background (all pairs at least 4.5:1). Hex so 2022 browsers read them too.
+     The five status accents passed the dataviz palette validator (lightness, chroma, colour-blind
+     separation between neighbours in the pipeline order, contrast) on 2026-10-24. */
+  --color-st-applied: #2563eb;
+  --color-st-applied-soft: #dbeafe;
+  --color-st-applied-ink: #1e3a8a;
+  --color-st-shortlisted: #a21caf;
+  --color-st-shortlisted-soft: #fae8ff;
+  --color-st-shortlisted-ink: #701a75;
+  --color-st-interviewing: #ca8a04;
+  --color-st-interviewing-soft: #fef9c3;
+  --color-st-interviewing-ink: #713f12;
+  --color-st-selected: #059669;
+  --color-st-selected-soft: #d1fae5;
+  --color-st-selected-ink: #064e3b;
+  --color-st-rejected: #dc2626;
+  --color-st-rejected-soft: #fee2e2;
+  --color-st-rejected-ink: #7f1d1d;
+  --color-type-fulltime: #2563eb;
+  --color-type-fulltime-soft: #dbeafe;
+  --color-type-fulltime-ink: #1e3a8a;
+  --color-type-intern: #0891b2;
+  --color-type-intern-soft: #cffafe;
+  --color-type-intern-ink: #164e63;
+  --color-type-hybrid: #7c3aed;
+  --color-type-hybrid-soft: #ede9fe;
+  --color-type-hybrid-ink: #4c1d95;
 
   --color-brand-navy: #031536;
   --color-brand-blue: #005afd;

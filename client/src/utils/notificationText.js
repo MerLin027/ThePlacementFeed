@@ -1,3 +1,5 @@
+import { statusLabel } from '../constants/applications';
+
 // Wording and icon (Material Symbols name) for each notification type.
 // `tone` drives colour: 'warning' for postponements, 'success' for good news.
 
@@ -27,7 +29,7 @@ export const describeNotification = (n) => {
       return { text: `${n.company} details were updated`, icon: 'edit_note', tone: 'info' };
     case 'applicationStatus':
       return {
-        text: `Your application to ${n.company}: ${n.status}`,
+        text: `Your application to ${n.company}: ${statusLabel(n.status)}`,
         icon: 'how_to_reg',
         tone: APPLICATION_TONE[n.status] || 'neutral',
       };

@@ -1,23 +1,20 @@
 import { useNavigate } from 'react-router';
+import { STATUS_META } from '../constants/applications';
 import { useApplyState } from '../hooks/useApplyState';
 
 const BASE = 'w-full min-h-[44px] py-3 justify-center';
 
-// Applied pill colour per pipeline status
-const STATUS_STYLES = {
-  Applied: 'bg-primary-fixed text-on-primary-fixed',
-  Shortlisted: 'bg-amber-100 text-amber-800',
-  Interviewing: 'bg-amber-100 text-amber-800',
-  Offered: 'bg-emerald-100 text-emerald-800',
-  Rejected: 'bg-surface-container-high text-on-surface-variant',
-};
 
-export const ApplicationStatusPill = ({ status }) => (
-  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm text-label-sm ${STATUS_STYLES[status] || STATUS_STYLES.Applied}`}>
-    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">check_circle</span>
-    {status}
-  </span>
-);
+// Status pill: one colour and icon per pipeline status (constants/applications.js)
+export const ApplicationStatusPill = ({ status }) => {
+  const meta = STATUS_META[status] || STATUS_META.Applied;
+  return (
+    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm text-label-sm ${meta.pill}`}>
+      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{meta.icon}</span>
+      {meta.label}
+    </span>
+  );
+};
 
 /**
  * Apply control for a drive card. The card itself is a link to the detail page,

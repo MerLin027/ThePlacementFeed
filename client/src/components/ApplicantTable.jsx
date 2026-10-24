@@ -1,5 +1,5 @@
 import { useCatalog } from '../stores/catalog';
-import { APPLICATION_STATUSES } from '../constants/applications';
+import { APPLICATION_STATUSES, statusLabel } from '../constants/applications';
 import { TableRowsSkeleton } from './Skeleton';
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
@@ -103,7 +103,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                         className="select-field min-w-[140px]"
                       >
                         {APPLICATION_STATUSES.map((s) => (
-                          <option key={s} value={s}>{s}</option>
+                          <option key={s} value={s}>{statusLabel(s)}</option>
                         ))}
                       </select>
                     </td>

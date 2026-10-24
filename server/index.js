@@ -41,6 +41,7 @@ const applicationRoutes = require('./routes/applications');
 const adminStudentRoutes = require('./routes/adminStudents');
 const catalogRoutes = require('./routes/catalog');
 const adminCatalogRoutes = require('./routes/adminCatalog');
+const adminInsightsRoutes = require('./routes/adminInsights');
 const catalog = require('./services/catalog');
 
 const app = express();
@@ -79,6 +80,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/admin/catalog', adminCatalogRoutes);
+app.use('/api/admin/insights', adminInsightsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import api from '../api/axios';
 import PlacementForm from '../components/PlacementForm';
@@ -12,6 +12,9 @@ import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { FormAlert } from '../components/AuthCard';
 import { useCatalog } from '../stores/catalog';
+
+// The charts (and their library) load as a separate chunk after the page itself
+const DashboardInsights = lazy(() => import('../components/charts/DashboardInsights'));
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 const iconButton =
@@ -272,6 +275,18 @@ const AdminDashboard = () => {
           </FormAlert>
         </div>
       )}
+
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-sm mb-lg" role="status" aria-label="Loading the overview">
+            {[0, 1, 2, 3].map((i) => <span key={i} className="skeleton h-28 rounded-2xl" />)}
+          </div>
+        }
+      >
+        <DashboardInsights />
+      </Suspense>
+
+      <h2 id="drives-heading" className="font-headline-md text-headline-md text-on-surface mb-sm">Drives</h2>
 
       {/* Search */}
       <div className="mb-md">

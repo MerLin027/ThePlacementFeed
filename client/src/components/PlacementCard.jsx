@@ -3,6 +3,7 @@ import StatusBadge from './StatusBadge';
 import CompanyMonogram from './CompanyMonogram';
 import { CardApplyButton } from './ApplyButton';
 import { useCatalog } from '../stores/catalog';
+import { TYPE_META } from '../constants/applications';
 import { deadlineInfo, DEADLINE_TONE_CLASS, formatDay } from '../utils/deadline';
 
 const Row = ({ icon, children, title }) => (
@@ -19,7 +20,8 @@ const Row = ({ icon, children, title }) => (
  */
 const PlacementCard = ({ placement, index = 0 }) => {
   const { formatBranches } = useCatalog();
-  const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
+  const { _id, company, role, type, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
+  const typeMeta = TYPE_META[type];
   const branches = eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'All branches';
   const closing = status === 'Upcoming' && !isPostponed ? deadlineInfo(deadline) : null;
 
@@ -49,6 +51,8 @@ const PlacementCard = ({ placement, index = 0 }) => {
         style={{ '--i': index }}
         className="relative bg-surface-container-lowest border border-outline-variant rounded-2xl p-md flex flex-col h-full shadow-soft group-hover/card:shadow-lift group-hover/card:border-primary-30 group-hover/card:-translate-y-0.5 transition-control focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 motion-safe:rise-in-stagger"
       >
+        {/* Colour-coded by drive type: a strip along the top edge and a chip next to the role */}
+        {typeMeta && <span className={`absolute -top-px -inset-x-px h-1 rounded-t-2xl ${typeMeta.bar}`} aria-hidden="true" />}
         <div className="flex justify-between items-start gap-sm mb-sm">
           <CompanyMonogram name={company} className="group-hover/card:scale-105 transition-transform duration-200 ease-snappy" />
           <StatusBadge status={status} isPostponed={isPostponed} />
@@ -62,7 +66,14 @@ const PlacementCard = ({ placement, index = 0 }) => {
             {company}
           </Link>
         </h3>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-sm truncate">{role}</p>
+        <p className="flex items-center gap-xs font-body-md text-body-md text-on-surface-variant mb-sm min-w-0">
+          <span className="truncate">{role}</span>
+          {typeMeta && (
+            <span className={`shrink-0 inline-flex items-center px-2 py-[1px] rounded-full font-label-sm text-label-sm ${typeMeta.pill}`}>
+              {typeMeta.short}
+            </span>
+          )}
+        </p>
 
         <div className="space-y-xs mb-md grow">
           <Row icon="payments">

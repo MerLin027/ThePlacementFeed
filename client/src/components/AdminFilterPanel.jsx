@@ -53,6 +53,8 @@ const AdminFilterPanel = ({
     const id = fid(field.key);
     const value = values[field.key];
     if (field.type === 'multi') {
+      // Nothing to choose from (e.g. no applicants yet): leave the group out
+      if (field.options.length === 0) return null;
       return (
         <fieldset key={field.key} className="sm:col-span-2">
           <legend className="label">{field.label}</legend>
@@ -111,7 +113,7 @@ const AdminFilterPanel = ({
       <div className="flex flex-col lg:flex-row lg:items-center gap-xs">
         <div
           role="search"
-          className="group/search flex-1 flex items-center gap-1 h-[52px] pl-4 pr-1.5 rounded-full bg-surface-container-lowest border border-outline-variant shadow-soft hover:border-outline focus-within:border-primary focus-within:hover:border-primary focus-within:shadow-glow transition-control"
+          className="group/search w-full lg:flex-1 flex items-center gap-1 h-[52px] pl-4 pr-1.5 rounded-full bg-surface-container-lowest border border-outline-variant shadow-soft hover:border-outline focus-within:border-primary focus-within:hover:border-primary focus-within:shadow-glow transition-control"
         >
           <span className="material-symbols-outlined shrink-0 text-outline text-[22px] group-focus-within/search:text-primary transition-colors duration-200" aria-hidden="true">
             search

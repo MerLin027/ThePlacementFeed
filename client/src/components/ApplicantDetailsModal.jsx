@@ -3,7 +3,7 @@ import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import { ApplicationStatusPill } from './ApplyButton';
 import { useCatalog } from '../stores/catalog';
-import { APPLICATION_STATUSES } from '../constants/applications';
+import { APPLICATION_STATUSES, statusLabel } from '../constants/applications';
 import { parseApiError } from '../utils/formErrors';
 
 const Row = ({ label, children }) => (
@@ -127,7 +127,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
               className="select-field"
             >
               {APPLICATION_STATUSES.map((st) => (
-                <option key={st} value={st}>{st}</option>
+                <option key={st} value={st}>{statusLabel(st)}</option>
               ))}
             </select>
           </div>

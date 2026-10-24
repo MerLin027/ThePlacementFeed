@@ -174,6 +174,26 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   ex = await exportRolls(`appliedTo=${istDate(-3)}`);
   ok(ex.names.join() === 'Bharat', 'export: date filter');
 
+  console.log('# Dashboard insights');
+  r = await call('GET', '/api/admin/insights');
+  ok(r.status === 401, 'insights without a session -> 401');
+  r = await call('GET', '/api/admin/insights', { cookie: S.a.cookie });
+  ok(r.status === 401, 'insights with a student session -> 401');
+  r = await call('GET', '/api/admin/insights?weeks=3', { cookie: admin });
+  ok(r.status === 400, 'weeks below 4 -> 400');
+  r = await call('GET', '/api/admin/insights', { cookie: admin });
+  const ins = r.json.data;
+  ok(r.status === 200 && ins.kpis && ins.pipeline && Array.isArray(ins.weekly), 'insights shape');
+  const pipelineSum = Object.values(ins.pipeline).reduce((t, n) => t + n, 0);
+  ok(pipelineSum === ins.kpis.applications && ins.kpis.applications === (await Application.countDocuments()), 'pipeline adds up to all applications', `${pipelineSum} vs ${ins.kpis.applications}`);
+  ok(ins.kpis.selected === ins.pipeline.Offered && ins.kpis.studentsPlaced === (await Application.distinct('studentId', { status: 'Offered' })).length, 'selected and placed counts');
+  ok(ins.weekly.length === 12 && ins.weekly.every((w) => /^\d{4}-\d{2}-\d{2}$/.test(w.weekStart) && new Date(`${w.weekStart}T00:00:00Z`).getUTCDay() === 1), '12 weeks, each starting on a Monday (IST)');
+  ok(ins.weekly[ins.weekly.length - 1].applications >= 2, 'this week includes the fixture applications');
+  const ourDrive = ins.topDrives.find((d) => d.id === drive._id.toString());
+  ok(!ourDrive || (ourDrive.total === 3 && ourDrive.statuses.Offered === 1 && ourDrive.statuses.Shortlisted === 1), 'per-drive split by status');
+  r = await call('GET', '/api/admin/insights?weeks=26', { cookie: admin });
+  ok(r.status === 200 && r.json.data.weekly.length === 26, 'weeks=26 -> 26 buckets');
+
   // cleanup
   await Application.deleteMany({ driveId: drive._id });
   await Placement.deleteOne({ _id: drive._id });
