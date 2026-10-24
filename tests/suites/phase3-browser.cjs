@@ -1,5 +1,6 @@
 // Phase 3 browser verification — apply flow, button states, admin config. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -69,6 +70,7 @@ const login = async (page, email, password = 'goodpass123') => {
     const s = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'goodpass123' } });
     const cookie = s.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
     if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+    if (profile) await chooseInstitute(cookie);
     return email;
   };
   const emailA = await signup('A', COMPLETE);

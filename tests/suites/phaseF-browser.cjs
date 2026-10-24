@@ -1,5 +1,6 @@
 // Phase F verification — admin pages. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
 const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
@@ -151,6 +152,7 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
   const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Das', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
+  await chooseInstitute(sc);
   await fetch(`${API}/api/placements/${pinned._id}/postpone`, { method: 'PATCH', headers: H, body: JSON.stringify({ isPostponed: false }) });
   await Placement.updateOne({ _id: pinned._id }, { status: 'Upcoming', statusManuallySet: false });
   const ap = await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: pinned._id, consentGiven: true }) });

@@ -19,6 +19,13 @@ const TEST_STUDENT = [
   const ids = (await db.collection('placements').find({ company: TEST_DRIVE }, { projection: { _id: 1 } }).toArray()).map((d) => d._id);
   const apps = await db.collection('applications').deleteMany({ driveId: { $in: ids } });
   const drives = await db.collection('placements').deleteMany({ _id: { $in: ids } });
+  // Applying needs an institute; suites pick this one (lib/institute.cjs)
+  const now = new Date();
+  await db.collection('institutes').updateOne(
+    { nameKey: 'test institute' },
+    { $set: { name: 'Test Institute', active: true, updatedAt: now }, $setOnInsert: { nameKey: 'test institute', createdAt: now } },
+    { upsert: true }
+  );
   console.log(`cleanup: ${students.deletedCount} students, ${drives.deletedCount} test drives, ${apps.deletedCount} applications removed`);
   await mongoose.disconnect();
 })().catch((e) => { console.error('cleanup failed:', e.message); process.exit(1); });

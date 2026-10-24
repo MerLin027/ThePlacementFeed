@@ -94,6 +94,188 @@ const resetAndLogin = async (s, admin) => {
   const cDoc = await Student.findById(c.id).lean();
   ok(cDoc.mustChangePassword === true, 'password was not changed');
 
+  console.log('# New admin routes are admin-only');
+  const someId = new mongoose.Types.ObjectId().toString();
+  const adminRoutes = [
+    ['GET', '/api/admin/catalog'], ['PUT', '/api/admin/catalog/university', { name: 'X University' }],
+    ['POST', '/api/admin/catalog/branches', { code: 'QQ', name: 'Quux' }], ['PATCH', `/api/admin/catalog/branches/${someId}`, { name: 'Quux' }],
+    ['DELETE', `/api/admin/catalog/branches/${someId}`], ['POST', '/api/admin/catalog/institutes', { name: 'Quux' }],
+    ['PATCH', `/api/admin/catalog/institutes/${someId}`, { name: 'Quux' }], ['DELETE', `/api/admin/catalog/institutes/${someId}`],
+    ['POST', `/api/admin/students/${a.id}/reset-institute`], ['GET', `/api/admin/students/${a.id}/application-count`],
+  ];
+  for (const [method, url, body] of adminRoutes) {
+    const label = `${method} ${url.replace(/[a-f0-9]{24}/, ':id')}`;
+    r = await call(method, url, { body });
+    ok(r.status === 401, `${label} without a session -> 401`);
+    r = await call(method, url, { body, cookie: a.cookie });
+    ok(r.status === 401, `${label} with a student session -> 401`);
+    if (method !== 'GET') {
+      r = await call(method, url, { body, cookie: admin, origin: 'https://evil.example.com' });
+      ok(r.status === 403, `${label} from another origin -> 403`);
+    }
+  }
+
+  console.log('# College/University');
+  for (const bad of ['', 'x', 'y'.repeat(121), { $gt: '' }]) {
+    r = await call('PUT', '/api/admin/catalog/university', { cookie: admin, body: { name: bad } });
+    ok(r.status === 400, `university name ${JSON.stringify(bad).slice(0, 20)} -> 400`);
+  }
+  r = await call('PUT', '/api/admin/catalog/university', { cookie: admin, body: { name: '  CHARUSAT University  ' } });
+  ok(r.status === 200 && r.json.data.university === 'CHARUSAT University', 'admin sets the university (trimmed)');
+  r = await call('GET', '/api/catalog');
+  ok(r.status === 200 && r.json.data.university === 'CHARUSAT University', 'public catalog shows it');
+  ok(r.json.data.branches.some((x) => x.code === 'CE' && x.name === 'Computer Engineering'), 'branches were seeded from the built-in list');
+  r = await call('GET', '/api/students/me', { cookie: a.cookie });
+  ok(r.json.data.university === 'CHARUSAT University' && r.json.data.institute === null && r.json.data.instituteLocked === false, 'every profile reads the current university');
+
+  console.log('# Institutes');
+  r = await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: `${TAG} CSPIT` } });
+  ok(r.status === 201 && r.json.data.name === `${TAG} CSPIT`, 'create institute');
+  const inst1 = r.json.data;
+  r = await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: `${TAG} cspit` } });
+  ok(r.status === 409 && r.json.code === 'DUPLICATE', 'same name in another case -> 409');
+  for (const bad of ['', 'x', 'y'.repeat(121), 42]) {
+    r = await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: bad } });
+    ok(r.status === 400, `institute name ${JSON.stringify(bad).slice(0, 20)} -> 400`);
+  }
+  const inst2 = (await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: `${TAG} DEPSTAR` } })).json.data;
+  const inst3 = (await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: `${TAG} CMPICA` } })).json.data;
+  r = await call('PATCH', `/api/admin/catalog/institutes/${inst2.id}`, { cookie: admin, body: { active: false } });
+  ok(r.status === 200 && r.json.data.active === false, 'archive institute');
+  r = await call('PATCH', `/api/admin/catalog/institutes/${inst3.id}`, { cookie: admin, body: {} });
+  ok(r.status === 400, 'empty update -> 400');
+  r = await call('PATCH', `/api/admin/catalog/institutes/${inst3.id}`, { cookie: admin, body: { active: 'yes' } });
+  ok(r.status === 400, 'non-boolean active -> 400');
+  r = await call('GET', '/api/catalog');
+  ok(r.json.data.institutes.some((i) => i.id === inst1.id) && !r.json.data.institutes.some((i) => i.id === inst2.id), 'catalog lists active institutes only');
+
+  console.log('# Institute: required, chosen once, locked');
+  const d = await mkStudent('d', PROFILE);
+  r = await call('POST', '/api/applications', { cookie: d.cookie, body: { driveId: drive._id, consentGiven: true } });
+  ok(r.status === 422 && r.json.code === 'INCOMPLETE_PROFILE' && r.json.missing.includes('instituteId'), 'no institute -> cannot apply');
+  for (const [bad, label] of [['abc', 'malformed id'], [someId, 'unknown institute'], [inst2.id, 'archived institute'], [{ $ne: null }, 'operator']]) {
+    r = await call('PUT', '/api/students/me/institute', { cookie: d.cookie, body: { instituteId: bad } });
+    ok(r.status === 400, `${label} -> 400`);
+  }
+  r = await call('PUT', '/api/students/me/institute', { cookie: d.cookie, body: { instituteId: inst1.id }, origin: 'https://evil.example.com' });
+  ok(r.status === 403, 'cross-origin choice -> 403');
+  r = await call('PUT', '/api/students/me/institute', { cookie: d.cookie, body: { instituteId: inst1.id } });
+  ok(r.status === 200 && r.json.data.institute?.id === inst1.id && r.json.data.instituteLocked === true, 'first choice -> 200, locked');
+  ok(!r.json.data.missingFields.includes('instituteId'), 'no longer missing');
+  r = await call('PUT', '/api/students/me/institute', { cookie: d.cookie, body: { instituteId: inst3.id } });
+  ok(r.status === 409 && r.json.code === 'INSTITUTE_LOCKED', 'second choice -> 409 INSTITUTE_LOCKED');
+  r = await call('PATCH', '/api/students/me', { cookie: d.cookie, body: { instituteId: inst3.id, institute: 'Hacked' } });
+  ok(r.status === 200 && r.json.data.institute.id === inst1.id, 'PATCH /me cannot change it');
+  const e = await mkStudent('e', PROFILE);
+  const racers = await Promise.all([inst1, inst3, inst1, inst3, inst1, inst3, inst1, inst3].map((i) =>
+    call('PUT', '/api/students/me/institute', { cookie: e.cookie, body: { instituteId: i.id } })));
+  const winners = racers.filter((x) => x.status === 200);
+  const eDoc = await Student.findById(e.id).lean();
+  ok(winners.length === 1 && racers.filter((x) => x.status === 409).length === 7, `8 concurrent choices -> exactly one wins (${winners.length})`);
+  ok(String(eDoc.instituteId) === winners[0]?.json.data.institute.id, 'and the stored one is the winner');
+  r = await call('POST', '/api/applications', { cookie: d.cookie, body: { driveId: drive._id, consentGiven: true } });
+  ok(r.status === 201, 'with an institute -> can apply');
+  let dApp = await Application.findOne({ driveId: drive._id, studentId: d.id }).lean();
+  ok(dApp.snapshot.institute === `${TAG} CSPIT` && dApp.snapshot.university === 'CHARUSAT University', 'snapshot keeps institute and university names');
+  r = await call('GET', `/api/admin/students?search=${d.rollNumber}`, { cookie: admin });
+  ok(r.json.data[0]?.institute?.name === `${TAG} CSPIT`, 'admin list shows the institute');
+
+  console.log('# Admin resets the institute');
+  r = await call('POST', `/api/admin/students/${e.id}/reset-institute`, { cookie: admin });
+  ok(r.status === 200 && r.json.data.institute === null, 'reset -> institute cleared');
+  r = await call('POST', `/api/admin/students/${someId}/reset-institute`, { cookie: admin });
+  ok(r.status === 404, 'unknown student -> 404');
+  r = await call('PUT', '/api/students/me/institute', { cookie: e.cookie, body: { instituteId: inst3.id } });
+  ok(r.status === 200 && r.json.data.institute.id === inst3.id, 'student can choose again after a reset');
+
+  console.log('# Deleting institutes');
+  r = await call('DELETE', `/api/admin/catalog/institutes/${inst1.id}`, { cookie: admin });
+  ok(r.status === 409 && r.json.code === 'IN_USE' && r.json.usage.students === 1, 'in use -> 409 IN_USE with the count');
+  r = await call('DELETE', `/api/admin/catalog/institutes/${inst1.id}?force=yes`, { cookie: admin });
+  ok(r.status === 400, 'bad force value -> 400');
+  r = await call('DELETE', `/api/admin/catalog/institutes/${inst1.id}?force=true`, { cookie: admin });
+  ok(r.status === 200 && r.json.clearedStudents === 1, 'force delete -> its students are cleared');
+  r = await call('GET', '/api/students/me', { cookie: d.cookie });
+  ok(r.json.data.institute === null && r.json.data.instituteLocked === false && r.json.data.missingFields.includes('instituteId'), 'that student must choose again');
+  dApp = await Application.findById(dApp._id).lean();
+  ok(dApp.snapshot.institute === `${TAG} CSPIT`, 'past application keeps the old name');
+  r = await call('DELETE', `/api/admin/catalog/institutes/${inst2.id}`, { cookie: admin });
+  ok(r.status === 200, 'unused institute deletes straight away');
+
+  console.log('# Branches');
+  const code = `T${TAG.slice(-5)}`.toUpperCase();
+  r = await call('POST', '/api/admin/catalog/branches', { cookie: admin, body: { code: code.toLowerCase(), name: 'Test Quantum Engineering' } });
+  ok(r.status === 201 && r.json.data.code === code && r.json.data.active === true, 'create branch (code upper-cased)');
+  const br = r.json.data;
+  r = await call('POST', '/api/admin/catalog/branches', { cookie: admin, body: { code, name: 'Again' } });
+  ok(r.status === 409 && r.json.code === 'DUPLICATE', 'duplicate code -> 409');
+  for (const bad of ['A,B', 'TOOLONGCODE123', '', '-X', { $gt: '' }]) {
+    r = await call('POST', '/api/admin/catalog/branches', { cookie: admin, body: { code: bad, name: 'Bad Branch' } });
+    ok(r.status === 400, `branch code ${JSON.stringify(bad)} -> 400`);
+  }
+  r = await call('PATCH', `/api/admin/catalog/branches/${br.id}`, { cookie: admin, body: { code: 'ZZ', name: 'Quantum Engineering' } });
+  ok(r.status === 200 && r.json.data.code === code && r.json.data.name === 'Quantum Engineering', 'rename keeps the code');
+  const f = await mkStudent('f', { ...PROFILE, branch: code });
+  ok((await Student.findById(f.id).lean()).branch === code, 'students can choose the new branch');
+  r = await call('POST', '/api/placements', { cookie: admin, body: { company: `${TAG} Bad`, role: 'X', type: 'Full-Time', ctc: 5, eligibility: { branches: ['NOPE1'] } } });
+  ok(r.status === 400, 'drive with an unknown branch -> 400');
+  r = await call('PATCH', `/api/admin/catalog/branches/${br.id}`, { cookie: admin, body: { active: false } });
+  ok(r.status === 200 && r.json.data.active === false, 'archive branch');
+  const g = await mkStudent('g', PROFILE);
+  r = await call('PATCH', '/api/students/me', { cookie: g.cookie, body: { branch: code } });
+  ok(r.status === 400 && r.json.errors?.[0]?.field === 'branch', 'archived branch cannot be newly chosen');
+  r = await call('PATCH', '/api/students/me', { cookie: f.cookie, body: { branch: code, firstName: 'Fiona' } });
+  ok(r.status === 200, 'a student who has it can keep it');
+  r = await call('GET', '/api/catalog');
+  ok(r.json.data.branches.some((x) => x.code === code && x.active === false && x.name === 'Quantum Engineering'), 'archived branch still labelled in the catalog');
+
+  console.log('# Deleting branches');
+  const open1 = await Placement.create({ company: `${TAG} Open1`, role: 'R', type: 'Full-Time', ctc: 5, eligibility: { branches: [code, 'CE'] } });
+  const only = await Placement.create({ company: `${TAG} Only`, role: 'R', type: 'Full-Time', ctc: 5, eligibility: { branches: [code] } });
+  const past = await Placement.create({ company: `${TAG} Past`, role: 'R', type: 'Full-Time', ctc: 5, status: 'Completed', eligibility: { branches: [code] } });
+  r = await call('GET', '/api/admin/catalog', { cookie: admin });
+  const row = r.json.data.branches.find((x) => x.code === code);
+  ok(row && row.students === 1 && row.openDrives === 2 && row.completedDrives === 1, 'settings list shows usage counts', JSON.stringify(row));
+  r = await call('DELETE', `/api/admin/catalog/branches/${br.id}`, { cookie: admin });
+  ok(r.status === 409 && r.json.code === 'IN_USE' && r.json.usage.students === 1 && r.json.usage.openDrives === 2, 'in use -> 409 IN_USE');
+  r = await call('DELETE', `/api/admin/catalog/branches/${br.id}?force=true`, { cookie: admin });
+  ok(r.status === 409 && r.json.code === 'ONLY_BRANCH' && r.json.usage.onlyBranchDrives.some((x) => x.id === only._id.toString()), 'an open drive only for it blocks even a forced delete');
+  ok((await Student.findById(f.id).lean()).branch === code, 'and nothing was changed');
+  await Placement.updateOne({ _id: only._id }, { $set: { 'eligibility.branches': ['CE'] } });
+  r = await call('DELETE', `/api/admin/catalog/branches/${br.id}?force=true`, { cookie: admin });
+  ok(r.status === 200 && r.json.clearedStudents === 1 && r.json.updatedDrives === 1, 'forced delete clears students and open drives', JSON.stringify(r.json));
+  ok((await Student.findById(f.id).lean()).branch === undefined, 'student must choose a branch again');
+  ok(JSON.stringify((await Placement.findById(open1._id).lean()).eligibility.branches) === '["CE"]', 'removed from the open drive');
+  ok(JSON.stringify((await Placement.findById(past._id).lean()).eligibility.branches) === JSON.stringify([code]), 'completed drive keeps it as history');
+  const unused = (await call('POST', '/api/admin/catalog/branches', { cookie: admin, body: { code: `${code}X`, name: 'Unused Branch' } })).json.data;
+  r = await call('DELETE', `/api/admin/catalog/branches/${unused.id}`, { cookie: admin });
+  ok(r.status === 200, 'unused branch deletes straight away');
+
+  console.log('# Two-step account delete');
+  const h = await mkStudent('h', PROFILE);
+  await call('PUT', '/api/students/me/institute', { cookie: h.cookie, body: { instituteId: inst3.id } });
+  r = await call('POST', '/api/applications', { cookie: h.cookie, body: { driveId: drive._id, consentGiven: true } });
+  ok(r.status === 201, 'h applied');
+  r = await call('GET', `/api/admin/students/${h.id}/application-count`, { cookie: admin });
+  ok(r.status === 200 && r.json.data.count === 1, 'application count for the second prompt');
+  r = await call('DELETE', `/api/admin/students/${h.id}?applications=maybe`, { cookie: admin });
+  ok(r.status === 400, 'unknown mode -> 400');
+  r = await call('DELETE', `/api/admin/students/${h.id}?applications=retain`, { cookie: admin });
+  ok(r.status === 200 && r.json.anonymizedApplications === 1, 'retain -> application kept');
+  const kept = await Application.findOne({ driveId: drive._id, studentId: h.id }).lean();
+  ok(kept && kept.studentDeleted === true && kept.snapshot.email === '' && kept.snapshot.branch === 'CE', 'kept record is flagged and scrubbed, academic data stays');
+  r = await call('GET', `/api/placements/${drive._id}/applicants?limit=100`, { cookie: admin });
+  ok(r.json.data.some((x) => x.id === kept._id.toString() && x.studentDeleted === true), 'applicant list marks it as a deleted account');
+  ok(r.json.stats.Applied >= 2, 'and still counts it');
+  r = await call('DELETE', `/api/admin/students/${d.id}?applications=delete`, { cookie: admin });
+  ok(r.status === 200 && r.json.deletedApplications === 1, 'delete -> applications removed too');
+  ok((await Application.countDocuments({ studentId: d.id })) === 0 && !(await Student.exists({ _id: d.id })), 'nothing left of that account');
+  const k = await mkStudent('k', PROFILE);
+  r = await call('DELETE', `/api/admin/students/${k.id}`, { cookie: admin });
+  ok(r.status === 200 && 'anonymizedApplications' in r.json, 'no mode (older client) -> retain');
+  await Placement.deleteMany({ _id: { $in: [open1._id, only._id, past._id] } });
+  await call('DELETE', `/api/admin/catalog/institutes/${inst3.id}?force=true`, { cookie: admin });
+
   // cleanup
   await Application.deleteMany({ driveId: drive._id });
   await Placement.deleteOne({ _id: drive._id });

@@ -1,5 +1,6 @@
 // Phase 4 API verification — admin student management, default-password reset, delete + scrub. Local stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const fs = require('fs');
 const path = require('path');
 const SERVER = TEST.SERVER;
@@ -31,6 +32,7 @@ const mkStudent = async (n, profile) => {
   const r = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber, password: 'origpass123' } });
   const cookie = cookieOf(r, 'student_token');
   if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+  if (profile) await chooseInstitute(cookie);
   const doc = await Student.findOne({ email }).lean();
   return { email, rollNumber, cookie, id: doc._id.toString() };
 };

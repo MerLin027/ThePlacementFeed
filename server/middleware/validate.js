@@ -3,9 +3,9 @@ const {
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
   DEFAULT_STUDENT_PASSWORD,
-  INSTITUTES,
 } = require('../constants/auth');
-const { BRANCHES } = require('../constants/branches');
+const catalog = require('../services/catalog');
+const { BRANCH_CODE_PATTERN } = require('../models/Branch');
 const { APPLICATION_STATUSES } = require('../models/Application');
 
 const isHttpsUrl = (value) => {
@@ -70,7 +70,10 @@ const placementValidationRules = [
   body('eligibility.branches.*')
     .optional()
     .isString()
-    .withMessage('Each branch must be a string'),
+    .withMessage('Each branch must be a string')
+    .bail()
+    .custom((value) => catalog.isBranchCode(value))
+    .withMessage('Unknown branch'),
 
   body('eligibility.cgpa')
     .optional({ values: 'null' })
@@ -244,10 +247,8 @@ const studentSignupRules = [
     .matches(/^[A-Z0-9]{4,20}$/)
     .withMessage('Roll number must be 4–20 letters or digits'),
 
-  body('institute')
-    .optional()
-    .isIn(INSTITUTES)
-    .withMessage(`Institute must be one of: ${INSTITUTES.join(', ')}`),
+  // The institute is a one-time choice on the profile (PUT /api/students/me/institute)
+  body('institute').not().exists().withMessage('Choose your institute on your profile after signing up'),
 
   passwordRule('password'),
 ];
@@ -293,7 +294,8 @@ const studentProfileRules = [
 
   body('branch')
     .optional()
-    .isIn(['', ...BRANCHES])
+    // Archived branches are still accepted here; routes/students.js only lets a student keep one
+    .custom((value) => value === '' || catalog.isBranchCode(value))
     .withMessage('Please choose a branch from the list'),
 
   optionalNumber('cgpa', { min: 0, max: 10 }, 'CGPA must be between 0 and 10'),
@@ -334,6 +336,10 @@ const changePasswordRules = [
   passwordRule('newPassword')
     .custom((value, { req }) => !notResetSession(value, { req }) || value !== req.body.currentPassword)
     .withMessage('Your new password must be different from the current one'),
+];
+
+const chooseInstituteRules = [
+  body('instituteId').isMongoId().withMessage('Please choose an institute from the list'),
 ];
 
 // --- Applications ---
@@ -396,8 +402,12 @@ const adminStudentListRules = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('search cannot exceed 100 characters'),
-  query('branch').optional().isIn(BRANCHES).withMessage('Unknown branch'),
+  query('branch').optional().custom((value) => catalog.isBranchCode(value)).withMessage('Unknown branch'),
   query('sort').optional().isIn(STUDENT_SORTS).withMessage(`sort must be one of: ${STUDENT_SORTS.join(', ')}`),
+];
+
+const adminStudentDeleteRules = [
+  query('applications').optional().isIn(['retain', 'delete']).withMessage('applications must be retain or delete'),
 ];
 
 const mongoIdParam = (name) => [param(name).isMongoId().withMessage('Invalid ID')];
@@ -409,7 +419,7 @@ const APPLICANT_SORTS = ['newest', 'oldest', 'cgpa_desc', 'cgpa_asc', 'name', 'r
 // Filters shared by the applicant list and the export
 const applicantFilterRules = [
   query('status').optional().isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
-  query('branch').optional().isIn(BRANCHES).withMessage('Unknown branch'),
+  query('branch').optional().custom((value) => catalog.isBranchCode(value)).withMessage('Unknown branch'),
   query('cgpaMin').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMin must be between 0 and 10').toFloat(),
   query('cgpaMax').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMax must be between 0 and 10').toFloat(),
   query('search')
@@ -449,6 +459,46 @@ const applicantBulkRules = [
   body('status').isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
 ];
 
+// --- Admin: catalog (branches, institutes, university) ---
+
+const catalogName = (field, label, { optional = false } = {}) => {
+  const chain = optional ? body(field).optional() : body(field);
+  return chain
+    .isString()
+    .withMessage(`${label} is required`)
+    .bail()
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage(`${label} must be 2–120 characters`);
+};
+
+const branchCreateRules = [
+  body('code')
+    .isString()
+    .withMessage('Branch code is required')
+    .bail()
+    .trim()
+    .toUpperCase()
+    .matches(BRANCH_CODE_PATTERN)
+    .withMessage('Use 1–12 letters or digits; / & . - are allowed, commas are not'),
+  catalogName('name', 'Branch name'),
+];
+
+const catalogUpdateRules = (label) => [
+  catalogName('name', label, { optional: true }),
+  body('active').optional().isBoolean({ strict: true }).withMessage('active must be true or false'),
+  body().custom((value) => value && (value.name !== undefined || value.active !== undefined))
+    .withMessage('Nothing to update'),
+];
+
+const instituteCreateRules = [catalogName('name', 'Institute name')];
+
+const universityRules = [catalogName('name', 'College/University name')];
+
+const catalogDeleteRules = [
+  query('force').optional().isIn(['true', 'false']).withMessage('force must be true or false'),
+];
+
 // Middleware to check validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -473,12 +523,19 @@ module.exports = {
   studentLoginRules,
   studentProfileRules,
   changePasswordRules,
+  chooseInstituteRules,
   applicationSubmitRules,
   adminStudentListRules,
+  adminStudentDeleteRules,
   mongoIdParam,
   applicantFilterRules,
   applicantListRules,
   applicantUpdateRules,
   applicantBulkRules,
+  branchCreateRules,
+  catalogUpdateRules,
+  instituteCreateRules,
+  universityRules,
+  catalogDeleteRules,
   validate,
 };

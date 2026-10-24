@@ -1,5 +1,6 @@
 // Phase 5 API verification — applicant management + Excel export. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const fs = require('fs');
 const path = require('path');
 const SERVER = TEST.SERVER;
@@ -49,6 +50,7 @@ const TAG = `p5${Date.now() % 1000000}`;
     const s = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${p.n}`.toUpperCase(), password: 'goodpass123' } });
     const cookie = cookieOf(s, 'student_token');
     await call('PATCH', '/api/students/me', { cookie, body: { firstName: p.firstName, lastName: p.lastName, branch: p.branch, cgpa: p.cgpa, activeBacklogs: 0, graduationYear: 2026, phone: '9000000001', resumeUrl: `https://example.com/${p.n}.pdf` } });
+    await chooseInstitute(cookie);
     const answer = p.n === 'a' ? '+1+1' : 'Anand';
     const cover = p.n === 'a' ? '=HYPERLINK("http://evil.example","click me")' : 'Hello';
     r = await call('POST', '/api/applications', { cookie, body: { driveId: d1._id, consentGiven: true, coverNote: cover, customAnswers: [{ promptId, answer }] } });

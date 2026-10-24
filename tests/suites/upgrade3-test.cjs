@@ -2,6 +2,7 @@
 // validated query values still coerced, sanitiser still strips $-keys in-process, 404/error shape.
 // Local stack only (API 5099, mongod 27099). Run on Express 4 first, then 5, to compare.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const path = require('path');
 const fs = require('fs');
 const SERVER = TEST.SERVER;
@@ -37,6 +38,7 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
   const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
   const student = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await req('PATCH', '/api/students/me', { cookie: student, body: { firstName: 'Up', lastName: 'Three', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' } });
+  await chooseInstitute(student);
   const created = (await req('POST', '/api/applications', { cookie: student, body: { driveId: drive._id, consentGiven: true } })).json;
   const appId = created?.data?._id || created?.data?.id;
   ok(Boolean(appId), 'setup: application created', JSON.stringify(created).slice(0, 150));

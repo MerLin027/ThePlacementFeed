@@ -1,5 +1,6 @@
 // Phase D verification — UI foundation: a11y scan, focus, titles, targets, motion, loading states.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
 const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
@@ -54,6 +55,7 @@ const smallTargets = (page) => page.evaluate(() => {
   const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
   const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Tara', lastName: 'Rao', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/t.pdf' }) });
+  await chooseInstitute(sCookie);
   const ap = await (await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: drive._id, consentGiven: true, customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Yes' }] }) })).json();
 
   const browser = await chromium.launch();

@@ -19,8 +19,6 @@ const BCRYPT_COST = 12;
 const DEFAULT_STUDENT_PASSWORD = process.env.DEFAULT_STUDENT_PASSWORD || 'college123';
 const TEMP_PASSWORD_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
 
-const INSTITUTES = ['CHARUSAT'];
-
 module.exports = {
   ADMIN_COOKIE,
   STUDENT_COOKIE,
@@ -32,5 +30,4 @@ module.exports = {
   BCRYPT_COST,
   DEFAULT_STUDENT_PASSWORD,
   TEMP_PASSWORD_TTL_MS,
-  INSTITUTES,
 };

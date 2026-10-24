@@ -1,5 +1,6 @@
 // Phase C verification — frontend completeness. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -32,6 +33,7 @@ const TAG = `PC${Date.now() % 100000}`;
   const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   const SH = { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie };
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: SH, body: JSON.stringify({ firstName: 'Neel', lastName: 'Joshi', branch: 'IT', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/n.pdf' }) });
+  await chooseInstitute(sCookie);
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });

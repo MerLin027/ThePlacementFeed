@@ -1,5 +1,6 @@
 // Phase B verification — notification system. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium, devices } = require('playwright');
@@ -161,6 +162,7 @@ const bellItems = async (page) => {
   const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
   const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Sen', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
+  await chooseInstitute(sCookie);
   const ap = await (await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: inApp._id, consentGiven: true }) })).json();
   const sctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const sp = await sctx.newPage();

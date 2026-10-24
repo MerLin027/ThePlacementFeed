@@ -1,4 +1,5 @@
 const { getStartOfTodayIST } = require('../utils/dates');
+const catalog = require('./catalog');
 
 /**
  * Server-side rules for whether a student may apply to a drive in-app.
@@ -91,7 +92,9 @@ const buildSnapshot = (student) => ({
   lastName: student.lastName,
   email: student.email,
   rollNumber: student.rollNumber,
-  institute: student.institute,
+  // Names as they are today; later renames don't rewrite what the student applied with
+  university: catalog.getUniversity() || undefined,
+  institute: catalog.getInstitute(student.instituteId)?.name,
   branch: student.branch,
   cgpa: student.cgpa,
   activeBacklogs: student.activeBacklogs,

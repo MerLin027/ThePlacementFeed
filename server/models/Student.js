@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
-const { BRANCHES } = require('../constants/branches');
-const { INSTITUTES } = require('../constants/auth');
+const catalog = require('../services/catalog');
 
 // Fields a student must fill in before applying to an in-app drive
 const REQUIRED_PROFILE_FIELDS = [
   'firstName',
   'lastName',
+  'instituteId',
   'branch',
   'cgpa',
   'graduationYear',
@@ -40,12 +40,9 @@ const studentSchema = new mongoose.Schema(
       uppercase: true,
       maxlength: [20, 'Roll number cannot exceed 20 characters'],
     },
-    institute: {
-      type: String,
-      required: [true, 'Institute is required'],
-      enum: { values: INSTITUTES, message: '{VALUE} is not a supported institute' },
-      default: 'CHARUSAT',
-    },
+    // Legacy: held the university ('CHARUSAT') before institutes existed. Kept, still written at
+    // signup, until the site-upgrade release is settled so the previous code can be rolled back to.
+    institute: { type: String, default: 'CHARUSAT' },
     passwordHash: {
       type: String,
       required: true,
@@ -55,9 +52,15 @@ const studentSchema = new mongoose.Schema(
     // --- Academic / eligibility profile ---
     firstName: { type: String, trim: true, maxlength: 100 },
     lastName: { type: String, trim: true, maxlength: 100 },
+    // Chosen once by the student; only the admin can clear it (lock enforced in routes/students.js)
+    instituteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Institute' },
+    instituteSetAt: { type: Date },
     branch: {
       type: String,
-      enum: { values: BRANCHES, message: '{VALUE} is not a valid branch' },
+      validate: {
+        validator: (v) => !v || catalog.isBranchCode(v),
+        message: '{VALUE} is not a valid branch',
+      },
     },
     cgpa: { type: Number, min: 0, max: 10 },
     activeBacklogs: { type: Number, min: 0, default: 0 },
@@ -92,7 +95,9 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
-studentSchema.index({ institute: 1, rollNumber: 1 }, { unique: true });
+studentSchema.index({ rollNumber: 1 }, { unique: true });
+studentSchema.index({ instituteId: 1 });
+studentSchema.index({ branch: 1, graduationYear: 1 });
 studentSchema.index({ createdAt: -1 });
 
 studentSchema.methods.getMissingFields = function () {
@@ -102,13 +107,21 @@ studentSchema.methods.getMissingFields = function () {
   });
 };
 
+// { id, name } for a chosen institute, or null (also when it was deleted)
+const instituteRef = (id) => {
+  const institute = id ? catalog.getInstitute(id) : null;
+  return institute ? { id: institute.id, name: institute.name } : null;
+};
+
 // Profile shape returned to the student themself — never includes auth internals
 studentSchema.methods.toProfileDTO = function () {
   return {
     id: this._id.toString(),
     email: this.email,
     rollNumber: this.rollNumber,
-    institute: this.institute,
+    university: catalog.getUniversity(),
+    institute: instituteRef(this.instituteId),
+    instituteLocked: Boolean(this.instituteId),
     firstName: this.firstName ?? '',
     lastName: this.lastName ?? '',
     branch: this.branch ?? '',
@@ -124,3 +137,4 @@ studentSchema.methods.toProfileDTO = function () {
 
 module.exports = mongoose.model('Student', studentSchema);
 module.exports.REQUIRED_PROFILE_FIELDS = REQUIRED_PROFILE_FIELDS;
+module.exports.instituteRef = instituteRef;

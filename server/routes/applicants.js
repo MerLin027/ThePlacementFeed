@@ -16,7 +16,7 @@ const {
 } = require('../middleware/validate');
 const { escapeRegex } = require('../utils/escapeRegex');
 const { logAdminAction } = require('../utils/auditLog');
-const { branchLabel } = require('../constants/branches');
+const { branchLabel } = require('../services/catalog');
 const { APPLICATION_STATUSES } = require('../models/Application');
 
 // Mounted at /api/placements/:driveId/applicants — admin-only
@@ -84,9 +84,11 @@ const buildFilter = (driveId, q) => {
   return filter;
 };
 
-// Accounts deleted by the admin leave a scrubbed snapshot behind
-const isDeletedStudent = (snapshot = {}) =>
-  snapshot.firstName === 'Deleted' && snapshot.lastName === 'User' && !snapshot.email;
+// Accounts deleted by the admin leave a scrubbed, flagged application behind. Records scrubbed
+// before the flag existed are recognised by the scrubbed name (the migration flags them too).
+const isDeletedStudent = (app) =>
+  app.studentDeleted === true ||
+  (app.snapshot?.firstName === 'Deleted' && app.snapshot?.lastName === 'User' && !app.snapshot?.email);
 
 const toApplicantDTO = (app) => ({
   id: app._id.toString(),
@@ -97,12 +99,13 @@ const toApplicantDTO = (app) => ({
   resumeUrl: app.resumeUrl ?? '',
   coverNote: app.coverNote ?? '',
   customAnswers: (app.customAnswers || []).map((a) => ({ question: a.question, answer: a.answer })),
-  studentDeleted: isDeletedStudent(app.snapshot),
+  studentDeleted: isDeletedStudent(app),
   snapshot: {
     firstName: app.snapshot?.firstName ?? '',
     lastName: app.snapshot?.lastName ?? '',
     email: app.snapshot?.email ?? '',
     rollNumber: app.snapshot?.rollNumber ?? '',
+    institute: app.snapshot?.institute ?? '',
     branch: app.snapshot?.branch ?? '',
     cgpa: app.snapshot?.cgpa ?? null,
     activeBacklogs: app.snapshot?.activeBacklogs ?? null,
@@ -212,6 +215,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
       { header: 'First Name', key: 'firstName', width: 16 },
       { header: 'Last Name', key: 'lastName', width: 16 },
       { header: 'Roll Number', key: 'rollNumber', width: 14 },
+      { header: 'Institute', key: 'institute', width: 18 },
       { header: 'Email', key: 'email', width: 28 },
       { header: 'Phone', key: 'phone', width: 15 },
       { header: 'Branch', key: 'branch', width: 30 },
@@ -240,6 +244,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
         firstName: s.firstName,
         lastName: s.lastName,
         rollNumber: s.rollNumber,
+        institute: s.institute,
         email: s.email,
         phone: s.phone,
         branch: branchLabel(s.branch),

@@ -1,5 +1,6 @@
 // Phase E verification — student-facing pages. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
@@ -153,6 +154,7 @@ const axeScan = async (page, label) => {
   const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
   const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ved', lastName: 'Shah', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/v.pdf' }) });
+  await chooseInstitute(sc);
   await page.goto(APP + '/login');
   await page.fill('#email', email);
   await page.fill('#password', 'goodpass123');

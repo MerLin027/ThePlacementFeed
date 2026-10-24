@@ -2,6 +2,7 @@
 // by write-excel-file, read back with exceljs) incl. formula-injection escaping; a production-mode boot
 // (cookie flags, no warnings); resetAdmin from the project root. Local stack only (API 5099, mongod 27099).
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const fs = require('fs');
@@ -40,6 +41,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
     const r = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email: s.email, rollNumber: s.roll, password: 'goodpass123' }) });
     const c = r.headers.getSetCookie().find((x) => x.startsWith('student_token=')).split(';')[0];
     await fetch(API + '/api/students/me', { method: 'PATCH', headers: J(c), body: JSON.stringify({ firstName: s.first, lastName: 'Test', branch: s.branch, cgpa: s.cgpa, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' }) });
+    await chooseInstitute(c);
     const a = await (await fetch(API + '/api/applications', { method: 'POST', headers: J(c), body: JSON.stringify({ driveId: drive._id, consentGiven: true, coverNote: s.note, customAnswers: [{ promptId, answer: s.answer }] }) })).json();
     appIds.push(a.data?._id || a.data?.id);
   }

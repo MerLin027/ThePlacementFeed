@@ -109,7 +109,7 @@ ok(Math.abs(tWrong - tUnknown) < Math.max(tWrong, tUnknown) * 0.5, 'timings comp
 
 console.log('# Student check / cross-role');
 r = await req('GET', '/api/students/auth/check', { cookie: stuCookie });
-ok(r.status === 200 && r.json.student.missingFields.length === 7, 'student check 200 with missingFields');
+ok(r.status === 200 && r.json.student.missingFields.length === 8 && r.json.student.missingFields.includes('instituteId'), 'student check 200 with missingFields (incl. institute)');
 ok(!r.text.includes('tokenVersion') && !r.text.includes('passwordHash'), 'check has no internals');
 r = await req('GET', '/api/auth/check', { cookie: stuCookie.replace('student_token', 'admin_token') });
 ok(r.status === 401, 'student JWT in admin_token rejected');

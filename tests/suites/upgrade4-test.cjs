@@ -2,6 +2,7 @@
 // the rewritten pre-validate hook, duplicate-key mapping, ObjectId handling, aggregation.
 // Local stack only (API 5099, mongod 27099).
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
@@ -30,7 +31,10 @@ const describe = (indexes) => indexes
   for (const M of [Placement, Student, Application, Admin]) {
     await M.init();
     const fresh = describe(await M.collection.indexes());
-    const before = describe(await old.db.collection(M.collection.collectionName).indexes());
+    // The site upgrade replaced { institute, rollNumber } with { rollNumber }; existing databases keep
+    // the old index until the cleanup release (the previous code still needs it for a rollback)
+    const before = describe(await old.db.collection(M.collection.collectionName).indexes())
+      .filter((i) => i !== '{"institute":1,"rollNumber":1} unique');
     ok(JSON.stringify(fresh) === JSON.stringify(before), `${M.modelName}: ${fresh.length} indexes identical`, `\n    fresh:  ${fresh.join(' | ')}\n    before: ${before.join(' | ')}`);
     ok(!(await M.collection.indexes()).some((i) => 'background' in i), `${M.modelName}: no background option`);
   }
@@ -82,6 +86,7 @@ const describe = (indexes) => indexes
   ok(s2.status === 409, `duplicate email → ${s2.status} (unique index mapping)`, JSON.stringify(s2j));
   const sc = s1.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
   await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'U', lastName: 'Four', branch: 'CE', cgpa: 7, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' }) });
+  await chooseInstitute(sc);
   const a1 = await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: id, consentGiven: true }) });
   const a2 = await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: id, consentGiven: true }) });
   ok(a1.status === 201 && a2.status === 409, `apply once (${a1.status}), twice → ${a2.status}`);

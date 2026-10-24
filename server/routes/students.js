@@ -4,7 +4,8 @@ const rateLimit = require('express-rate-limit');
 const Student = require('../models/Student');
 const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudent, requireStudentAllowPending } = require('../middleware/requireStudent');
-const { studentProfileRules, changePasswordRules, validate } = require('../middleware/validate');
+const { studentProfileRules, changePasswordRules, chooseInstituteRules, validate } = require('../middleware/validate');
+const catalog = require('../services/catalog');
 const { issueStudentSession } = require('../utils/studentSession');
 const { getClearCookieOptions } = require('../utils/cookies');
 const { BCRYPT_COST, STUDENT_COOKIE } = require('../constants/auth');
@@ -80,6 +81,16 @@ router.patch(
       const student = await Student.findById(req.student.id);
       if (!student) return notFound(res);
 
+      // An archived branch can be kept, but not newly chosen
+      const { branch } = req.body;
+      if (branch && branch !== student.branch && !catalog.isBranchCode(branch, { activeOnly: true })) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: [{ field: 'branch', message: 'Please choose a branch from the list' }],
+        });
+      }
+
       for (const field of EDITABLE_PROFILE_FIELDS) {
         if (!Object.prototype.hasOwnProperty.call(req.body, field)) continue;
         const value = req.body[field];
@@ -88,6 +99,47 @@ router.patch(
       }
 
       await student.save();
+      res.json({ success: true, data: student.toProfileDTO() });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// PUT /api/students/me/institute — a one-time choice. The update only matches while no institute
+// is set, so a second (or concurrent) request can't change it; only the admin can clear it.
+router.put(
+  '/me/institute',
+  csrfCheck,
+  requireStudent,
+  profileUpdateLimiter,
+  chooseInstituteRules,
+  validate,
+  async (req, res, next) => {
+    try {
+      const institute = catalog.getInstitute(req.body.instituteId);
+      if (!institute || !institute.active) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: [{ field: 'instituteId', message: 'Please choose an institute from the list' }],
+        });
+      }
+
+      const student = await Student.findOneAndUpdate(
+        { _id: req.student.id, instituteId: null },
+        { $set: { instituteId: institute.id, instituteSetAt: new Date() } },
+        { returnDocument: 'after' }
+      );
+
+      if (!student) {
+        if (!(await Student.exists({ _id: req.student.id }))) return notFound(res);
+        return res.status(409).json({
+          success: false,
+          code: 'INSTITUTE_LOCKED',
+          message: 'Your institute is already set. Ask the CDPC admin if it needs to change.',
+        });
+      }
       res.json({ success: true, data: student.toProfileDTO() });
     } catch (error) {
       next(error);

@@ -31,6 +31,8 @@ const applicationSchema = new mongoose.Schema(
       lastName: String,
       email: String,
       rollNumber: String,
+      university: String,
+      // Constituent institute name (before the site upgrade this held the university)
       institute: String,
       branch: String,
       cgpa: Number,
@@ -65,6 +67,10 @@ const applicationSchema = new mongoose.Schema(
       default: 'Applied',
     },
     adminNote: { type: String, trim: true, maxlength: 1000 },
+
+    // Set when the admin deleted the account but kept its applications (personal details scrubbed)
+    studentDeleted: { type: Boolean, default: false },
+    studentDeletedAt: { type: Date },
   },
   { timestamps: true }
 );

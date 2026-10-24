@@ -1,11 +1,10 @@
-// Canonical branch list — mirrored in client/src/constants/branches.js.
-// Student.branch and Placement.eligibility.branches are matched against each other,
-// so both sides must draw from the same values.
+// The original branch list. Branches now live in the database (models/Branch.js, edited by the
+// admin); this list seeds it on first boot and is the fallback if it can't be read
+// (services/catalog.js).
 const BRANCHES = [
   'CE', 'IT', 'CS', 'EC', 'EE', 'ME', 'CL', 'IC', 'BME', 'AI/ML', 'CSE', 'Other',
 ];
 
-// Full names for display (e.g. the applicant export) — mirrors client BRANCH_LABELS
 const BRANCH_LABELS = {
   CE: 'Computer Engineering',
   IT: 'Information Technology',
@@ -21,6 +20,4 @@ const BRANCH_LABELS = {
   Other: 'Other',
 };
 
-const branchLabel = (code) => BRANCH_LABELS[code] || code || '';
-
-module.exports = { BRANCHES, BRANCH_LABELS, branchLabel };
+module.exports = { BRANCHES, BRANCH_LABELS };

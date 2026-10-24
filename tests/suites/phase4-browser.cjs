@@ -1,5 +1,6 @@
 // Phase 4 browser verification — admin Students page + full branch names. Local stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -37,6 +38,7 @@ const TAG = `P4B${Date.now() % 100000}`;
     const r = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'origpass123' } });
     const cookie = r.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
     if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+    if (profile) await chooseInstitute(cookie);
     return { email, roll: `${TAG}${n}`.toUpperCase() };
   };
   const s1 = await mk('1', { firstName: 'Kavya', lastName: 'Joshi', branch: 'IT', graduationYear: 2026 });

@@ -1,5 +1,6 @@
 // Phase 5 browser verification — admin applicants page. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -49,6 +50,7 @@ const TAG = `P5B${Date.now() % 100000}`;
     const s = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${p.n}`, password: 'goodpass123' } });
     const cookie = s.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
     await call('PATCH', '/api/students/me', { cookie, body: { firstName: p.firstName, lastName: p.lastName, branch: p.branch, cgpa: p.cgpa, activeBacklogs: 0, graduationYear: 2026, phone: '9000000002', resumeUrl: `https://example.com/${p.n}.pdf` } });
+    await chooseInstitute(cookie);
     await call('POST', '/api/applications', { cookie, body: { driveId: drive._id, consentGiven: true, coverNote: p.n === 'a' ? '=HYPERLINK("http://evil.example","x") <script>alert(1)</script>' : 'Hi', customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Anand' }] } });
     students[p.n] = { email };
   }

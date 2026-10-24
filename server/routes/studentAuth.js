@@ -70,13 +70,12 @@ router.post(
   async (req, res, next) => {
     try {
       const { email, rollNumber, password } = req.body;
-      const institute = req.body.institute || 'CHARUSAT';
 
       const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
 
       let student;
       try {
-        student = await Student.create({ email, rollNumber, institute, passwordHash });
+        student = await Student.create({ email, rollNumber, passwordHash });
       } catch (error) {
         // Same message for a taken email or roll number
         if (error.code === 11000) {

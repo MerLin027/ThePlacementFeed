@@ -39,6 +39,9 @@ const studentAuthRoutes = require('./routes/studentAuth');
 const studentRoutes = require('./routes/students');
 const applicationRoutes = require('./routes/applications');
 const adminStudentRoutes = require('./routes/adminStudents');
+const catalogRoutes = require('./routes/catalog');
+const adminCatalogRoutes = require('./routes/adminCatalog');
+const catalog = require('./services/catalog');
 
 const app = express();
 
@@ -74,6 +77,8 @@ app.use('/api/students/auth', studentAuthRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
+app.use('/api/catalog', catalogRoutes);
+app.use('/api/admin/catalog', adminCatalogRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -133,6 +138,8 @@ const startServer = async () => {
   try {
     await connectDB();
     await seedAdmin();
+    // Branches, institutes and the university name, cached for validation and labels
+    await catalog.init();
     
     // Initialize scheduled jobs
     initCronJobs();

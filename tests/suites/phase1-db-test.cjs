@@ -58,7 +58,7 @@ const runMw = (mw, cookie) => new Promise((resolve) => {
   // Indexes
   const idx = await Student.collection.indexes();
   ok(idx.some((i) => i.key.email === 1 && i.unique), 'unique email index');
-  ok(idx.some((i) => i.key.institute === 1 && i.key.rollNumber === 1 && i.unique), 'unique institute+rollNumber index');
+  ok(idx.some((i) => JSON.stringify(i.key) === '{"rollNumber":1}' && i.unique), 'unique rollNumber index');
 
   // 409 from global handler
   console.log(`\n${pass} passed, ${fail} failed`);

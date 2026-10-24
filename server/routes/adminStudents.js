@@ -5,9 +5,10 @@ const Student = require('../models/Student');
 const Application = require('../models/Application');
 const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
-const { adminStudentListRules, mongoIdParam, validate } = require('../middleware/validate');
+const { adminStudentListRules, adminStudentDeleteRules, mongoIdParam, validate } = require('../middleware/validate');
 const { escapeRegex } = require('../utils/escapeRegex');
 const { logAdminAction } = require('../utils/auditLog');
+const { instituteRef } = require('../models/Student');
 const {
   BCRYPT_COST,
   DEFAULT_STUDENT_PASSWORD,
@@ -49,7 +50,7 @@ const toAdminStudentDTO = (s) => ({
   id: s._id.toString(),
   email: s.email,
   rollNumber: s.rollNumber,
-  institute: s.institute,
+  institute: instituteRef(s.instituteId),
   firstName: s.firstName ?? '',
   lastName: s.lastName ?? '',
   branch: s.branch ?? '',
@@ -79,7 +80,7 @@ router.get('/', listLimiter, adminStudentListRules, validate, async (req, res, n
 
     const [students, total] = await Promise.all([
       Student.find(filter)
-        .select('email rollNumber institute firstName lastName branch graduationYear createdAt mustChangePassword')
+        .select('email rollNumber instituteId firstName lastName branch graduationYear createdAt mustChangePassword')
         .sort(SORTS[req.query.sort] || SORTS.newest)
         .skip((page - 1) * limit)
         .limit(limit)
@@ -138,40 +139,83 @@ router.post(
   }
 );
 
-// DELETE /api/admin/students/:id
-// Applications are kept for the drive's records but stripped of personal details,
-// then the account is removed (freeing its email and roll number). Both steps are
+// POST /api/admin/students/:id/reset-institute — clears the student's one-time institute choice
+// so they can pick again (they can't apply until they do)
+router.post(
+  '/:id/reset-institute',
+  actionLimiter,
+  csrfCheck,
+  mongoIdParam('id'),
+  validate,
+  async (req, res, next) => {
+    try {
+      const student = await Student.findByIdAndUpdate(
+        req.params.id,
+        { $unset: { instituteId: '', instituteSetAt: '' } },
+        { returnDocument: 'after' }
+      );
+      if (!student) {
+        return res.status(404).json({ success: false, message: 'Student not found' });
+      }
+      logAdminAction(req, 'student.resetInstitute', { studentId: student._id.toString() });
+      res.json({ success: true, message: 'Institute reset', data: toAdminStudentDTO(student) });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /api/admin/students/:id/application-count — shown in the second delete prompt
+router.get('/:id/application-count', listLimiter, mongoIdParam('id'), validate, async (req, res, next) => {
+  try {
+    const count = await Application.countDocuments({ studentId: req.params.id });
+    res.json({ success: true, data: { count } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/admin/students/:id?applications=retain|delete
+// retain (the default, also for older clients): applications stay for the drive's records but
+// are stripped of personal details and flagged studentDeleted. delete: they are removed too.
+// Applications go first, then the account (freeing its email and roll number); every step is
 // idempotent, so retrying after a failure finishes the job.
-router.delete('/:id', actionLimiter, csrfCheck, mongoIdParam('id'), validate, async (req, res, next) => {
+router.delete('/:id', actionLimiter, csrfCheck, mongoIdParam('id'), adminStudentDeleteRules, validate, async (req, res, next) => {
   try {
     const student = await Student.findById(req.params.id).select('_id').lean();
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    const { modifiedCount } = await Application.updateMany(
-      { studentId: student._id },
-      {
-        $set: {
-          'snapshot.firstName': 'Deleted',
-          'snapshot.lastName': 'User',
-          'snapshot.email': '',
-          'snapshot.phone': '',
-          'snapshot.rollNumber': '',
-          customAnswers: [],
-        },
-        $unset: { resumeUrl: '', coverNote: '' },
-      }
-    );
+    const mode = req.query.applications === 'delete' ? 'delete' : 'retain';
+    let result;
+    if (mode === 'delete') {
+      const { deletedCount } = await Application.deleteMany({ studentId: student._id });
+      result = { deletedApplications: deletedCount };
+    } else {
+      const { modifiedCount } = await Application.updateMany(
+        { studentId: student._id },
+        {
+          $set: {
+            'snapshot.firstName': 'Deleted',
+            'snapshot.lastName': 'User',
+            'snapshot.email': '',
+            'snapshot.phone': '',
+            'snapshot.rollNumber': '',
+            customAnswers: [],
+            studentDeleted: true,
+            studentDeletedAt: new Date(),
+          },
+          $unset: { resumeUrl: '', coverNote: '' },
+        }
+      );
+      result = { anonymizedApplications: modifiedCount };
+    }
 
     await Student.deleteOne({ _id: student._id });
 
-    logAdminAction(req, 'student.delete', { studentId: student._id.toString() });
-    res.json({
-      success: true,
-      message: 'Account deleted',
-      anonymizedApplications: modifiedCount,
-    });
+    logAdminAction(req, 'student.delete', { studentId: student._id.toString(), applications: mode, ...result });
+    res.json({ success: true, message: 'Account deleted', ...result });
   } catch (error) {
     next(error);
   }

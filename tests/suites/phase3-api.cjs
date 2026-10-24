@@ -1,5 +1,6 @@
 // Phase 3 API verification — applications rules engine, ownership, cascade. Local throwaway server only.
 const TEST = require('../lib/env.cjs');
+const { chooseInstitute } = require('../lib/institute.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
@@ -38,6 +39,7 @@ const newStudent = async (profile) => {
   const cookie = r.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
   if (profile) {
     const p = await call('PATCH', '/api/students/me', { cookie, body: profile });
+    await chooseInstitute(cookie);
     if (p.status !== 200) throw new Error('profile failed ' + p.text);
   }
   return { email, cookie };
@@ -91,7 +93,7 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
 
   const incomplete = await newStudent();
   r = await apply(incomplete, inApp._id);
-  ok(r.status === 422 && r.json.code === 'INCOMPLETE_PROFILE' && r.json.missing.length === 7, 'incomplete profile -> 422 with missing list');
+  ok(r.status === 422 && r.json.code === 'INCOMPLETE_PROFILE' && r.json.missing.length === 8 && r.json.missing.includes('instituteId'), 'incomplete profile -> 422 with missing list (incl. institute)');
 
   const s1 = await newStudent(COMPLETE);
   r = await apply(s1, ext._id);
