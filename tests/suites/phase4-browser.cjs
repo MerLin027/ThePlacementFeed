@@ -1,5 +1,6 @@
 // Phase 4 browser verification — admin Students page + full branch names. Local stack only.
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -78,14 +79,13 @@ const TAG = `P4B${Date.now() % 100000}`;
   await page.click('header nav >> text=Students');
   await page.waitForURL(/\/admin\/students$/);
   await page.getByLabel('Search students').fill(TAG);
-  await page.waitForTimeout(800);
-  ok(await page.locator('tbody tr').count() === 2, 'search narrows to the 2 test students');
+  const rowCount = () => page.locator('tbody tr').count();
+  ok(await until(async () => (await rowCount()) === 2), 'search narrows to the 2 test students');
   ok(await hasText(page.locator('tbody'), 'Information Technology') && await hasText(page.locator('tbody'), 'Electronics & Communication Engineering'), 'table shows full branch names');
   await page.selectOption('select[aria-label="Filter by branch"]', 'EC');
-  await page.waitForTimeout(800);
-  ok(await page.locator('tbody tr').count() === 1 && await hasText(page.locator('tbody'), 'Nikhil Desai'), 'branch filter');
+  ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Nikhil Desai'), 'branch filter');
   await page.selectOption('select[aria-label="Filter by branch"]', '');
-  await page.waitForTimeout(800);
+  await until(async () => (await rowCount()) === 2);
 
   console.log('# Reset password dialog');
   const kavyaRow = page.locator('tbody tr', { hasText: 'Kavya Joshi' });
@@ -107,13 +107,12 @@ const TAG = `P4B${Date.now() % 100000}`;
   ok(await hasText(page, 'They can sign up again afterwards'), 'delete dialog explains consequences');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete account' }).click();
   ok(await hasText(page, "Nikhil Desai's account was deleted."), 'delete toast');
-  await page.waitForTimeout(800);
-  ok(!(await page.locator('tbody tr', { hasText: 'Nikhil Desai' }).count()), 'row removed');
+  ok(await until(async () => !(await page.locator('tbody tr', { hasText: 'Nikhil Desai' }).count())), 'row removed');
   ok(!(await Student.findOne({ email: s2.email })), 'student removed in DB');
 
   console.log('# Mobile layout');
   await page.setViewportSize({ width: 375, height: 800 });
-  await page.waitForTimeout(300);
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // re-layout done
   ok(await noHorizontalScroll(page), 'no page-level horizontal scroll at 375px');
   const btn = await kavyaRow.getByRole('button', { name: 'Reset password' }).boundingBox();
   ok(btn && btn.width >= 39 && btn.height >= 39, `action button touch size ${btn && Math.round(btn.width)}x${btn && Math.round(btn.height)} (90% root font)`);
@@ -132,8 +131,7 @@ const TAG = `P4B${Date.now() % 100000}`;
   await page.getByPlaceholder('e.g. 12').fill('6');
   await page.screenshot({ path: path.join(SHOTS, 'admin-branch-picker.png'), fullPage: true });
   await page.click('button[type=submit]:has-text("Add placement")');
-  await page.waitForTimeout(1500);
-  const made = await Placement.findOne({ company: `${TAG} BranchCo` }).lean();
+  const made = await until(() => Placement.findOne({ company: `${TAG} BranchCo` }).lean());
   ok(made && made.eligibility.branches.sort().join(',') === 'CE,IT', 'drive stores branch codes', JSON.stringify(made?.eligibility));
   await page.goto(`${APP}/placement/${made._id}`);
   ok(await hasText(page, 'Information Technology, Computer Engineering') || await hasText(page, 'Computer Engineering, Information Technology'), 'detail page lists full names');
