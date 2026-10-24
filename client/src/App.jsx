@@ -67,7 +67,7 @@ function App() {
               }}
             />
             <Navbar />
-          <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto content-scrollbar focus:outline-hidden">
+          <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 flex flex-col overflow-y-auto content-scrollbar focus:outline-hidden">
             <PageTransition>
             <Suspense fallback={<PageSpinner />}>
             <Routes>
@@ -137,8 +137,9 @@ function App() {
             </Routes>
             </Suspense>
             </PageTransition>
+            {/* Inside the scroller: the footer comes after the page, it does not stay on screen */}
+            <Footer />
           </main>
-          <Footer />
         </div>
         </NotificationProvider>
         </MyApplicationsProvider>

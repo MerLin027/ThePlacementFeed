@@ -55,9 +55,11 @@ const NotificationBell = () => {
         aria-expanded={isOpen}
         aria-controls={panelId}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-        className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        className={`relative isolate inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full transition-colors duration-200 before:absolute before:inset-1 before:-z-10 before:rounded-full before:transition-colors before:duration-200 focus-visible:outline-hidden focus-visible:before:ring-2 focus-visible:before:ring-primary ${
+          isOpen ? 'text-primary before:bg-primary-fixed/70' : 'text-on-surface-variant hover:text-on-surface hover:before:bg-surface-container-low'
+        }`}
       >
-        <span className="material-symbols-outlined text-[24px]" aria-hidden="true">notifications</span>
+        <span className="material-symbols-outlined text-[22px]" aria-hidden="true">notifications</span>
         {unreadCount > 0 && (
           <span
             className="absolute top-1.5 right-1.5 flex h-4 min-w-[1rem] px-1 items-center justify-center rounded-full bg-error text-[10px] font-bold text-on-error tabular-nums"

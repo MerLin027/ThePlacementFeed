@@ -6,11 +6,17 @@ import logo from '../../assets/logo.png';
 import { m } from 'motion/react';
 import { dropDown, pillSpring } from '../../utils/motion';
 
+// The visible shape of every header control: a slim 36px pill, centred in a 44px hit area
+// (inset-y-1), so the pills sit with even space above and below inside the bar
+const PILL = 'absolute inset-x-0 inset-y-1 -z-10 rounded-full';
+const PILL_BEFORE =
+  'before:absolute before:inset-x-0 before:inset-y-1 before:-z-10 before:rounded-full before:transition-colors before:duration-200 focus-visible:outline-hidden focus-visible:before:ring-2 focus-visible:before:ring-primary';
+
 // Desktop: plain text links; the current page gets a soft tinted pill that slides between links
-// (Motion layoutId), drawn behind the link's own content
+// (Motion layoutId), drawn behind the link's own content. Hover tints the same shape (::before).
 const desktopLinkClass = (active) =>
-  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3 rounded-xl font-label-md text-label-md whitespace-nowrap transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-    active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md whitespace-nowrap transition-control ${PILL_BEFORE} ${
+    active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:before:bg-surface-container-low'
   }`;
 
 const mobileLinkClass = (active) =>
@@ -137,7 +143,7 @@ const Navbar = () => {
                 className={desktopLinkClass(isActive(link.to))}
               >
                 {isActive(link.to) && (
-                  <m.span layoutId="nav-pill" transition={pillSpring} className="absolute inset-0 -z-10 rounded-xl bg-primary-fixed/70" aria-hidden="true" />
+                  <m.span layoutId="nav-pill" transition={pillSpring} className={`${PILL} bg-primary-fixed/70`} aria-hidden="true" />
                 )}
                 {/* Label first in the markup (the icon's ligature text, e.g. "dashboard", must not be the
                     first match for the link's name); the icon is shown first with CSS order */}
@@ -150,13 +156,14 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 aria-current={isActive(link.to) ? 'page' : undefined}
-                className="ml-1 inline-flex items-center gap-1.5 h-[44px] px-4 rounded-xl font-label-md text-label-md whitespace-nowrap bg-primary-container text-on-primary shadow-soft hover:bg-primary transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className={`group/cta relative isolate ml-1.5 inline-flex items-center h-[44px] px-4 rounded-full font-label-md text-label-md whitespace-nowrap text-on-primary ${PILL_BEFORE} before:bg-primary-container before:shadow-soft hover:before:bg-primary focus-visible:before:ring-offset-2`}
               >
                 {link.label}
+                <span className="material-symbols-outlined text-[18px] -mr-1 ml-0.5 transition-transform duration-200 ease-out-soft group-hover/cta:translate-x-0.5" aria-hidden="true">arrow_forward</span>
               </Link>
             ))}
             {logout && (
-              <button type="button" onClick={logout} title="Logout" className={`${desktopLinkClass(false)} hover:text-error!`}>
+              <button type="button" onClick={logout} title="Logout" className={`${desktopLinkClass(false)} hover:text-error! hover:before:bg-error-container/50!`}>
                 <span className={labelClass}>Logout</span>
                 <span className={`material-symbols-outlined text-[20px] order-first ${iconClass}`} aria-hidden="true">logout</span>
               </button>
@@ -194,7 +201,7 @@ const Navbar = () => {
               aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileOpen}
               aria-controls="mobile-menu"
-              className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
                 {isMobileOpen ? 'close' : 'menu'}

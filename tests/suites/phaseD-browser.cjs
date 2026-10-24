@@ -121,6 +121,7 @@ const smallTargets = (page) => page.evaluate(() => {
   const rm = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
   const rp = await rm.newPage();
   await rp.goto(APP + '/login');
+  await rp.waitForSelector('.btn-primary'); // the login page is loaded on demand
   const dur = await rp.evaluate(() => getComputedStyle(document.querySelector('.btn-primary')).transitionDuration);
   ok(parseFloat(dur) < 0.001, `transitions effectively off with reduced motion (${dur})`);
   await rm.close();
