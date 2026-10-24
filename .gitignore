@@ -21,3 +21,21 @@ HISTORY.md
 # Regression test output and the Playwright browser downloaded for them
 tests/output/
 tests/.playwright-browsers/
+
+# Kept locally, not published: planning/audit notes, agent and editor files, design sources
+implementation.md
+refinement-plan.md
+upgrade-plan.md
+upgrade-audit-plan.md
+upgrade-audit-report.md
+polish-plan.md
+client/README.md
+.agents/
+.antigravityignore
+logo/
+client/screenshots/
+server/.eslintrc.json
+# Unused leftovers from the Vite/CRA templates
+client/public/icons.svg
+client/public/logo192.png
+client/public/logo512.png
