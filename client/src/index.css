@@ -301,6 +301,53 @@
   mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 35%, transparent 100%);
 }
 
+/* Living version of the wash for the landing page: the dot grid drifts and two soft glows breathe.
+   Only transforms on pseudo-elements move, so it stays on the compositor; the global reduced-motion
+   rule stops it. The drift moves exactly one dot tile per loop, so the pattern repeats seamlessly. */
+@utility hero-wash-live {
+  overflow: hidden;
+  -webkit-mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 100% at 50% 0%, #000 35%, transparent 100%);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -22px;
+    z-index: 1;
+    background-image: radial-gradient(circle at 1px 1px, rgb(0 74 198 / 0.16) 1px, transparent 0);
+    background-size: 22px 22px;
+    animation: wash-dots 9s linear infinite;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -20% -10%;
+    background:
+      radial-gradient(32% 55% at 36% 22%, rgb(0 90 253 / 0.1), transparent 70%),
+      radial-gradient(28% 50% at 66% 34%, rgb(56 189 248 / 0.12), transparent 70%);
+    animation: wash-glow 16s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes wash-dots {
+  to {
+    transform: translate(22px, 22px);
+  }
+}
+
+@keyframes wash-glow {
+  0% {
+    transform: translate3d(-4%, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3%, 4%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(5%, -2%, 0) scale(0.96);
+  }
+}
+
 /* Staggered entrance: set --i on each item; the delay stops growing after the 8th */
 @utility rise-in-stagger {
   animation: rise-in 240ms var(--ease-out-soft) backwards;

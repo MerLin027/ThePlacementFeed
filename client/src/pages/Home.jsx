@@ -129,13 +129,9 @@ const Home = () => {
 
   return (
     <div className="relative isolate w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
-      <div className="absolute inset-x-0 top-0 h-80 -z-10 hero-wash pointer-events-none" aria-hidden="true" />
-      <div className="mb-md md:mb-lg md:text-center motion-safe:animate-rise-in">
-        <p className="inline-flex items-center gap-xs mb-sm px-3 py-1 rounded-full border border-outline-variant bg-surface-container-lowest shadow-soft font-label-sm text-label-sm text-on-surface-variant">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
-          CHARUSAT CDPC placement drives
-        </p>
-        <h1 className="font-display-lg text-display-lg md:text-[2.75rem] md:leading-[3.25rem] text-on-surface mb-xs">{heading.title}</h1>
+      <div className="absolute inset-x-0 top-0 h-80 -z-10 hero-wash-live pointer-events-none" aria-hidden="true" />
+      <div className="mb-md md:mb-lg md:pt-sm md:text-center motion-safe:animate-rise-in">
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">{heading.title}</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-(--container-xl) md:mx-auto">{heading.subtitle}</p>
       </div>
 
