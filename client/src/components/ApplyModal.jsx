@@ -39,11 +39,19 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Opening the dialog clears earlier errors (adjusted during render, not in the effect below)
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setError('');
+      setFieldErrors({});
+    }
+  }
+
   useEffect(() => {
     if (!isOpen) return undefined;
     const controller = new AbortController();
-    setError('');
-    setFieldErrors({});
     api
       .get('/api/students/me', { signal: controller.signal })
       .then((res) => {
