@@ -6,17 +6,17 @@ import logo from '../../assets/logo.png';
 import { m } from 'motion/react';
 import { dropDown, pillSpring } from '../../utils/motion';
 
-// Desktop: links sit in one rounded track; the current page gets a raised white pill that slides
-// between links (Motion layoutId), drawn behind the link's own content
+// Desktop: plain text links; the current page gets a soft tinted pill that slides between links
+// (Motion layoutId), drawn behind the link's own content
 const desktopLinkClass = (active) =>
-  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md whitespace-nowrap transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-    active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest/70'
+  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3 rounded-xl font-label-md text-label-md whitespace-nowrap transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+    active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
   }`;
 
 const mobileLinkClass = (active) =>
-  `flex items-center gap-sm w-full text-left px-sm min-h-[48px] rounded-xl font-body-md text-body-md transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+  `flex items-center gap-sm w-full text-left px-sm min-h-[48px] rounded-xl font-body-md text-body-md transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
     active
-      ? 'bg-primary-fixed text-on-primary-fixed font-semibold'
+      ? 'bg-primary-fixed/70 text-on-primary-fixed font-semibold'
       : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
   }`;
 
@@ -25,6 +25,11 @@ const initialsOf = (student) => {
   return name ? name.slice(0, 1).toUpperCase() : (student?.email || '?').slice(0, 1).toUpperCase();
 };
 
+/**
+ * The site header: one floating, rounded bar a few pixels below the top of the window, with the
+ * dotted background showing around it. No full-width border line; the bar is set apart by a
+ * near-invisible hairline and a soft shadow that grows a little once the page scrolls.
+ */
 const Navbar = () => {
   const { role, student, logoutAdmin, logoutStudent } = useAuth();
   const location = useLocation();
@@ -48,7 +53,7 @@ const Navbar = () => {
     return () => document.removeEventListener('keydown', onKey);
   }, [isMobileOpen]);
 
-  // A soft shadow appears once the page (the <main> scroller) has moved
+  // The bar's shadow deepens a little once the page (the <main> scroller) has moved
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const main = document.getElementById('main-content');
@@ -84,151 +89,159 @@ const Navbar = () => {
   const logout = role === 'admin' ? logoutAdmin : role === 'student' ? logoutStudent : null;
 
   const isActive = (path) => location.pathname === path;
-  // Labels show from lg (xl for the longer admin nav); below that the links are icons, and the label
-  // stays as the accessible name
-  const labelClass = navLinks.length > 4 ? 'sr-only xl:not-sr-only' : 'sr-only lg:not-sr-only';
+  // Desktop links are text from lg (xl for the longer admin nav); narrower, they become icons and the
+  // label stays as the accessible name
+  const wide = navLinks.length > 4;
+  const labelClass = wide ? 'sr-only xl:not-sr-only' : 'sr-only lg:not-sr-only';
+  const iconClass = wide ? 'xl:hidden' : 'lg:hidden';
 
   return (
-    <header
-      data-scrolled={scrolled || undefined}
-      className="relative isolate w-full sticky top-0 z-50 transition-shadow duration-200 data-scrolled:shadow-soft before:absolute before:inset-0 before:-z-10 before:bg-surface/80 before:backdrop-blur-md after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-linear-to-r after:from-transparent after:via-primary-30 after:to-transparent"
-    >
-      {/* The blur lives on ::before, not on <header>: backdrop-filter on the header itself would
-          become the containing block of fixed-position children (notification panel, menus) */}
-      <div className="flex items-center w-full px-sm md:px-lg h-16 gap-sm">
+    <header className="sticky top-0 z-50 w-full px-xs sm:px-sm md:px-lg pt-2 md:pt-3 pb-1">
+      {/* The blur sits on ::before, not on the bar itself: backdrop-filter on an element makes it the
+          containing block of fixed-position children */}
+      <div
+        data-scrolled={scrolled || undefined}
+        className="relative isolate mx-auto w-full max-w-container-max rounded-2xl transition-shadow duration-300 shadow-[0_1px_2px_rgb(3_21_54/0.04),0_8px_24px_-12px_rgb(3_21_54/0.12)] data-scrolled:shadow-[0_2px_4px_rgb(3_21_54/0.05),0_14px_32px_-12px_rgb(3_21_54/0.2)] before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-surface-container-lowest/80 before:backdrop-blur-md before:ring-1 before:ring-[rgb(3_21_54/0.06)]"
+      >
+        <div className="flex items-center h-[56px] md:h-[60px] pl-xs pr-1.5 md:pl-sm md:pr-2 gap-sm">
 
-        {/* Left zone — logo, flex-1 so it balances the right zone */}
-        <div className="flex-1 flex items-center min-w-0">
-          <Link
-            to="/"
-            aria-label="The Placement Feed — home"
-            className="group/logo flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <img
-              src={logo}
-              alt=""
-              width={90}
-              height={108}
-              className="h-9 w-auto object-contain transition-transform duration-300 ease-out-soft group-hover/logo:-rotate-6 group-hover/logo:scale-105"
-            />
-            <span className="font-headline-md text-headline-md font-semibold hidden sm:block md:hidden lg:block whitespace-nowrap">
-              <span className="text-brand-navy">The </span>
-              <span className="text-brand-blue bg-linear-to-r from-brand-blue to-[#0ea5e9] bg-clip-text [-webkit-text-fill-color:transparent]">Placement</span>
-              <span className="text-brand-navy"> Feed</span>
-            </span>
-          </Link>
-        </div>
-
-        {/* Center zone — desktop nav in one rounded track */}
-        <nav
-          className="hidden md:flex items-center gap-1 p-1 rounded-full bg-surface-container-low/80 border border-outline-variant shadow-xs"
-          aria-label="Main"
-        >
-          {navLinks.map((link) => (
+          {/* Left — logo, flex-1 so it balances the right side */}
+          <div className="flex-1 flex items-center min-w-0">
             <Link
-              key={link.to}
-              to={link.to}
-              aria-current={isActive(link.to) ? 'page' : undefined}
-              className={
-                link.cta
-                  ? 'inline-flex items-center gap-1.5 h-[44px] px-4 rounded-full font-label-md text-label-md whitespace-nowrap bg-primary-container text-on-primary shadow-soft hover:bg-primary hover:shadow-lift transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
-                  : desktopLinkClass(isActive(link.to))
-              }
+              to="/"
+              aria-label="The Placement Feed — home"
+              className="group/logo flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
-              {isActive(link.to) && !link.cta && (
-                <m.span layoutId="nav-pill" transition={pillSpring} className="absolute inset-0 -z-10 rounded-full bg-surface-container-lowest shadow-soft" aria-hidden="true" />
-              )}
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{link.icon}</span>
-              <span className={link.cta ? '' : labelClass}>{link.label}</span>
-            </Link>
-          ))}
-          {logout && (
-            <button type="button" onClick={logout} title="Logout" className={`${desktopLinkClass(false)} hover:text-error!`}>
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span>
-              <span className={labelClass}>Logout</span>
-            </button>
-          )}
-        </nav>
-
-        {/* Right zone — flex-1 balances the logo zone; hamburger sits here on mobile */}
-        <div className="flex-1 flex items-center justify-end gap-2">
-          {role === 'admin' && (
-            <span className="hidden xl:inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-brand-navy text-white font-label-sm text-label-sm uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
-              Admin
-            </span>
-          )}
-          <NotificationBell />
-          {role === 'student' && (
-            <Link
-              to="/profile"
-              aria-label="Your profile"
-              title="Your profile"
-              className="hidden md:inline-flex items-center justify-center w-[44px] h-[44px] rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <span
-                className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-linear-to-br from-brand-blue to-[#7c3aed] text-white font-label-md text-label-md shadow-soft ring-2 ring-surface-container-lowest"
-                aria-hidden="true"
-              >
-                {initialsOf(student)}
+              <img
+                src={logo}
+                alt=""
+                width={90}
+                height={108}
+                className="h-8 w-auto object-contain transition-transform duration-300 ease-out-soft group-hover/logo:-rotate-6"
+              />
+              <span className="font-headline-sm text-headline-sm font-semibold hidden sm:block md:hidden lg:block whitespace-nowrap tracking-tight">
+                <span className="text-brand-navy">The </span>
+                <span className="text-brand-blue">Placement</span>
+                <span className="text-brand-navy"> Feed</span>
               </span>
             </Link>
-          )}
-          <button
-            ref={menuButtonRef}
-            type="button"
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-            aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMobileOpen}
-            aria-controls="mobile-menu"
-            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
-              {isMobileOpen ? 'close' : 'menu'}
-            </span>
-          </button>
+          </div>
+
+          {/* Centre — desktop links */}
+          <nav className="hidden md:flex items-center gap-0.5" aria-label="Main">
+            {navLinks.filter((link) => !link.cta).map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                aria-current={isActive(link.to) ? 'page' : undefined}
+                className={desktopLinkClass(isActive(link.to))}
+              >
+                {isActive(link.to) && (
+                  <m.span layoutId="nav-pill" transition={pillSpring} className="absolute inset-0 -z-10 rounded-xl bg-primary-fixed/70" aria-hidden="true" />
+                )}
+                {/* Label first in the markup (the icon's ligature text, e.g. "dashboard", must not be the
+                    first match for the link's name); the icon is shown first with CSS order */}
+                <span className={labelClass}>{link.label}</span>
+                <span className={`material-symbols-outlined text-[20px] order-first ${iconClass}`} aria-hidden="true">{link.icon}</span>
+              </Link>
+            ))}
+            {navLinks.filter((link) => link.cta).map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                aria-current={isActive(link.to) ? 'page' : undefined}
+                className="ml-1 inline-flex items-center gap-1.5 h-[44px] px-4 rounded-xl font-label-md text-label-md whitespace-nowrap bg-primary-container text-on-primary shadow-soft hover:bg-primary transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {logout && (
+              <button type="button" onClick={logout} title="Logout" className={`${desktopLinkClass(false)} hover:text-error!`}>
+                <span className={labelClass}>Logout</span>
+                <span className={`material-symbols-outlined text-[20px] order-first ${iconClass}`} aria-hidden="true">logout</span>
+              </button>
+            )}
+          </nav>
+
+          {/* Right — flex-1 balances the logo; the menu button lives here on phones */}
+          <div className="flex-1 flex items-center justify-end gap-1">
+            {role === 'admin' && (
+              <span className="hidden xl:inline-flex items-center gap-1 h-7 px-2.5 mr-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
+                Admin
+              </span>
+            )}
+            <NotificationBell />
+            {role === 'student' && (
+              <Link
+                to="/profile"
+                aria-label="Your profile"
+                title="Your profile"
+                className="hidden md:inline-flex items-center justify-center w-[44px] h-[44px] rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <span
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-container text-on-primary font-label-md text-label-md"
+                  aria-hidden="true"
+                >
+                  {initialsOf(student)}
+                </span>
+              </Link>
+            )}
+            <button
+              ref={menuButtonRef}
+              type="button"
+              onClick={() => setIsMobileOpen(!isMobileOpen)}
+              aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileOpen}
+              aria-controls="mobile-menu"
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
+                {isMobileOpen ? 'close' : 'menu'}
+              </span>
+            </button>
+          </div>
         </div>
 
+        {/* Mobile menu — opens inside the same bar; enters with a short drop and leaves at once
+            (a dismissed menu must be gone immediately) */}
+        {isMobileOpen && (
+          <m.nav
+            initial={dropDown.initial}
+            animate={dropDown.animate}
+            transition={dropDown.transition}
+            id="mobile-menu"
+            className="md:hidden px-xs pb-xs pt-1 space-y-1"
+            aria-label="Main"
+          >
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsMobileOpen(false)}
+                aria-current={isActive(link.to) ? 'page' : undefined}
+                className={mobileLinkClass(isActive(link.to))}
+              >
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{link.icon}</span>
+                {link.label}
+              </Link>
+            ))}
+            {logout && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  logout();
+                }}
+                className={mobileLinkClass(false)}
+              >
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
+                Logout
+              </button>
+            )}
+          </m.nav>
+        )}
       </div>
-
-      {/* Mobile menu — mirrors the desktop links */}
-      {/* Enters with a short drop; leaves at once (a dismissed menu must be gone immediately) */}
-      {isMobileOpen && (
-        <m.nav
-          initial={dropDown.initial}
-          animate={dropDown.animate}
-          transition={dropDown.transition}
-          id="mobile-menu"
-          className="md:hidden border-t border-outline-variant bg-surface-container-lowest/95 px-sm py-sm space-y-1 shadow-lift"
-          aria-label="Main"
-        >
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setIsMobileOpen(false)}
-              aria-current={isActive(link.to) ? 'page' : undefined}
-              className={mobileLinkClass(isActive(link.to))}
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{link.icon}</span>
-              {link.label}
-            </Link>
-          ))}
-          {logout && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsMobileOpen(false);
-                logout();
-              }}
-              className={mobileLinkClass(false)}
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
-              Logout
-            </button>
-          )}
-        </m.nav>
-      )}
     </header>
   );
 };
