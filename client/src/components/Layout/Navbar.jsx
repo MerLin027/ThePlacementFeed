@@ -20,21 +20,21 @@ const mobileLinkClass = (active) =>
   }`;
 
 const Navbar = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { role, logoutAdmin, logoutStudent } = useAuth();
   const location = useLocation();
   const menuButtonRef = useRef(null);
 
-  // The mobile menu closes on navigation, and on Escape (focus back to the menu button)
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [location.pathname]);
+  // The mobile menu remembers the page it was opened on, so navigating closes it without an
+  // effect; Escape also closes it (focus back to the menu button)
+  const [menuOpenOn, setMenuOpenOn] = useState(null);
+  const isMobileOpen = menuOpenOn === location.pathname;
+  const setIsMobileOpen = (open) => setMenuOpenOn(open ? location.pathname : null);
 
   useEffect(() => {
     if (!isMobileOpen) return undefined;
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        setIsMobileOpen(false);
+        setMenuOpenOn(null);
         menuButtonRef.current?.focus();
       }
     };
