@@ -1,5 +1,5 @@
-// Upgrade Phase 9 checks (Node 24 runtime): the riskiest code paths — Excel export round-trip through
-// exceljs/archiver (oldest deps in the tree) incl. formula-injection escaping; a production-mode boot
+// Upgrade Phase 9 checks (Node 24 runtime): the riskiest code paths — Excel export round-trip (written
+// by write-excel-file, read back with exceljs) incl. formula-injection escaping; a production-mode boot
 // (cookie flags, no warnings); resetAdmin from the project root. Local stack only (API 5099, mongod 27099).
 const TEST = require('../lib/env.cjs');
 const { until } = require('../lib/wait.cjs');
@@ -9,7 +9,8 @@ const { spawn } = require('child_process');
 const SERVER = TEST.SERVER;
 const ROOT = TEST.ROOT;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
-const ExcelJS = require(path.join(SERVER, 'node_modules/exceljs'));
+// Reads the exports back; a test-only dependency (the server writes them with write-excel-file)
+const ExcelJS = require('exceljs');
 const Placement = require(path.join(SERVER, 'models/Placement'));
 const Student = require(path.join(SERVER, 'models/Student'));
 const Application = require(path.join(SERVER, 'models/Application'));
@@ -46,7 +47,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   const note = await fetch(API + `/api/placements/${drive._id}/applicants/${appIds[0]}`, { method: 'PATCH', headers: J(admin), body: JSON.stringify({ status: 'Shortlisted', adminNote: '+1 strong' }) });
   ok(note.status === 200, `admin note + status update → ${note.status}`);
 
-  console.log('# Excel export round-trip (exceljs → archiver/zip streams)');
+  console.log('# Excel export round-trip (write-excel-file → exceljs reader)');
   const ex = await fetch(API + `/api/placements/${drive._id}/applicants/export`, { headers: { Origin: APP, Cookie: admin } });
   const buf = Buffer.from(await ex.arrayBuffer());
   ok(ex.status === 200 && /spreadsheetml/.test(ex.headers.get('content-type')), `export → ${ex.status} ${ex.headers.get('content-type')}`);
@@ -57,7 +58,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   const sheet = wb.getWorksheet('Applicants');
   ok(Boolean(sheet), 'sheet "Applicants" present');
   const header = sheet.getRow(1).values.slice(1);
-  ok(header[0] === 'First Name' && header.includes('Relocate?') && header[header.length - 1] === 'Admin Note' && sheet.getRow(1).font?.bold, 'header row incl. custom prompt column, bold', JSON.stringify(header));
+  ok(header[0] === 'First Name' && header.includes('Relocate?') && header[header.length - 1] === 'Admin Note' && header.every((_, i) => sheet.getRow(1).getCell(i + 1).font?.bold === true), 'header row incl. custom prompt column, every header cell bold', JSON.stringify(header));
   ok(sheet.actualRowCount === 3, `header + 2 applicant rows (${sheet.actualRowCount})`);
   const rows = [2, 3].map((n) => { const r = sheet.getRow(n); return Object.fromEntries(header.map((h, i) => [h, r.getCell(i + 1)])); });
   const asha = rows.find((r) => r['First Name'].value === 'Asha');

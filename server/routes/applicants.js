@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
-const ExcelJS = require('exceljs');
+const writeExcelFile = require('write-excel-file/node');
 const Application = require('../models/Application');
 const Placement = require('../models/Placement');
 const requireAdmin = require('../middleware/requireAdmin');
@@ -172,6 +172,15 @@ const sanitizeCell = (value) => {
   return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 };
 
+// One spreadsheet cell, typed explicitly so text is never read as a number or a formula; empty
+// values become empty cells
+const toCell = (value, format) => {
+  if (value === undefined || value === null || value === '') return null;
+  if (value instanceof Date) return { value, type: Date, format };
+  if (typeof value === 'number') return { value, type: Number };
+  return { value: sanitizeCell(String(value)), type: String };
+};
+
 const slugify = (text) =>
   String(text || 'drive')
     .replace(/[^A-Za-z0-9]+/g, '-')
@@ -189,13 +198,6 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
     const filter = buildFilter(req.params.driveId, req.query);
     const prompts = (drive.customPrompts || []).map((p) => p.question);
 
-    const date = new Date().toISOString().slice(0, 10);
-    // Filename is built server-side from safe characters only
-    const filename = `applicants-${slugify(drive.company)}-${date}.xlsx`;
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Cache-Control', 'no-store');
-
     logAdminAction(req, 'applicants.export', {
       driveId: drive._id.toString(),
       filters: {
@@ -207,10 +209,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
       },
     });
 
-    // Streamed straight to the response — no workbook held in memory
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: res, useStyles: true });
-    const sheet = workbook.addWorksheet('Applicants');
-    sheet.columns = [
+    const columns = [
       { header: 'First Name', key: 'firstName', width: 16 },
       { header: 'Last Name', key: 'lastName', width: 16 },
       { header: 'Roll Number', key: 'rollNumber', width: 14 },
@@ -223,13 +222,12 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
       { header: 'Graduation Year', key: 'graduationYear', width: 10 },
       { header: 'Resume Link', key: 'resumeUrl', width: 40 },
       { header: 'Status', key: 'status', width: 13 },
-      { header: 'Applied At', key: 'submittedAt', width: 20, style: { numFmt: 'dd mmm yyyy hh:mm' } },
+      { header: 'Applied At', key: 'submittedAt', width: 20, format: 'dd mmm yyyy hh:mm' },
       { header: 'Note from Student', key: 'coverNote', width: 40 },
       ...prompts.map((q, i) => ({ header: sanitizeCell(q), key: `prompt_${i}`, width: 30 })),
       { header: 'Admin Note', key: 'adminNote', width: 30 },
     ];
-    sheet.getRow(1).font = { bold: true };
-    sheet.getRow(1).commit();
+    const rows = [columns.map((c) => ({ value: c.header, type: String, fontWeight: 'bold' }))];
 
     const cursor = Application.find(filter)
       .sort(SORTS[req.query.sort] || SORTS.newest)
@@ -240,7 +238,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
     for await (const app of cursor) {
       const s = app.snapshot || {};
       const answers = new Map((app.customAnswers || []).map((a) => [a.question, a.answer]));
-      const row = {
+      const record = {
         firstName: s.firstName,
         lastName: s.lastName,
         rollNumber: s.rollNumber,
@@ -258,17 +256,22 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
         adminNote: app.adminNote,
       };
       prompts.forEach((q, i) => {
-        row[`prompt_${i}`] = answers.get(q);
+        record[`prompt_${i}`] = answers.get(q);
       });
-      // Every value is a plain string/number/date (never a formula object) and strings are sanitized
-      Object.keys(row).forEach((k) => {
-        row[k] = row[k] === undefined || row[k] === null ? '' : sanitizeCell(row[k]);
-      });
-      sheet.addRow(row).commit();
+      rows.push(columns.map((c) => toCell(record[c.key], c.format)));
     }
 
-    sheet.commit();
-    await workbook.commit();
+    // Built in full (at most EXPORT_ROW_CAP rows) before anything is sent, so a failure while
+    // building still gets a JSON error instead of a truncated download
+    const file = writeExcelFile(rows, { sheet: 'Applicants', columns: columns.map((c) => ({ width: c.width })) });
+
+    const date = new Date().toISOString().slice(0, 10);
+    // Filename is built server-side from safe characters only
+    const filename = `applicants-${slugify(drive.company)}-${date}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    await file.toStream(res);
   } catch (error) {
     // Headers may already be sent mid-stream; then the download just ends early
     if (res.headersSent) {

@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
-const ExcelJS = require(path.join(SERVER, 'node_modules/exceljs'));
+// Reads the exports back; a test-only dependency (the server writes them with write-excel-file)
+const ExcelJS = require('exceljs');
 const Student = require(path.join(SERVER, 'models/Student'));
 const Application = require(path.join(SERVER, 'models/Application'));
 const Placement = require(path.join(SERVER, 'models/Placement'));
