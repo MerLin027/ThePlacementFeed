@@ -44,11 +44,15 @@ const AdminStudents = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [branch, setBranch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null); // { type: 'reset' | 'delete', student }
   const [reloadKey, setReloadKey] = useState(0);
+  // Each finished request records the key of the parameters it answered; until the latest one
+  // matches the current parameters the list is loading (derived instead of reset in the effect)
+  const requestKey = JSON.stringify([page, debouncedSearch, branch, reloadKey]);
+  const [settled, setSettled] = useState({ key: null, error: '' });
+  const loading = settled.key !== requestKey;
+  const error = loading ? '' : settled.error;
 
   // Debounce search; any filter change goes back to page 1
   useEffect(() => {
@@ -61,8 +65,7 @@ const AdminStudents = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError('');
+    const key = JSON.stringify([page, debouncedSearch, branch, reloadKey]);
     const params = { page, limit: PAGE_SIZE };
     if (debouncedSearch) params.search = debouncedSearch;
     if (branch) params.branch = branch;
@@ -72,12 +75,11 @@ const AdminStudents = () => {
       .then((res) => {
         setStudents(res.data.data);
         setPagination(res.data.pagination);
-        setLoading(false);
+        setSettled({ key, error: '' });
       })
       .catch((err) => {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-        setError(parseApiError(err, 'Could not load students.').message);
-        setLoading(false);
+        setSettled({ key, error: parseApiError(err, 'Could not load students.').message });
       });
     return () => controller.abort();
   }, [page, debouncedSearch, branch, reloadKey]);
