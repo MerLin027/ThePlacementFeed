@@ -183,7 +183,6 @@ const AdminDashboard = () => {
         aria-disabled={!!toggling[p._id]}
         aria-busy={!!toggling[p._id]}
         title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
-        aria-label={p.isPostponed ? `Un-postpone ${p.company}` : `Mark ${p.company} as postponed`}
         className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
           p.isPostponed
             ? 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -198,6 +197,8 @@ const AdminDashboard = () => {
           </span>
         )}
         {p.isPostponed ? 'Un-postpone' : 'Postpone'}
+        {/* The accessible name starts with the visible text (WCAG 2.5.3), e.g. "Postpone Infosys" */}
+        <span className="sr-only">{` ${p.company}`}</span>
       </button>
 
       {p.statusManuallySet && (

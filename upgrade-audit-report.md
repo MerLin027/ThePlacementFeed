@@ -24,7 +24,7 @@ pulse now works).
 | Critical | 0 | — |
 | High | 0 | — |
 | Medium | 2 | M-1 (upgrade), M-2 (pre-existing) |
-| Low | 8 | L-2, L-7 (upgrade) · L-5 (parity) · L-3, L-4, L-6, L-8 (pre-existing) · L-9 (test tooling) — L-1 withdrawn |
+| Low | 9 | L-2, L-7 (upgrade) · L-5 (parity) · L-3, L-4, L-6, L-8, L-10 (pre-existing) · L-9 (test tooling) — L-1 withdrawn; L-10 found during the fixes |
 | Info | 15 | I-1 … I-15 |
 
 ---
@@ -101,6 +101,7 @@ pulse now works).
 | L-7 | L | 3 | Startup (Express 5) | If the port is taken, Express 5 hands the error to the `app.listen` callback, which ignores it: the server logs "Server running…", keeps the cron job running and serves nothing. `main` exits with `EADDRINUSE`. Unlikely on Render (assigned port), confusing locally. | `app.listen(PORT, (err) => { if (err) { log; process.exit(1); } … })`. |
 | L-8 | L | 3 | Validation (pre-existing) | The admin drive form accepts numbers/booleans/objects for `company`, `role` (and numbers/booleans for `jdDescription`) and stores them as text (`"123"`, `"true"`, `"[object Object]"`); `.trim()` coerces before the length check. Admin-only; data quality. | Add `.isString()` before `.trim()` on admin text fields. |
 | L-9 | L | 3 | Test tooling | A suite that hangs until its timeout leaves no summary line and silently drops out of the totals. | Count suites with a summary line vs suites run; flag missing ones as failures. |
+| L-10 | L | fixes | Accessibility (pre-existing) | Found when the suites moved to axe-core 4.14 (Group D): rule `label-content-name-mismatch` (serious, WCAG 2.5.3 "Label in Name") — the admin postpone toggle shows "Postpone" but was named "Mark <company> as postponed", and the Home Filters button's `aria-label` overrode its visible text. axe 4.10 did not check this rule. Voice-control users saying "click Postpone" could not reach the button. | Build the names from the visible text (+ screen-reader-only extras), no overriding `aria-label`. |
 | I-1 | I | 1 | Lockfile | `overrides` (`uuid ^11.1.1`) is not mirrored in the lockfile root — normal npm behaviour; the override is applied. | None. Re-check whether the override is still needed in Pass 3 (S11). |
 | I-2 | I | 1 | Dependencies | Five deprecated transitive packages (`inflight`, `lodash.isequal`, `rimraf@2`, `fstream`, `glob@7`) — all under `exceljs@4.4.0` (newest ExcelJS, last release 2023). No advisories (npm audit + OSV). Pre-existing. | Assess in Pass 2 (B7). |
 | I-3 | I | 1 | Lint | 18 warnings: 15 new React-Compiler-style rules from oxlint 1.89 (`set-state-in-effect` ×13, `purity`, `refs`) + 3 pre-existing `only-export-components`. Documented as a follow-up. | Review individually in Pass 3. |
@@ -153,3 +154,10 @@ Approved 2026-10-24 with **M-1 option 1** (accept Tailwind 4's floor, add cheap 
 - **L-8:** `company`, `role`, `jdDescription` and selection-round name/description reject non-strings (`isString` before `trim`); required/blank fields keep their "is required" message.
 - **L-1:** **withdrawn — false positive.** `.env.example` already documents `# DEFAULT_STUDENT_PASSWORD=college123` (commented out because it is optional); the Pass 1 check only matched uncommented lines.
 - **Verification:** sanitiser unit checks (real payloads pass; 5,000-level body → 400; operators still stripped; NUL/tab in query → 400; Unicode, brackets, dots, `$` in values pass). Over HTTP vs `main`: deep-nesting cases 400 (main 500); type fuzz 648 requests → **0 server errors** (main 12); server log: client errors one line each, 0 stack traces. Full regression **767/767 on Node 24.22.1 and 22.23.4**.
+
+### Group D — done
+- **M-2:** the 24 regression suites (767 checks) now live in `tests/`: `tests/run.mjs` (starts Vite once and a fresh API per suite, from `tests/output/` so `server/.env` is never read; per-suite 400 s timeout; one retry if the API fails to start), `tests/lib/env.cjs` (refuses any non-local MongoDB), `tests/lib/cleanup.cjs`, pinned **Playwright 1.64.1** and **axe-core 4.14.0** (latest stable), Chromium installed into the gitignored `tests/.playwright-browsers`. `tests/README.md`, a README "Tests" section and the vault describe setup and use.
+- **L-9:** a suite that crashes, times out or ends without its summary line now counts as a failure (exit code ≠ 0); the runner caught exactly that once (an API start that timed out, now retried).
+- **I-15:** the 9 tautological `ok(true, …)` checks are real assertions (a timeout is a counted FAIL, the suite continues). Fixed waits remain (documented).
+- **L-10 (new, found here):** axe-core 4.14 checks `label-content-name-mismatch` (WCAG 2.5.3), which 4.10 did not: the postpone toggle ("Postpone", named "Mark … as postponed") and the Home Filters button (`aria-label` overriding its text). Names are now built from the visible text plus screen-reader-only extras ("Postpone Infosys", "Filters, 2 active").
+- **Verification:** all 24 suites pass on the final code with the in-repo runner on Node 24 (743 checks in one run, the remaining 24 in a re-run of the suite whose API start had timed out), no deprecation warnings.

@@ -17,3 +17,7 @@ Thumbs.db
 *.swo
 
 HISTORY.md
+
+# Regression test output and the Playwright browser downloaded for them
+tests/output/
+tests/.playwright-browsers/

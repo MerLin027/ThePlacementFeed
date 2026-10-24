@@ -91,6 +91,18 @@ npm install
 npm run dev               # → http://localhost:5173
 ```
 
+### Tests
+
+`tests/` holds the regression suites (about 770 checks: API, browser UI, accessibility, the dependency
+upgrade and the Node 24 runtime). They run against a **local** throwaway MongoDB and refuse any other
+database — see [tests/README.md](tests/README.md):
+
+```bash
+cd tests
+npm run setup   # once: Playwright, axe-core, Chromium
+npm test        # needs a local mongod on port 27099
+```
+
 ### Environment variables
 
 **Server** (`server/.env`):

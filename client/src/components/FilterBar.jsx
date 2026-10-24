@@ -41,7 +41,6 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
           onClick={() => setIsExpanded(!isExpanded)}
           aria-expanded={isExpanded}
           aria-controls={fid('panel')}
-          aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
           className={`inline-flex items-center gap-2 h-[46px] min-w-[46px] px-4 rounded-lg font-label-md text-label-md border transition-colors ${
             activeFilterCount > 0
               ? 'bg-primary/5 border-primary/30 text-primary'
@@ -49,11 +48,15 @@ const FilterBar = ({ filters, onFilterChange, onReset }) => {
           }`}
         >
           <span className="material-symbols-outlined text-[20px]" aria-hidden="true">tune</span>
-          <span className="hidden sm:inline">Filters</span>
+          {/* Name comes from the content ("Filters, 2 active"); the word is screen-reader-only on phones */}
+          <span className="sr-only sm:not-sr-only">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="bg-primary-container text-on-primary text-xs rounded-full w-5 h-5 flex items-center justify-center" aria-hidden="true">
-              {activeFilterCount}
-            </span>
+            <>
+              <span className="bg-primary-container text-on-primary text-xs rounded-full w-5 h-5 flex items-center justify-center" aria-hidden="true">
+                {activeFilterCount}
+              </span>
+              <span className="sr-only">{`, ${activeFilterCount} active`}</span>
+            </>
           )}
         </button>
       </div>
