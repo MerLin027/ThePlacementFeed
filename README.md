@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="client/public/logo.png" alt="The Placement Feed logo" width="110" />
+  <img src="client/public/logo-mark.png" alt="The Placement Feed logo" width="110" />
   <h1>The Placement Feed</h1>
   <p>Campus placement drives for CHARUSAT students, in one place.</p>
   <p><a href="https://theplacementfeed.vercel.app"><strong>theplacementfeed.vercel.app</strong></a></p>
