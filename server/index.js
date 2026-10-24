@@ -1,3 +1,6 @@
+// Reads .env from the working directory on purpose (npm start / Render run in server/). The test
+// runner starts the API from tests/output/, where no .env exists, so the real server/.env is never
+// read during tests; an absolute path here would undo that.
 require('dotenv').config({ quiet: true });
 
 // --- Fail fast if required env vars are missing ---
