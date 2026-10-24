@@ -25,17 +25,19 @@ const AdminDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPlacement, setEditingPlacement] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  // Applications that will be deleted along with the drive (null while loading)
-  const [deleteAppCount, setDeleteAppCount] = useState(null);
+  // Applications that will be deleted along with the drive. The count is stored with the drive it
+  // belongs to, so it reads as null (loading) for any other drive without resetting it in the effect.
+  const [appCount, setAppCount] = useState({ id: null, count: null });
+  const deleteAppCount = deleteTarget && appCount.id === deleteTarget._id ? appCount.count : null;
 
   useEffect(() => {
     if (!deleteTarget) return undefined;
     const controller = new AbortController();
-    setDeleteAppCount(null);
+    const id = deleteTarget._id;
     api
-      .get(`/api/placements/${deleteTarget._id}/application-count`, { signal: controller.signal })
-      .then((res) => setDeleteAppCount(res.data.data.count))
-      .catch(() => setDeleteAppCount(null));
+      .get(`/api/placements/${id}/application-count`, { signal: controller.signal })
+      .then((res) => setAppCount({ id, count: res.data.data.count }))
+      .catch(() => setAppCount({ id, count: null }));
     return () => controller.abort();
   }, [deleteTarget]);
 
