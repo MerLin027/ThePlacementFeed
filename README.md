@@ -108,7 +108,7 @@ mongod --dbpath tests/output/db --port 27099 --bind_ip 127.0.0.1
 # 2. In another terminal (after npm install in client/ and server/)
 cd tests
 npm run setup                 # once: installs Playwright, axe-core and a Chromium build
-npm test                      # starts the API and the website itself, then runs every suite
+npm test                      # starts the API and the website itself, then runs every suite (~6 min)
 node run.mjs phaseE-test      # or run selected suites by file name
 ```
 
