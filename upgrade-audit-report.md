@@ -2,7 +2,7 @@
 
 **Plan:** `upgrade-audit-plan.md` · **Subject:** branch `upgrade/deps` vs `main` (17 upgrade commits + audit-plan commit)
 **Started:** 2026-10-24 · **Runtime used:** Node 24.22.1 (target) and 22.23.4 (fallback), local MongoDB 8.0 on port 27099
-**Status:** COMPLETE (2026-10-24) — Pass 1, Pass 2 and Pass 3 done · fix plan approved (M-1 option 1) · fixes in progress, see Fix log
+**Status:** COMPLETE (2026-10-24) — Pass 1, Pass 2 and Pass 3 done · fix plan approved (M-1 option 1) · **all fix groups done** (A, B, C, D) — see Fix log
 
 Severity: **C** Critical · **H** High · **M** Medium · **L** Low · **I** Info.
 Evidence files live in the session scratchpad `audit/` folder (command output, logs).
@@ -161,3 +161,12 @@ Approved 2026-10-24 with **M-1 option 1** (accept Tailwind 4's floor, add cheap 
 - **I-15:** the 9 tautological `ok(true, …)` checks are real assertions (a timeout is a counted FAIL, the suite continues). Fixed waits remain (documented).
 - **L-10 (new, found here):** axe-core 4.14 checks `label-content-name-mismatch` (WCAG 2.5.3), which 4.10 did not: the postpone toggle ("Postpone", named "Mark … as postponed") and the Home Filters button (`aria-label` overriding its text). Names are now built from the visible text plus screen-reader-only extras ("Postpone Infosys", "Filters, 2 active").
 - **Verification:** all 24 suites pass on the final code with the in-repo runner on Node 24 (743 checks in one run, the remaining 24 in a re-run of the suite whose API start had timed out), no deprecation warnings.
+
+### Group C — done
+- **L-3:** the icon font now requests only the 62 icons the app uses (`icon_names=…`, alphabetical) at the single style it renders (`opsz,wght,FILL,GRAD@24,400,0,0`) — **≈ 6 kB instead of 1,111 kB**. Both `client/src/index.css` (`@import`) and `client/index.html` (preload) carry the same URL; a comment explains how to add an icon. Two names in use (`expand_more`, `push_pin`) are legacy "Material Icons" names that Google's Symbols metadata marks unsupported — they still render from the subset, were missed by the first metadata-based scan, and were caught by the new guard.
+- **Guard:** `tests/suites/icons-test.cjs` checks that the CSS and HTML URLs match, that the list is sorted, and that every icon rendered on every page (guest/student/admin, desktop and phone, panels and dialogs) is listed and draws as a glyph (≈ 24 px wide, not its name as text).
+- **Verification:** final full run of all 25 suites — **772/772 on Node 24.22.1 and on 22.23.4**, no warnings; back-to-back visual comparison with `main`: 24/32 views pixel-identical, the other 8 the same anti-aliasing-only differences as before (icons render identically).
+- **Result (slow 4G, median of 3):** icons usable at **≈ 5.1 s instead of ≈ 12.7 s** (≈ 0.5 s after first paint instead of ≈ 8 s); first paint unchanged (≈ 4.6 s).
+
+### Summary of the fixes
+All approved findings are resolved: M-1 (option 1), M-2, L-2 … L-10 (L-1 withdrawn). Still tracked, not fixed: I-3 (oxlint React-Compiler warnings), I-11 (exceljs dormant), I-12 (single 800 kB bundle). Final state: **772/772 checks on Node 24 and 22**, npm audit 0, views pixel-identical to main apart from anti-aliasing.

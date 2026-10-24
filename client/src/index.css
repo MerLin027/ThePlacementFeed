@@ -1,9 +1,12 @@
 /* Cascade-layer order. Tailwind 4 utilities live in native layers, and unlayered CSS beats any
    layer: Google's icon stylesheet sets font-size/display on .material-symbols-outlined, which would
    override text-[18px], hidden, etc. It is imported into the lowest layer instead (index.html
-   preloads it so it still downloads in parallel). */
+   preloads it so it still downloads in parallel).
+   Only the icons the app uses are requested (icon_names, alphabetical; ~6 kB instead of ~1.1 MB),
+   at the one style it uses (weight 400, unfilled). Adding an icon: add its name to this URL AND to
+   the preload in index.html — tests/suites/icons-test.cjs fails if a rendered icon is missing. */
 @layer vendor, theme, base, components, utilities;
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap')
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,add_circle,arrow_back,arrow_forward,assignment_late,calendar_month,cards,check_circle,chevron_left,chevron_right,close,cloud_off,delete,done_all,download,edit,edit_note,error,event,event_available,event_busy,event_upcoming,expand_more,explore_off,function,group,help,history,hourglass_top,how_to_reg,info,key,label,lock,lock_reset,login,menu,notifications,open_in_new,password,pause_circle,payments,person_add,play_circle,push_pin,radio,restart_alt,schedule,school,search,search_off,sort,storage,sync,timeline,tune,undo,verified_user,visibility,visibility_off,warning,work_history&display=swap')
   layer(vendor);
 @import 'tailwindcss';
 
