@@ -1,4 +1,3 @@
-import { Link } from 'react-router';
 import logo from '../../assets/logo.png';
 import charusatLogo from '../../assets/charusat-logo.png';
 import cdpcLogo from '../../assets/cdpc-logo.png';
@@ -6,13 +5,11 @@ import cdpcLogo from '../../assets/cdpc-logo.png';
 // Computed once per page load, not on every render (React components must render purely)
 const YEAR = new Date().getFullYear();
 
-const linkClass =
-  'inline-flex items-center min-h-[32px] px-1 rounded-md font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
-
 /**
  * The site footer, at the end of every page (inside the <main> scroller, so it scrolls in after the
  * content rather than staying on screen). One slim rounded bar, the header's height and look:
- * brand and copyright, two links (centred: equal side columns), the CHARUSAT and CDPC logos.
+ * brand and copyright, a short line about the site (centred: equal side columns), the CHARUSAT
+ * and CDPC logos.
  * On phones it stacks, centred.
  */
 const Footer = () => (
@@ -25,10 +22,9 @@ const Footer = () => (
           <span>© {YEAR} The Placement Feed</span>
         </p>
 
-        <nav aria-label="Footer" className="flex items-center gap-sm">
-          <Link to="/" className={linkClass}>Drives</Link>
-          <Link to="/timeline" className={linkClass}>Timeline</Link>
-        </nav>
+        <p className="font-body-sm text-body-sm text-outline text-center">
+          Every CHARUSAT placement drive, in one place.
+        </p>
 
         {/* Logos at one visual height; the width caps keep CHARUSAT's wide mark in check */}
         <div className="flex items-center gap-sm md:justify-self-end">
