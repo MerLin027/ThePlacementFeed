@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import BranchSelect from './BranchSelect';
 import TagInput from './TagInput';
 import FormField from './FormField';
@@ -104,42 +104,46 @@ const mapServerErrors = (err) => {
   return { fieldErrors, general: general.join(' ') };
 };
 
+// Form values for editing an existing drive
+const formFromDrive = (initialData) => ({
+  company: initialData.company || '',
+  role: initialData.role || '',
+  type: initialData.type || 'Full-Time',
+  ctc: initialData.ctc ?? '',
+  eligibility: {
+    branches: initialData.eligibility?.branches || [],
+    cgpa: initialData.eligibility?.cgpa ?? '',
+    backlog: initialData.eligibility?.backlog ?? '',
+  },
+  driveDate: initialData.driveDate ? new Date(initialData.driveDate).toISOString().split('T')[0] : '',
+  deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
+  status: initialData.statusManuallySet ? initialData.status || 'Upcoming' : 'auto',
+  isPostponed: initialData.isPostponed ?? false,
+  jdDescription: initialData.jdDescription || '',
+  tags: initialData.tags || [],
+  formUrl: initialData.formUrl || '',
+  selectionRounds: initialData.selectionRounds || [],
+  applicationMode: initialData.applicationMode || 'external',
+  customPrompts: (initialData.customPrompts || []).map((p) => ({
+    question: p.question,
+    required: Boolean(p.required),
+  })),
+});
+
 const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(() => (initialData ? formFromDrive(initialData) : INITIAL_FORM));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const formRef = useRef(null);
   useFocusFirstInvalid(formRef, fieldErrors);
 
-  useEffect(() => {
-    if (initialData) {
-      setForm({
-        company: initialData.company || '',
-        role: initialData.role || '',
-        type: initialData.type || 'Full-Time',
-        ctc: initialData.ctc ?? '',
-        eligibility: {
-          branches: initialData.eligibility?.branches || [],
-          cgpa: initialData.eligibility?.cgpa ?? '',
-          backlog: initialData.eligibility?.backlog ?? '',
-        },
-        driveDate: initialData.driveDate ? new Date(initialData.driveDate).toISOString().split('T')[0] : '',
-        deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
-        status: initialData.statusManuallySet ? initialData.status || 'Upcoming' : 'auto',
-        isPostponed: initialData.isPostponed ?? false,
-        jdDescription: initialData.jdDescription || '',
-        tags: initialData.tags || [],
-        formUrl: initialData.formUrl || '',
-        selectionRounds: initialData.selectionRounds || [],
-        applicationMode: initialData.applicationMode || 'external',
-        customPrompts: (initialData.customPrompts || []).map((p) => ({
-          question: p.question,
-          required: Boolean(p.required),
-        })),
-      });
-    }
-  }, [initialData]);
+  // Editing another drive refills the form (adjusted during render, not in an effect)
+  const [formFor, setFormFor] = useState(initialData);
+  if (formFor !== initialData) {
+    setFormFor(initialData);
+    if (initialData) setForm(formFromDrive(initialData));
+  }
 
   // Editing a field clears its own error (and the general message)
   const clearError = (key) => {
