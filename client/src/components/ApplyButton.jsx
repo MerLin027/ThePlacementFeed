@@ -78,8 +78,9 @@ export const CardApplyButton = ({ drive }) => {
       );
     case 'applied':
       return (
+        // The pill already says the status ("Applied", "Shortlisted"…), so the label must not repeat it
         <div className={`btn-secondary ${BASE} gap-xs`}>
-          Applied
+          Your application
           <ApplicationStatusPill status={state.status} />
         </div>
       );
