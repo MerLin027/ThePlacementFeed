@@ -33,11 +33,8 @@ const AdminApplicants = () => {
   const [applicants, setApplicants] = useState([]);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
-  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
   const [busyIds, setBusyIds] = useState(() => new Set());
@@ -57,15 +54,25 @@ const AdminApplicants = () => {
   const paramsKey = JSON.stringify(toParams(filters, debouncedSearch));
   const params = useMemo(() => JSON.parse(paramsKey), [paramsKey]);
 
-  // Any filter change goes back to page 1
-  useEffect(() => {
+  // Any filter change goes back to page 1. Adjusted during render when the filters differ from the
+  // ones the page was chosen under (React's pattern for resetting state on an input change), so it
+  // also resets when filters return to an earlier value, without an effect.
+  const [page, setPage] = useState(1);
+  const [pageFilters, setPageFilters] = useState(paramsKey);
+  if (pageFilters !== paramsKey) {
+    setPageFilters(paramsKey);
     setPage(1);
-  }, [params]);
+  }
+
+  // Loading/error are derived from the key of the last finished request (see AdminStudents)
+  const requestKey = JSON.stringify([driveId, paramsKey, page, reloadKey]);
+  const [settled, setSettled] = useState({ key: null, error: '' });
+  const loading = settled.key !== requestKey;
+  const error = loading ? '' : settled.error;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError('');
+    const key = JSON.stringify([driveId, JSON.stringify(params), page, reloadKey]);
     api
       .get(`/api/placements/${driveId}/applicants`, {
         params: { ...params, page, limit: PAGE_SIZE },
@@ -77,13 +84,12 @@ const AdminApplicants = () => {
         setStats(res.data.stats);
         setPagination(res.data.pagination);
         setSelected(new Set());
-        setLoading(false);
+        setSettled({ key, error: '' });
       })
       .catch((err) => {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         if (err.response?.status === 404 || err.response?.status === 400) setNotFound(true);
-        else setError(parseApiError(err, 'Could not load applicants.').message);
-        setLoading(false);
+        setSettled({ key, error: err.response?.status === 404 || err.response?.status === 400 ? '' : parseApiError(err, 'Could not load applicants.').message });
       });
     return () => controller.abort();
   }, [driveId, params, page, reloadKey]);
