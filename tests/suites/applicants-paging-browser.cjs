@@ -25,7 +25,7 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
   await db.collection('applications').insertMany(Array.from({ length: 30 }, (_, i) => ({
     driveId, studentId: new mongoose.Types.ObjectId(), consentGiven: true,
     status: i % 8 === 0 ? 'Shortlisted' : 'Applied', customAnswers: [],
-    snapshot: { firstName: `Ap${String(i).padStart(2, '0')}`, lastName: TAG, email: `${TAG.toLowerCase()}${i}@example.com`, rollNumber: `${TAG}${i}`, branch: 'CE', cgpa: 8, activeBacklogs: 0, historyBacklogs: 0, graduationYear: 2026, phone: '9876543210' },
+    snapshot: { firstName: `Ap${String(i).padStart(2, '0')}`, lastName: TAG, email: `${TAG.toLowerCase()}${i}@example.com`, rollNumber: `${TAG}${i}`, branch: 'CE', cgpa: 8, activeBacklogs: 0, graduationYear: 2026, phone: '9876543210' },
     createdAt: new Date(now - i * 60000), updatedAt: new Date(now - i * 60000),
   })));
 

@@ -95,7 +95,6 @@ const buildSnapshot = (student) => ({
   branch: student.branch,
   cgpa: student.cgpa,
   activeBacklogs: student.activeBacklogs,
-  historyBacklogs: student.historyBacklogs,
   graduationYear: student.graduationYear,
   phone: student.phone,
 });

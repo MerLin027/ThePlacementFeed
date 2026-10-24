@@ -78,7 +78,7 @@ const TAG = `PC${Date.now() % 100000}`;
   await loginStudent('college123');
   await page.waitForURL(/\/change-password/);
   ok(await hasText(page, 'Set a new password to continue') && await hasText(page, 'Required before you can use your account'), 'title says it is required');
-  ok(await hasText(page, 'works for 72 hours after the reset'), 'mentions the 72-hour window');
+  ok(await hasText(page, "You won't need the temporary password again"), 'explains the temporary password is not asked for again');
 
   console.log('# Route matrix');
   const routes = ['/', '/timeline', '/login', '/signup', '/profile', '/applications', '/change-password', '/admin/login', '/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`, `/placement/${d1._id}`, '/nope'];
@@ -92,7 +92,6 @@ const TAG = `PC${Date.now() % 100000}`;
   };
   // Restricted (reset pending) student: every student page funnels to /change-password
   for (const r of ['/profile', '/applications']) ok((await landing(r, '/change-password')) === '/change-password', `restricted student ${r} -> /change-password`);
-  await page.fill('#currentPassword', 'college123');
   await page.fill('#newPassword', 'brandnew789');
   await page.fill('#confirmPassword', 'brandnew789');
   await page.click('button[type=submit]');

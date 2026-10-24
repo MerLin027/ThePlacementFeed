@@ -61,7 +61,6 @@ const studentSchema = new mongoose.Schema(
     },
     cgpa: { type: Number, min: 0, max: 10 },
     activeBacklogs: { type: Number, min: 0, default: 0 },
-    historyBacklogs: { type: Number, min: 0, default: 0 },
     graduationYear: { type: Number, min: 2020, max: 2040 },
     phone: {
       type: String,
@@ -115,7 +114,6 @@ studentSchema.methods.toProfileDTO = function () {
     branch: this.branch ?? '',
     cgpa: this.cgpa ?? null,
     activeBacklogs: this.activeBacklogs ?? 0,
-    historyBacklogs: this.historyBacklogs ?? 0,
     graduationYear: this.graduationYear ?? null,
     phone: this.phone ?? '',
     resumeUrl: this.resumeUrl ?? '',

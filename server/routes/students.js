@@ -6,7 +6,8 @@ const csrfCheck = require('../middleware/csrfCheck');
 const { requireStudent, requireStudentAllowPending } = require('../middleware/requireStudent');
 const { studentProfileRules, changePasswordRules, validate } = require('../middleware/validate');
 const { issueStudentSession } = require('../utils/studentSession');
-const { BCRYPT_COST } = require('../constants/auth');
+const { getClearCookieOptions } = require('../utils/cookies');
+const { BCRYPT_COST, STUDENT_COOKIE } = require('../constants/auth');
 
 const router = express.Router();
 
@@ -17,7 +18,6 @@ const EDITABLE_PROFILE_FIELDS = [
   'branch',
   'cgpa',
   'activeBacklogs',
-  'historyBacklogs',
   'graduationYear',
   'phone',
   'resumeUrl',
@@ -95,7 +95,8 @@ router.patch(
   }
 );
 
-// POST /api/students/me/password — also the way out of a restricted (reset) session
+// POST /api/students/me/password — also the way out of a restricted (reset) session, where
+// the current (temporary) password isn't asked for again
 router.post(
   '/me/password',
   csrfCheck,
@@ -110,13 +111,25 @@ router.post(
       const student = await Student.findById(req.student.id).select('+passwordHash');
       if (!student) return notFound(res);
 
-      const isMatch = await bcrypt.compare(currentPassword, student.passwordHash);
-      if (!isMatch) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors: [{ field: 'currentPassword', message: 'Current password is incorrect' }],
-        });
+      if (student.mustChangePassword) {
+        // Logging in checks the 72 h window, but a restricted session can outlive it
+        if (student.tempPasswordExpiresAt && student.tempPasswordExpiresAt < new Date()) {
+          res.clearCookie(STUDENT_COOKIE, getClearCookieOptions());
+          return res.status(401).json({
+            success: false,
+            code: 'TEMP_PASSWORD_EXPIRED',
+            message: 'Your temporary password has expired. Ask the CDPC admin to reset it again.',
+          });
+        }
+      } else {
+        const isMatch = await bcrypt.compare(currentPassword, student.passwordHash);
+        if (!isMatch) {
+          return res.status(400).json({
+            success: false,
+            message: 'Validation failed',
+            errors: [{ field: 'currentPassword', message: 'Current password is incorrect' }],
+          });
+        }
       }
 
       student.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);

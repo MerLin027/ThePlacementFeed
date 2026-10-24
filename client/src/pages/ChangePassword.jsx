@@ -29,9 +29,7 @@ const ChangePassword = () => {
     setError('');
 
     const errors = {};
-    if (!form.currentPassword) errors.currentPassword = isReset
-      ? 'Please enter the temporary password'
-      : 'Please enter your current password';
+    if (!isReset && !form.currentPassword) errors.currentPassword = 'Please enter your current password';
     if (form.newPassword.length < 8) errors.newPassword = 'Password must be at least 8 characters';
     if (form.confirmPassword !== form.newPassword) errors.confirmPassword = "Passwords don't match";
     setFieldErrors(errors);
@@ -39,10 +37,13 @@ const ChangePassword = () => {
 
     setIsLoading(true);
     try {
-      await api.post('/api/students/me/password', {
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword,
-      });
+      // A reset session was opened with the temporary password, so it isn't asked for again
+      await api.post(
+        '/api/students/me/password',
+        isReset
+          ? { newPassword: form.newPassword }
+          : { currentPassword: form.currentPassword, newPassword: form.newPassword }
+      );
       await refreshStudent();
       toast.success('Password updated');
       navigate('/profile', { replace: true });
@@ -80,25 +81,26 @@ const ChangePassword = () => {
           <FormAlert tone="warning" icon="lock_reset">
             <p className="font-semibold">Your password was reset by the CDPC admin.</p>
             <p className="mt-[2px]">
-              For your security, you need to choose a new password before you can browse, apply or edit
-              your profile. Enter the temporary password you were given, then pick one that only you know.
-              The temporary password works for 72 hours after the reset.
+              Choose a new password that only you know before you browse, apply or edit your profile.
+              You won&apos;t need the temporary password again.
             </p>
           </FormAlert>
         )}
         {error && <FormAlert>{error}</FormAlert>}
 
-        <FormField
-          id="currentPassword"
-          label={isReset ? 'Temporary password' : 'Current password'}
-          type="password"
-          value={form.currentPassword}
-          onChange={update('currentPassword')}
-          autoComplete="current-password"
-          maxLength={72}
-          error={fieldErrors.currentPassword}
-          autoFocus
-        />
+        {!isReset && (
+          <FormField
+            id="currentPassword"
+            label="Current password"
+            type="password"
+            value={form.currentPassword}
+            onChange={update('currentPassword')}
+            autoComplete="current-password"
+            maxLength={72}
+            error={fieldErrors.currentPassword}
+            autoFocus
+          />
+        )}
 
         <FormField
           id="newPassword"
@@ -110,6 +112,7 @@ const ChangePassword = () => {
           maxLength={72}
           helper="At least 8 characters."
           error={fieldErrors.newPassword}
+          autoFocus={isReset}
         />
 
         <FormField

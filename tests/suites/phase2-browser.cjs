@@ -178,7 +178,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   ok(await page.waitForURL(/\/change-password/).then(() => true, () => false), 'restricted student bounced from /profile');
   r = await page.evaluate(async ({ api, origin }) => (await fetch(api + '/api/students/me', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName: 'X' }) })).status, { api: API, origin: APP });
   ok(r === 403, 'restricted session PATCH /me -> 403 server-side');
-  await page.fill('#currentPassword', 'college123');
+  ok(await page.locator('#currentPassword').count() === 0, 'reset form does not ask for the temporary password again');
   await page.fill('#newPassword', 'college123');
   await page.fill('#confirmPassword', 'college123');
   await page.click('button[type=submit]');

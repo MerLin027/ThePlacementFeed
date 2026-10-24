@@ -102,11 +102,11 @@ const mkStudent = async (n, profile) => {
   ok(r.status === 403, 'restricted: applications blocked');
   r = await call('GET', '/api/students/me', { cookie: bTemp });
   ok(r.status === 200, 'restricted: profile read allowed');
-  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { currentPassword: 'college123', newPassword: 'college123' } });
+  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { newPassword: 'college123' } });
   ok(r.status === 400, 'cannot keep the default');
-  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { currentPassword: 'college123', newPassword: 'brandnew456' } });
+  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { newPassword: 'brandnew456' } });
   const bNew = cookieOf(r, 'student_token');
-  ok(r.status === 200, 'change from default -> 200');
+  ok(r.status === 200, 'change from default without the temporary password -> 200');
   const bDoc = await Student.findById(b.id).lean();
   ok(!bDoc.mustChangePassword && !bDoc.tempPasswordExpiresAt, 'pending flags cleared');
   r = await call('GET', '/api/applications/my/summary', { cookie: bNew });

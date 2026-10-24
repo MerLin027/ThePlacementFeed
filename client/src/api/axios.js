@@ -49,8 +49,9 @@ export const setupAuthInterceptor = ({ onAdminExpired, onStudentExpired, navigat
         // it reads the expired flag from AuthContext so both land on the same URL.
         if (isStudentRequest(url)) {
           const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-          onStudentExpired();
-          navigate(`/login?expired=true&returnTo=${returnTo}`);
+          const reason = error.response?.data?.code === 'TEMP_PASSWORD_EXPIRED' ? 'temp' : true;
+          onStudentExpired(reason);
+          navigate(`/login?expired=${reason}&returnTo=${returnTo}`);
         } else {
           onAdminExpired();
           navigate('/admin/login?expired=true');

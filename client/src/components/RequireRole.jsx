@@ -31,7 +31,7 @@ const RequireRole = ({ role, allowPendingPasswordChange = false, children }) => 
 
   if (!student) {
     const returnTo = encodeURIComponent(location.pathname + location.search);
-    const expired = studentSessionExpired ? 'expired=true&' : '';
+    const expired = studentSessionExpired ? `expired=${studentSessionExpired}&` : '';
     return <Navigate to={`/login?${expired}returnTo=${returnTo}`} replace />;
   }
 

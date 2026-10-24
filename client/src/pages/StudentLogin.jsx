@@ -19,7 +19,7 @@ const StudentLogin = () => {
   const [searchParams] = useSearchParams();
   const rawReturnTo = searchParams.get('returnTo');
   const returnTo = safeReturnTo(rawReturnTo, '/');
-  const expired = searchParams.get('expired') === 'true';
+  const expired = searchParams.get('expired');
 
   // Already logged in (e.g. back button) — move on
   useEffect(() => {
@@ -73,7 +73,12 @@ const StudentLogin = () => {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
-        {expired && !error && (
+        {expired === 'temp' && !error && (
+          <FormAlert tone="warning" icon="lock_reset">
+            Your temporary password has expired. Ask the CDPC admin to reset your password again.
+          </FormAlert>
+        )}
+        {expired === 'true' && !error && (
           <FormAlert tone="warning" icon="schedule">
             Your session has expired. Please log in again.
           </FormAlert>

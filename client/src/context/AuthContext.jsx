@@ -12,8 +12,9 @@ export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminSessionExpired, setAdminSessionExpired] = useState(false);
   const [student, setStudent] = useState(null);
-  // True when a session ended because the server rejected it (not a logout),
-  // so route guards can tell the user why they're back on the login page
+  // Set when a session ended because the server rejected it (not a logout), so route guards can
+  // tell the user why they're back on the login page: true, or 'temp' when a reset password's
+  // 72-hour window ran out
   const [studentSessionExpired, setStudentSessionExpired] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -22,8 +23,8 @@ export const AuthProvider = ({ children }) => {
     setAdminSessionExpired(true);
     setIsAdmin(false);
   }, []);
-  const expireStudent = useCallback(() => {
-    setStudentSessionExpired(true);
+  const expireStudent = useCallback((reason = true) => {
+    setStudentSessionExpired(reason);
     setStudent(null);
   }, []);
 

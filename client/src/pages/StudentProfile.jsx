@@ -19,7 +19,6 @@ const EMPTY_FORM = {
   branch: '',
   cgpa: '',
   activeBacklogs: '0',
-  historyBacklogs: '0',
   graduationYear: '',
   phone: '',
   resumeUrl: '',
@@ -31,7 +30,6 @@ const toForm = (profile) => ({
   branch: profile.branch,
   cgpa: profile.cgpa ?? '',
   activeBacklogs: String(profile.activeBacklogs ?? 0),
-  historyBacklogs: String(profile.historyBacklogs ?? 0),
   graduationYear: profile.graduationYear ?? '',
   phone: profile.phone,
   resumeUrl: profile.resumeUrl,
@@ -44,7 +42,6 @@ const toPayload = (form) => ({
   branch: form.branch,
   cgpa: form.cgpa === '' ? null : Number(form.cgpa),
   activeBacklogs: form.activeBacklogs === '' ? 0 : Number(form.activeBacklogs),
-  historyBacklogs: form.historyBacklogs === '' ? 0 : Number(form.historyBacklogs),
   graduationYear: form.graduationYear === '' ? null : Number(form.graduationYear),
   phone: form.phone.trim(),
   resumeUrl: form.resumeUrl.trim(),
@@ -198,23 +195,20 @@ const StudentProfile = () => {
               value={form.cgpa} onChange={update('cgpa')} helper="On a 10-point scale."
               error={fieldErrors.cgpa} />
 
+            <FormField id="activeBacklogs" label="Active backlogs" type="number" inputMode="numeric" min={0} max={50}
+              value={form.activeBacklogs} onChange={update('activeBacklogs')}
+              helper="Subjects you haven't cleared yet. Enter 0 if none."
+              error={fieldErrors.activeBacklogs} />
+
             <FormField id="phone" label="Phone number" type="tel" value={form.phone} onChange={update('phone')}
               autoComplete="tel" maxLength={16} helper="10–15 digits, e.g. 9876543210 or +919876543210."
               error={fieldErrors.phone} />
 
-            <FormField id="activeBacklogs" label="Active backlogs" type="number" inputMode="numeric" min={0} max={50}
-              value={form.activeBacklogs} onChange={update('activeBacklogs')} error={fieldErrors.activeBacklogs} />
-
-            <FormField id="historyBacklogs" label="Backlog history" type="number" inputMode="numeric" min={0} max={50}
-              value={form.historyBacklogs} onChange={update('historyBacklogs')}
-              helper="Total backlogs you've ever had, including cleared ones."
-              error={fieldErrors.historyBacklogs} />
+            <FormField id="resumeUrl" label="Resume link" type="url" value={form.resumeUrl} onChange={update('resumeUrl')}
+              maxLength={500} placeholder="https://drive.google.com/..."
+              helper="A https:// link the CDPC can open, e.g. a Google Drive file shared as 'Anyone with the link'."
+              error={fieldErrors.resumeUrl} />
           </div>
-
-          <FormField id="resumeUrl" label="Resume link" type="url" value={form.resumeUrl} onChange={update('resumeUrl')}
-            maxLength={500} placeholder="https://drive.google.com/..."
-            helper="A https:// link the CDPC can open, e.g. a Google Drive file shared as 'Anyone with the link'."
-            error={fieldErrors.resumeUrl} />
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-xs pt-xs">
             {returnTo && (

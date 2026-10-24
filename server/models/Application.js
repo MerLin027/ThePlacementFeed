@@ -35,7 +35,6 @@ const applicationSchema = new mongoose.Schema(
       branch: String,
       cgpa: Number,
       activeBacklogs: Number,
-      historyBacklogs: Number,
       graduationYear: Number,
       phone: String,
     },

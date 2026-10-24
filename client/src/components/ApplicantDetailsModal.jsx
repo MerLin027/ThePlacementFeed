@@ -75,7 +75,6 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
             <Row label="Branch">{s.branch ? branchLabel(s.branch) : '—'}</Row>
             <Row label="CGPA">{s.cgpa ?? '—'}</Row>
             <Row label="Active backlogs">{s.activeBacklogs ?? '—'}</Row>
-            <Row label="Backlog history">{s.historyBacklogs ?? '—'}</Row>
             <Row label="Graduation year">{s.graduationYear ?? '—'}</Row>
             <Row label="Resume">
               {applicant.resumeUrl ? (

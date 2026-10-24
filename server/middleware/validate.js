@@ -298,7 +298,6 @@ const studentProfileRules = [
 
   optionalNumber('cgpa', { min: 0, max: 10 }, 'CGPA must be between 0 and 10'),
   optionalNumber('activeBacklogs', { min: 0, max: 50, int: true }, 'Active backlogs must be a whole number from 0 to 50'),
-  optionalNumber('historyBacklogs', { min: 0, max: 50, int: true }, 'Backlog history must be a whole number from 0 to 50'),
   optionalNumber('graduationYear', { min: 2020, max: 2040, int: true }, 'Graduation year must be between 2020 and 2040'),
 
   body('phone')
@@ -321,15 +320,19 @@ const studentProfileRules = [
     .withMessage('Resume link must be a valid https:// URL'),
 ];
 
+// A restricted (reset) session was opened with the temporary password, so it isn't asked for again
+const notResetSession = (value, { req }) => !req.student?.mustChangePassword;
+
 const changePasswordRules = [
   body('currentPassword')
+    .if(notResetSession)
     .isString()
     .withMessage('Current password is required')
     .isLength({ min: 1, max: PASSWORD_MAX_LENGTH })
     .withMessage('Current password is required'),
 
   passwordRule('newPassword')
-    .custom((value, { req }) => value !== req.body.currentPassword)
+    .custom((value, { req }) => !notResetSession(value, { req }) || value !== req.body.currentPassword)
     .withMessage('Your new password must be different from the current one'),
 ];
 
