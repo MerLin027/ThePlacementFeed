@@ -490,6 +490,13 @@ const applicantBulkRules = [
   body('status').isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
 ];
 
+const applicantBulkDeleteRules = [
+  body('applicationIds')
+    .isArray({ min: 1, max: 100 })
+    .withMessage('Select between 1 and 100 applicants'),
+  body('applicationIds.*').isMongoId().withMessage('Invalid applicant'),
+];
+
 // --- Admin: catalog (branches, institutes, university) ---
 
 const catalogName = (field, label, { optional = false } = {}) => {
@@ -563,6 +570,7 @@ module.exports = {
   applicantListRules,
   applicantUpdateRules,
   applicantBulkRules,
+  applicantBulkDeleteRules,
   branchCreateRules,
   catalogUpdateRules,
   instituteCreateRules,

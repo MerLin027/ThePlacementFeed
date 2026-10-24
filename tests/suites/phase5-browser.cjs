@@ -150,6 +150,21 @@ const TAG = `P5B${Date.now() % 100000}`;
   ok(!(await spage.getByText('Call for round 2').count()), 'admin note not shown to student');
   await sctx.close();
 
+  console.log('# Delete an application');
+  await until(async () => (await rowCount()) === 3);
+  await page.getByLabel('Select Chirag Modi').check();
+  const bulk = page.getByRole('region', { name: 'Bulk actions' });
+  await bulk.getByRole('button', { name: 'Delete' }).click();
+  const confirm = page.getByRole('alertdialog');
+  ok(await until(() => confirm.isVisible()) && await hasText(confirm, 'Delete application') && await hasText(confirm, 'apply again'), 'confirmation names what happens');
+  await confirm.getByRole('button', { name: 'Cancel' }).click();
+  ok(await until(async () => !(await confirm.count())) && (await Application.countDocuments({ driveId: drive._id })) === 3, 'cancel keeps the record');
+  await bulk.getByRole('button', { name: 'Delete' }).click();
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  ok(await hasText(page, '1 application deleted'), 'delete toast');
+  ok(await until(async () => (await rowCount()) === 2) && !(await page.locator('tbody').getByText('Chirag Modi').count()), 'row removed from the list');
+  ok((await Application.countDocuments({ driveId: drive._id, 'snapshot.firstName': 'Chirag' })) === 0, 'DB: record deleted');
+
   console.log('# Mobile + access');
   await page.setViewportSize({ width: 375, height: 800 });
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // re-layout done

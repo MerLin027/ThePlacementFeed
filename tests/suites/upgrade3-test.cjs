@@ -56,6 +56,7 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
     ['PATCH', `/api/placements/${drive._id}/postpone`, admin],
     ['PATCH', `/api/placements/${drive._id}/reset-status-automation`, admin],
     ['PATCH', `/api/placements/${drive._id}/applicants/bulk-status`, admin],
+    ['POST', `/api/placements/${drive._id}/applicants/bulk-delete`, admin],
     ['PATCH', `/api/placements/${drive._id}/applicants/${appId}`, admin],
   ];
   for (const [m, u, c] of noBody) {

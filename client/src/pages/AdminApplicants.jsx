@@ -9,6 +9,7 @@ import StatusStrip from '../components/charts/StatusStrip';
 const DriveInsights = lazy(() => import('../components/charts/DriveInsights'));
 import ApplicantTable from '../components/ApplicantTable';
 import ApplicantDetailsModal from '../components/ApplicantDetailsModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { APPLICATION_STATUSES, APPLICANT_SORTS, STATUS_META, statusLabel } from '../constants/applications';
@@ -59,6 +60,8 @@ const AdminApplicants = () => {
   const [busyIds, setBusyIds] = useState(() => new Set());
   const [bulkStatus, setBulkStatus] = useState('Shortlisted');
   const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [viewing, setViewing] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -163,6 +166,21 @@ const AdminApplicants = () => {
       toast.error(parseApiError(err, 'Could not update applicants.').message || 'Could not update applicants.');
     } finally {
       setIsBulkSaving(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await api.post(`/api/placements/${driveId}/applicants/bulk-delete`, { applicationIds: [...selected] });
+      toast.success(`${res.data.deleted} application${res.data.deleted === 1 ? '' : 's'} deleted`);
+      // Emptied the last page: step back one so the list isn't left blank
+      if (page > 1 && selected.size >= applicants.length) setPage(page - 1);
+      else reload();
+    } catch (err) {
+      toast.error(parseApiError(err, 'Could not delete applications.').message || 'Could not delete applications.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -349,6 +367,16 @@ const AdminApplicants = () => {
           >
             {isBulkSaving ? 'Updating…' : 'Apply'}
           </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            disabled={isDeleting}
+            aria-busy={isDeleting}
+            className="btn-secondary min-h-[44px] gap-1.5 text-error! hover:text-error! hover:bg-error-container/40! hover:border-error/40!"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+            {isDeleting ? 'Deleting…' : 'Delete'}
+          </button>
           <button type="button" onClick={() => setSelected(new Set())} className="btn-secondary min-h-[44px]">
             Clear
           </button>
@@ -367,6 +395,14 @@ const AdminApplicants = () => {
       />
 
       <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleBulkDelete}
+        title={selected.size === 1 ? 'Delete application' : `Delete ${selected.size} applications`}
+        message={`${selected.size === 1 ? 'This application' : `These ${selected.size} applications`} to ${drive?.company || 'this drive'} will be removed for good, with ${selected.size === 1 ? 'its' : 'their'} status, your notes and the student's answers. The student can apply again while the drive is open. This action cannot be undone.`}
+      />
 
       <ApplicantDetailsModal
         applicant={viewing}

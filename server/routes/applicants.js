@@ -10,6 +10,7 @@ const {
   applicantListRules,
   applicantUpdateRules,
   applicantBulkRules,
+  applicantBulkDeleteRules,
   mongoIdParam,
   validate,
 } = require('../middleware/validate');
@@ -323,6 +324,19 @@ router.patch('/bulk-status', updateLimiter, csrfCheck, applicantBulkRules, valid
       count: result.modifiedCount,
     });
     res.json({ success: true, matched: result.matchedCount, updated: result.modifiedCount });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/placements/:driveId/applicants/bulk-delete — removes applications for good (status, note,
+// answers). Scoped to this drive like bulk-status; the student may apply again while the drive is open.
+router.post('/bulk-delete', updateLimiter, csrfCheck, applicantBulkDeleteRules, validate, async (req, res, next) => {
+  try {
+    const ids = [...new Set(req.body.applicationIds)];
+    const { deletedCount } = await Application.deleteMany({ _id: { $in: ids }, driveId: req.params.driveId });
+    logAdminAction(req, 'applicants.delete', { driveId: req.params.driveId, count: deletedCount });
+    res.json({ success: true, deleted: deletedCount });
   } catch (error) {
     next(error);
   }

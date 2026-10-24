@@ -168,9 +168,24 @@ const TAG = `p5${Date.now() % 1000000}`;
   for (let i = 0; i < 4; i++) last = await call('GET', `${base}/export`, { cookie: admin, raw: true });
   ok(last.status === 429, 'export rate limit (5 / 15 min) -> 429');
 
+  console.log('# Bulk delete');
+  r = await call('POST', `${base}/bulk-delete`, { cookie: students.a.cookie, body: { applicationIds: [students.a.appId] } });
+  ok(r.status === 401, 'student cannot delete applications');
+  for (const [ids, label] of [[[], 'empty selection'], [['nope'], 'invalid id'], [Array(101).fill(students.c.appId), '> 100 ids'], [[{ $ne: null }], 'operator object in ids']]) {
+    r = await call('POST', `${base}/bulk-delete`, { cookie: admin, body: { applicationIds: ids } });
+    ok(r.status === 400, `delete: ${label} -> 400`);
+  }
+  r = await call('POST', `${base}/bulk-delete`, { cookie: admin, body: { applicationIds: [students.c.appId, d2AppId] } });
+  ok(r.status === 200 && r.json.deleted === 1, 'delete only touches this drive (1 of 2 ids)', r.text);
+  ok(!(await Application.findById(students.c.appId).lean()) && Boolean(await Application.findById(d2AppId).lean()), 'record on this drive gone, cross-drive id kept');
+  r = await call('GET', base, { cookie: admin });
+  ok(r.json.pagination.total === 3, 'list shows 3 applicants after the delete');
+  r = await call('POST', '/api/applications', { cookie: students.c.cookie, body: { driveId: d1._id, consentGiven: true, customAnswers: [{ promptId, answer: 'Anand' }] } });
+  ok(r.status === 201, 'the student can apply again after their record is deleted', r.text.slice(0, 160));
+
   console.log('# Audit log');
   const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[AdminAction]'));
-  ok(log.some((l) => l.includes('applicants.export')) && log.some((l) => l.includes('applicants.bulkStatus')), 'export + bulk actions logged');
+  ok(log.some((l) => l.includes('applicants.export')) && log.some((l) => l.includes('applicants.bulkStatus')) && log.some((l) => l.includes('applicants.delete')), 'export + bulk actions + deletes logged');
   ok(!log.some((l) => /@example\.com|9000000001|Hometown/.test(l)), 'audit log free of PII');
 
   // cleanup
