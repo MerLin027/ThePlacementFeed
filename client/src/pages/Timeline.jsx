@@ -105,7 +105,9 @@ const Timeline = () => {
         />
       ) : (
         <div className="relative max-w-4xl mx-auto">
-          <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-px bg-outline-variant" aria-hidden="true" />
+          {/* The rail, centred on the month badges' centre line. Markers below use the same spacing units
+              (not px), so they stay on it whatever the root font size. */}
+          <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-px -translate-x-1/2 bg-outline-variant" aria-hidden="true" />
 
           {groups.map((g) => {
             const isPastMonth = g.key < thisMonth;
@@ -136,7 +138,7 @@ const Timeline = () => {
                       <Fragment key={p._id}>
                         {p._id === firstPastId && (
                           <li className="flex items-center gap-xs -ml-8 sm:-ml-10" aria-label="Today">
-                            <span className="w-3 h-3 rounded-full bg-primary-container ring-4 ring-primary/15 ml-[-6px] z-10" aria-hidden="true" />
+                            <span className="w-3 h-3 rounded-full bg-primary-container ring-4 ring-primary/15 -ml-1.5 z-10" aria-hidden="true" />
                             <span className="font-label-md text-label-md text-primary">
                               Today · {formatDay(new Date(today), { day: 'numeric', month: 'short' })}
                             </span>
@@ -144,9 +146,9 @@ const Timeline = () => {
                           </li>
                         )}
                         <li className="group/item relative motion-safe:rise-in-stagger" style={{ '--i': i }}>
-                          {/* Marker on the rail; grows when its card is hovered */}
+                          {/* Marker on the rail (back by the list's padding, then half its width); grows when its card is hovered */}
                           <span
-                            className={`absolute top-1/2 -mt-1 -left-[36px] sm:-left-[44px] w-2 h-2 rounded-full ring-4 ring-background transition-transform duration-200 ease-snappy group-hover/item:[transform:scale(1.5)] ${
+                            className={`absolute top-1/2 -mt-1 -left-8 sm:-left-10 -ml-1 w-2 h-2 rounded-full ring-4 ring-background transition-transform duration-200 ease-snappy group-hover/item:[transform:scale(1.5)] ${
                               past ? 'bg-outline' : TYPE_META[p.type]?.bar || 'bg-primary-container'
                             }`}
                             aria-hidden="true"
