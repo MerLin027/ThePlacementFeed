@@ -7,7 +7,7 @@ import { deadlineInfo, DEADLINE_TONE_CLASS } from '../utils/deadline';
 import { DetailApplyPanel } from '../components/ApplyButton';
 import ApplyModal from '../components/ApplyModal';
 import { useApplyState } from '../hooks/useApplyState';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import { formatBranches } from '../constants/branches';
 import { describeAcademicRequirement } from '../utils/eligibility';
 import { DetailSkeleton, Skeleton } from '../components/Skeleton';

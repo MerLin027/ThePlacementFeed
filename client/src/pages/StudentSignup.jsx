@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';

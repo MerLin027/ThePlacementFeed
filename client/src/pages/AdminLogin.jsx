@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import Spinner from '../components/Spinner';
 import FormField from '../components/FormField';
 import { usePageTitle } from '../hooks/usePageTitle';

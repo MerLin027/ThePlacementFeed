@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -10,8 +10,9 @@ const FOCUSABLE =
  * returns to whatever opened the dialog.
  */
 export const useDialogFocus = (isOpen, containerRef, onClose, initialFocusRef) => {
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  // Always calls the latest onClose without re-running the effect (and re-moving focus) when the
+  // parent passes a new function on every render
+  const close = useEffectEvent(() => onClose?.());
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -24,7 +25,7 @@ export const useDialogFocus = (isOpen, containerRef, onClose, initialFocusRef) =
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onCloseRef.current?.();
+        close();
         return;
       }
       if (e.key !== 'Tab' || !container) return;

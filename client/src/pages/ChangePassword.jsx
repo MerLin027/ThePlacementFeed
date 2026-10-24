@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';

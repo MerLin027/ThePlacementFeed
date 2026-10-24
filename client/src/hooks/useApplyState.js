@@ -1,5 +1,5 @@
-import { useAuth } from '../context/AuthContext';
-import { useMyApplications } from '../context/MyApplicationsContext';
+import { useAuth } from '../context/auth';
+import { useMyApplications } from '../context/myApplications';
 import { getApplyState } from '../utils/applyState';
 
 // Apply-control state for one drive, from the current student and their applications

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useId } from 'react';
 import { Link } from 'react-router';
-import { useNotifications } from '../../context/NotificationContext';
+import { useNotifications } from '../../context/notifications';
 import { describeNotification, timeAgo } from '../../utils/notificationText';
 
 const TONE_ICON = {

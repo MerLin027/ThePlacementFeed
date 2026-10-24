@@ -1,14 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import { useAuth } from './AuthContext';
-import { useMyApplications } from './MyApplicationsContext';
+import { useAuth } from './auth';
+import { useMyApplications } from './myApplications';
+import { NotificationContext } from './notifications';
 import { readJSON, writeJSON, removeKeys } from '../utils/storage';
 import { describeNotification } from '../utils/notificationText';
-
-const NotificationContext = createContext(null);
-
-export const useNotifications = () => useContext(NotificationContext);
 
 const POLL_MS = 30 * 1000;
 const MAX_NOTIFICATIONS = 30;

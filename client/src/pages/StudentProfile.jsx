@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';

@@ -1,19 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axios';
-import { useAuth } from './AuthContext';
-
-const MyApplicationsContext = createContext(null);
+import { useAuth } from './auth';
+import { MyApplicationsContext } from './myApplications';
 
 // How often a logged-in student's application statuses are refreshed
 const REFRESH_MS = 60 * 1000;
-
-export const useMyApplications = () => {
-  const context = useContext(MyApplicationsContext);
-  if (!context) {
-    throw new Error('useMyApplications must be used within a MyApplicationsProvider');
-  }
-  return context;
-};
 
 /**
  * Keeps the logged-in student's applications ({ driveId, status, company, role,

@@ -1,12 +1,15 @@
 import charusatLogo from '../../assets/charusat-logo.png';
 import cdpcLogo from '../../assets/cdpc-logo.png';
 
+// Computed once per page load, not on every render (React components must render purely)
+const YEAR = new Date().getFullYear();
+
 const Footer = () => {
   return (
     <footer className="bg-surface-container-low border-t border-outline-variant shrink-0">
       <div className="flex flex-col md:flex-row justify-between items-center w-full px-sm md:px-lg py-sm max-w-container-max mx-auto gap-sm">
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          © {new Date().getFullYear()} <span className="text-brand-navy">The </span><span className="text-brand-blue">Placement</span><span className="text-brand-navy"> Feed</span>. All rights reserved.
+          © {YEAR} <span className="text-brand-navy">The </span><span className="text-brand-blue">Placement</span><span className="text-brand-navy"> Feed</span>. All rights reserved.
         </p>
         {/* Both logos share the same height so they sit as visual peers.
             max-w caps prevent CHARUSAT's extreme aspect ratio from dominating. */}
