@@ -95,7 +95,7 @@ credentials later, run `node server/scripts/resetAdmin.js`.
 
 ## Tests
 
-The `tests/` folder holds 786 automated checks in 26 suites. They cover the API, the website in a
+The `tests/` folder holds 791 automated checks in 27 suites. They cover the API, the website in a
 real browser (Playwright) and accessibility (axe-core) at desktop and phone sizes. They only run
 against a local, throwaway MongoDB on port 27099 and refuse any other database, so your real data
 is never touched.
