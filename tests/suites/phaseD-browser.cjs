@@ -1,6 +1,7 @@
 // Phase D verification — UI foundation: a11y scan, focus, titles, targets, motion, loading states.
 const TEST = require('../lib/env.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
+const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -64,27 +65,25 @@ const smallTargets = (page) => page.evaluate(() => {
 
   console.log('# Skip link + focus management');
   await page.goto(APP + '/');
-  await wait(1500);
+  await settled(page);
   await page.keyboard.press('Tab');
   ok((await page.evaluate(() => document.activeElement?.textContent?.trim())) === 'Skip to main content', 'first Tab reaches the skip link');
   ok(await page.getByText('Skip to main content').isVisible(), 'skip link becomes visible when focused');
   await page.keyboard.press('Enter');
-  await wait(200);
-  ok(await page.evaluate(() => document.activeElement?.id === 'main-content'), 'skip link moves focus to main');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'main-content')), 'skip link moves focus to main');
   await page.evaluate(() => { document.getElementById('main-content').scrollTop = 400; });
   await page.locator('a', { hasText: `${TAG} Corp` }).first().click();
   await page.waitForURL(/\/placement\//);
-  await wait(800);
-  ok(await page.evaluate(() => document.getElementById('main-content').scrollTop === 0), 'new page starts at the top');
-  ok(await page.evaluate(() => document.activeElement?.id === 'main-content'), 'focus moves to main on navigation');
+  ok(await until(() => page.evaluate(() => document.getElementById('main-content').scrollTop === 0)), 'new page starts at the top');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'main-content')), 'focus moves to main on navigation');
+  await until(async () => (await page.title()).startsWith(TAG));
   ok((await page.title()) === `${TAG} Corp — Engineer · The Placement Feed`, `drive page title (${await page.title()})`);
   await page.goto(APP + '/login');
-  await wait(800);
-  ok(await page.evaluate(() => document.activeElement?.id === 'email'), 'autofocused field keeps focus (not stolen by main)');
+  await settled(page);
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'email')), 'autofocused field keeps focus (not stolen by main)');
   for (const [route, title] of [['/', 'Drives'], ['/timeline', 'Timeline'], ['/signup', 'Sign up'], ['/admin/login', 'Admin login'], ['/nope', 'Page not found']]) {
     await page.goto(APP + route);
-    await wait(600);
-    ok((await page.title()) === `${title} · The Placement Feed`, `title for ${route}`);
+    ok(await until(async () => (await page.title()) === `${title} · The Placement Feed`), `title for ${route}`);
   }
 
   console.log('# Forms');
@@ -97,27 +96,23 @@ const smallTargets = (page) => page.evaluate(() => {
   ok((await page.getAttribute('#password', 'type')) === 'password', 'and hidden again');
   await page.fill('#password', '');
   await page.click('button[type=submit]');
-  await wait(300);
-  ok(await page.evaluate(() => document.activeElement?.id === 'email'), 'failed submit focuses the first invalid field');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'email')), 'failed submit focuses the first invalid field');
   await page.fill('#email', 'a@b.co');
   await page.fill('#rollNumber', 'ABCD1234');
   await page.click('button[type=submit]');
-  await wait(300);
-  ok(await page.evaluate(() => document.activeElement?.id === 'password'), '...and the next one after fixing it');
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'password')), '...and the next one after fixing it');
 
   console.log('# Loading states (slow network)');
   await page.route('**/api/placements?*', async (route) => { await wait(4500); await route.continue().catch(() => {}); });
   await page.goto(APP + '/');
-  await wait(1000);
-  ok((await page.locator('.skeleton').count()) > 10, 'card skeletons while loading');
-  await wait(3000);
-  ok(await page.getByText('Waking up the server').isVisible(), 'cold-start explanation after 3 s');
+  ok(await until(async () => (await page.locator('.skeleton').count()) > 10, { timeout: 3000 }), 'card skeletons while loading');
+  // The explanation is designed to appear 3 s into a slow load (this request is held for 4.5 s)
+  ok(await until(() => page.getByText('Waking up the server').isVisible(), { timeout: 4400 }), 'cold-start explanation after 3 s');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   await page.route(`**/api/placements/${drive._id}`, async (route) => { await wait(2500); await route.continue().catch(() => {}); });
   await page.goto(`${APP}/placement/${drive._id}`);
-  await wait(800);
-  ok(await page.getByRole('status', { name: 'Loading drive details' }).isVisible(), 'detail skeleton while loading');
-  await wait(2500);
+  ok(await until(() => page.getByRole('status', { name: 'Loading drive details' }).isVisible(), { timeout: 2400 }), 'detail skeleton while loading');
+  await until(async () => !(await page.getByRole('status', { name: 'Loading drive details' }).isVisible()), { timeout: 8000 });
   await page.unrouteAll({ behavior: 'ignoreErrors' });
 
   console.log('# Reduced motion');
@@ -147,7 +142,7 @@ const smallTargets = (page) => page.evaluate(() => {
   ];
   for (const [label, route] of pages) {
     await page.goto(APP + route);
-    await wait(1500);
+    await settled(page);
     const small = await smallTargets(page);
     ok(small.length === 0, `targets >= 44px on ${label}`, small.join(', '));
     await axeScan(page, label);
@@ -156,7 +151,7 @@ const smallTargets = (page) => page.evaluate(() => {
   await studentPages(page);
   for (const [label, route] of [['home (student)', '/'], ['profile', '/profile'], ['my applications', '/applications'], ['change password', '/change-password'], ['drive detail (applied)', `/placement/${drive._id}`]]) {
     await page.goto(APP + route);
-    await wait(1500);
+    await settled(page);
     const small = await smallTargets(page);
     ok(small.length === 0, `targets >= 44px on ${label}`, small.join(', '));
     await axeScan(page, label);
@@ -169,7 +164,7 @@ const smallTargets = (page) => page.evaluate(() => {
   await page.waitForURL(/dashboard/);
   for (const [label, route] of [['admin dashboard', '/admin/dashboard'], ['admin students', '/admin/students'], ['admin applicants', `/admin/drives/${drive._id}/applicants`]]) {
     await page.goto(APP + route);
-    await wait(1500);
+    await settled(page);
     await axeScan(page, label);
   }
 
