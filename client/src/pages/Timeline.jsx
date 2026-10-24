@@ -2,6 +2,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import { TYPE_META } from '../constants/applications';
 import ColdStartLoader from '../components/ColdStartLoader';
 import EmptyState, { LoadError } from '../components/EmptyState';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
@@ -146,7 +147,7 @@ const Timeline = () => {
                           {/* Marker on the rail; grows when its card is hovered */}
                           <span
                             className={`absolute top-1/2 -mt-1 -left-[36px] sm:-left-[44px] w-2 h-2 rounded-full ring-4 ring-background transition-transform duration-200 ease-snappy group-hover/item:[transform:scale(1.5)] ${
-                              past ? 'bg-outline' : 'bg-primary-container'
+                              past ? 'bg-outline' : TYPE_META[p.type]?.bar || 'bg-primary-container'
                             }`}
                             aria-hidden="true"
                           />
@@ -162,7 +163,14 @@ const Timeline = () => {
                                   <h3 className="font-headline-sm text-headline-sm text-on-surface">{p.company}</h3>
                                   <StatusBadge status={p.status} isPostponed={p.isPostponed} />
                                 </div>
-                                <p className="font-body-sm text-body-sm text-on-surface-variant">{p.role}</p>
+                                <p className="flex flex-wrap items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+                                  {p.role}
+                                  {TYPE_META[p.type] && (
+                                    <span className={`inline-flex items-center px-2 py-[1px] rounded-full font-label-sm text-label-sm ${TYPE_META[p.type].pill}`}>
+                                      {TYPE_META[p.type].short}
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                               <div className="text-right shrink-0">
                                 <p className="font-label-md text-label-md text-on-surface tabular-nums">₹{p.ctc} LPA</p>

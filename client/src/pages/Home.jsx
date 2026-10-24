@@ -8,6 +8,8 @@ import EmptyState, { LoadError } from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { m } from 'motion/react';
+import { EASE_OUT_SOFT } from '../utils/motion';
 
 const DEFAULT_SORT = 'closing_soon';
 
@@ -41,10 +43,13 @@ const baseParams = (filters) => {
 };
 
 // Cards rise in with a short stagger; `from` keeps a "show more" batch from waiting on earlier cards
+// Cards that stay across a filter or sort change glide to their new place (Motion layout)
 const DriveGrid = ({ drives, from = 0 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
     {drives.map((p, i) => (
-      <PlacementCard key={p._id} placement={p} index={Math.max(0, i - from)} />
+      <m.div key={p._id} layout="position" transition={{ duration: 0.3, ease: EASE_OUT_SOFT }} className="h-full">
+        <PlacementCard placement={p} index={Math.max(0, i - from)} />
+      </m.div>
     ))}
   </div>
 );

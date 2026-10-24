@@ -14,8 +14,8 @@ const BASE_R = 1.15;
 const SETTLE = 0.02;
 
 const INTENSITY = {
-  hero: { radius: 150, push: 16, grow: 1.1, alpha: 0.2 },
-  content: { radius: 110, push: 10, grow: 0.7, alpha: 0.13 },
+  hero: { radius: 150, push: 16, grow: 1.1, alpha: 0.3 },
+  content: { radius: 110, push: 10, grow: 0.7, alpha: 0.22 },
 };
 
 export const createDotField = (canvas, { intensity = 'content', onFrame } = {}) => {

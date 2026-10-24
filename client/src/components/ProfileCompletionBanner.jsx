@@ -11,7 +11,7 @@ const ProfileCompletionBanner = ({ missingFields = [], linkTo }) => {
   return (
     <div
       role="status"
-      className="p-sm bg-amber-50 border border-amber-200 rounded-xl font-body-sm text-body-sm text-amber-900 flex items-start gap-xs"
+      className="relative border-beam p-sm bg-amber-50 border border-amber-200 rounded-xl font-body-sm text-body-sm text-amber-900 flex items-start gap-xs"
     >
       <span className="material-symbols-outlined text-[20px] shrink-0 text-amber-700" aria-hidden="true">
         assignment_late

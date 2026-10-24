@@ -326,32 +326,30 @@
    whole layer fades towards the bottom so it never competes with content further down a page. */
 @layer components {
   .backdrop {
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgb(0 0 0 / 0.35) 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgb(0 0 0 / 0.35) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, rgb(0 0 0 / 0.55) 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 55%, rgb(0 0 0 / 0.55) 100%);
   }
 
   .backdrop-dots {
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle at 1px 1px, rgb(0 74 198 / 0.2) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, rgb(0 74 198 / 0.3) 1px, transparent 0);
     background-size: 22px 22px;
     transition: opacity 300ms ease-out;
   }
-  [data-intensity='content'] .backdrop-dots { opacity: 0.65; }
-  [data-intensity='static'] .backdrop-dots { opacity: 0.45; }
+  [data-intensity='content'] .backdrop-dots { opacity: 0.75; }
+  [data-intensity='static'] .backdrop-dots { opacity: 0.55; }
   [data-backdrop='live'] .backdrop-dots { opacity: 0; }
 
+  /* One soft, centred, still wash at the top (two drifting glows read as uneven blotches) */
   .backdrop-glow {
     position: absolute;
-    inset: -20% -10% auto;
-    height: 75vh;
-    background:
-      radial-gradient(32% 55% at 36% 22%, rgb(0 90 253 / 0.1), transparent 70%),
-      radial-gradient(28% 50% at 66% 34%, rgb(56 189 248 / 0.12), transparent 70%);
-    animation: wash-glow 16s ease-in-out infinite alternate;
+    inset: 0 0 auto;
+    height: 60vh;
+    background: radial-gradient(55% 70% at 50% 0%, rgb(0 90 253 / 0.07), transparent 75%);
   }
   [data-intensity='content'] .backdrop-glow { opacity: 0.6; }
-  [data-intensity='static'] .backdrop-glow { opacity: 0.35; animation: none; }
+  [data-intensity='static'] .backdrop-glow { opacity: 0.4; }
 }
 
 /* Faint dot grid behind page headers; fades out on every side so it never competes with content */
@@ -408,6 +406,40 @@
   }
   100% {
     transform: translate3d(5%, -2%, 0) scale(0.96);
+  }
+}
+
+/* A short light travelling around the border, for things that need attention (a drive closing today or
+   tomorrow, an incomplete profile). The element needs position: relative and a border radius. The angle
+   is a registered property so it can animate (Chrome 85+ / Safari 16.4+); without that the light just
+   rests at the top. Reduced motion stops it via the global rule. */
+@property --beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@utility border-beam {
+  &::before {
+    --beam-angle: 0deg;
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: 1;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(from var(--beam-angle), transparent 0deg 250deg, rgb(37 99 235 / 0.85) 310deg, rgb(14 165 233) 340deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: beam-spin 3.6s linear infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
   }
 }
 

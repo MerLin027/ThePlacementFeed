@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router';
 import api from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 import CompanyMonogram from '../components/CompanyMonogram';
+import { TYPE_META } from '../constants/applications';
 import { deadlineInfo, DEADLINE_TONE_CLASS } from '../utils/deadline';
 import { DetailApplyPanel } from '../components/ApplyButton';
 import ApplyModal from '../components/ApplyModal';
@@ -132,11 +133,7 @@ const PlacementDetail = () => {
 
   const closing = placement.status === 'Upcoming' && !placement.isPostponed ? deadlineInfo(placement.deadline) : null;
 
-  const typeConfig = {
-    'Full-Time': 'bg-primary-container/10 text-primary',
-    'Internship': 'bg-surface-container-high text-on-surface-variant border border-surface-variant',
-    '6M Intern + FTE': 'bg-tertiary-container/10 text-tertiary',
-  };
+  const typeMeta = TYPE_META[placement.type];
 
   return (
     // py-sm (16px top+bottom) — tighter than py-lg/py-md; gives the layout room to breathe without wasting vertical space
@@ -160,7 +157,7 @@ const PlacementDetail = () => {
         <div className="contents md:flex md:flex-col md:col-span-4 md:gap-sm">
 
           {/* 1. Company Info Card */}
-          <div className="order-1 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm flex flex-col motion-safe:rise-in-stagger" style={{ '--i': 0 }}>
+          <div className="relative order-1 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm flex flex-col motion-safe:rise-in-stagger" style={{ '--i': 0 }}>
             <div className="mb-xs">
               <CompanyMonogram name={placement.company} size="sm" />
             </div>
@@ -172,7 +169,7 @@ const PlacementDetail = () => {
             </div>
             <div className="flex flex-wrap gap-xs">
               {placement.type && (
-                <span className={`font-label-md text-label-md px-2.5 py-0.5 rounded-full ${typeConfig[placement.type] || typeConfig['Full-Time']}`}>
+                <span className={`font-label-md text-label-md px-2.5 py-0.5 rounded-full ${typeMeta?.pill || TYPE_META['Full-Time'].pill}`}>
                   {placement.type}
                 </span>
               )}
