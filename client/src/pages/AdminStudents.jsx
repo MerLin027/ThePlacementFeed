@@ -6,11 +6,38 @@ import TwoStepConfirmDialog from '../components/TwoStepConfirmDialog';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { useCatalog } from '../stores/catalog';
+import AdminFilterPanel from '../components/AdminFilterPanel';
+import { STUDENT_SORTS } from '../constants/applications';
+import { useUrlFilters } from '../hooks/useUrlFilters';
+import { addNumber, addList, addOne, gradYearOptions } from '../utils/filterParams';
 import { parseApiError } from '../utils/formErrors';
 import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const PAGE_SIZE = 25;
+const NONE = '__none'; // "not set" option for branch / institute
+
+const FILTER_DEFAULTS = {
+  search: '', branch: '', institute: '', gradYear: [], profile: '', cgpaMin: '', cgpaMax: '', backlogsMax: '',
+  account: '', applications: '', sort: 'newest',
+};
+const SORT_VALUES = STUDENT_SORTS.map((s) => s.value);
+
+// Query params for the list; empty / invalid values are left out
+const toParams = (filters, search) => {
+  const params = { sort: SORT_VALUES.includes(filters.sort) ? filters.sort : 'newest' };
+  if (search) params.search = search;
+  addOne(params, 'branch', filters.branch);
+  addOne(params, 'institute', filters.institute);
+  addList(params, 'gradYear', filters.gradYear.filter((y) => /^\d{4}$/.test(y)));
+  addOne(params, 'profile', filters.profile, ['complete', 'incomplete', 'no_institute']);
+  addNumber(params, 'cgpaMin', filters.cgpaMin, { min: 0, max: 10 });
+  addNumber(params, 'cgpaMax', filters.cgpaMax, { min: 0, max: 10 });
+  addNumber(params, 'backlogsMax', filters.backlogsMax, { min: 0, max: 50, int: true });
+  addOne(params, 'account', filters.account, ['reset_pending']);
+  addOne(params, 'applications', filters.applications, ['applied', 'never', 'selected']);
+  return params;
+};
 
 const formatDate = (dateStr) =>
   new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -38,39 +65,39 @@ const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
 );
 
 const AdminStudents = () => {
-  const { branches, branchLabel } = useCatalog();
+  const { branches, branchLabel, institutes } = useCatalog();
   usePageTitle('Students');
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [branch, setBranch] = useState('');
+  const [filters, setFilter, resetFilters] = useUrlFilters(FILTER_DEFAULTS);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search.trim());
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null); // { type: 'reset' | 'resetInstitute' | 'delete', student, applications? }
   const [reloadKey, setReloadKey] = useState(0);
   // Each finished request records the key of the parameters it answered; until the latest one
   // matches the current parameters the list is loading (derived instead of reset in the effect)
-  const requestKey = JSON.stringify([page, debouncedSearch, branch, reloadKey]);
+  const paramsKey = JSON.stringify(toParams(filters, debouncedSearch));
+  // Any filter change goes back to page 1 (adjusted during render, as on the Applicants page)
+  const [pageFilters, setPageFilters] = useState(paramsKey);
+  if (pageFilters !== paramsKey) {
+    setPageFilters(paramsKey);
+    setPage(1);
+  }
+  const requestKey = JSON.stringify([page, paramsKey, reloadKey]);
   const [settled, setSettled] = useState({ key: null, error: '' });
   const loading = settled.key !== requestKey;
   const error = loading ? '' : settled.error;
 
-  // Debounce search; any filter change goes back to page 1
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
-    }, 300);
+    const t = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [filters.search]);
 
   useEffect(() => {
     const controller = new AbortController();
-    const key = JSON.stringify([page, debouncedSearch, branch, reloadKey]);
-    const params = { page, limit: PAGE_SIZE };
-    if (debouncedSearch) params.search = debouncedSearch;
-    if (branch) params.branch = branch;
+    const key = JSON.stringify([page, paramsKey, reloadKey]);
+    const params = { ...JSON.parse(paramsKey), page, limit: PAGE_SIZE };
 
     api
       .get('/api/admin/students', { params, signal: controller.signal })
@@ -84,7 +111,7 @@ const AdminStudents = () => {
         setSettled({ key, error: parseApiError(err, 'Could not load students.').message });
       });
     return () => controller.abort();
-  }, [page, debouncedSearch, branch, reloadKey]);
+  }, [page, paramsKey, reloadKey]);
 
   const closeConfirm = useCallback(() => setConfirm(null), []);
 
@@ -207,35 +234,39 @@ const AdminStudents = () => {
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-sm mb-md">
-        <div className="group/s relative w-full sm:max-w-(--container-md)">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px] group-focus-within/s:text-primary transition-colors duration-200" aria-hidden="true">search</span>
-          <input
-            type="search"
-            placeholder="Search by name, email or roll number"
-            aria-label="Search students"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            maxLength={100}
-            className="input-field rounded-full! pl-11! hover:shadow-soft"
-          />
-        </div>
-        <select
-          aria-label="Filter by branch"
-          value={branch}
-          onChange={(e) => {
-            setBranch(e.target.value);
-            setPage(1);
-          }}
-          className="select-field sm:max-w-(--container-xs)"
-        >
-          <option value="">All branches</option>
-          {branches.map((b) => (
-            <option key={b.code} value={b.code}>{b.name}{b.active ? '' : ' (archived)'}</option>
-          ))}
-        </select>
-      </div>
+      <AdminFilterPanel
+        searchLabel="Search students"
+        searchPlaceholder="Name, email or roll number"
+        values={filters}
+        defaults={FILTER_DEFAULTS}
+        onChange={setFilter}
+        onReset={resetFilters}
+        sortOptions={STUDENT_SORTS}
+        resultText={loading ? '' : `Showing ${students.length} of ${pagination.total} student${pagination.total === 1 ? '' : 's'}`}
+        fields={[
+          {
+            key: 'branch', label: 'Branch', type: 'select',
+            options: [{ value: '', label: 'All branches' }, { value: NONE, label: 'Not set' }, ...branches.map((b) => ({ value: b.code, label: `${b.name}${b.active ? '' : ' (archived)'}` }))],
+          },
+          {
+            key: 'institute', label: 'Institute', type: 'select',
+            options: [{ value: '', label: 'All institutes' }, { value: NONE, label: 'Not chosen yet' }, ...institutes.map((i) => ({ value: i.id, label: i.name }))],
+          },
+          {
+            key: 'profile', label: 'Profile', type: 'select',
+            options: [{ value: '', label: 'Any' }, { value: 'complete', label: 'Complete' }, { value: 'incomplete', label: 'Incomplete' }, { value: 'no_institute', label: 'No institute chosen' }],
+          },
+          {
+            key: 'applications', label: 'Applications', type: 'select',
+            options: [{ value: '', label: 'Any' }, { value: 'applied', label: 'Has applied' }, { value: 'never', label: 'Never applied' }, { value: 'selected', label: 'Selected somewhere' }],
+          },
+          { key: 'cgpaMin', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
+          { key: 'cgpaMax', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
+          { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
+          { key: 'account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'reset_pending', label: 'Password reset pending' }] },
+          { key: 'gradYear', label: 'Graduation year', type: 'multi', options: gradYearOptions().map((y) => ({ value: y, label: y })) },
+        ]}
+      />
 
       {error && <div className="mb-md"><FormAlert>{error}</FormAlert></div>}
 
@@ -260,7 +291,7 @@ const AdminStudents = () => {
               ) : students.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
-                    {debouncedSearch || branch ? 'No students match these filters.' : 'No students have signed up yet.'}
+                    {paramsKey !== JSON.stringify(toParams(FILTER_DEFAULTS, '')) ? 'No students match these filters.' : 'No students have signed up yet.'}
                   </td>
                 </tr>
               ) : (
@@ -272,6 +303,19 @@ const AdminStudents = () => {
                       </p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">{s.rollNumber}</p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant md:hidden break-all">{s.email}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {!s.profileComplete && (
+                          <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Profile incomplete</span>
+                        )}
+                        {s.applications > 0 && (
+                          <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm tabular-nums">
+                            {s.applications} application{s.applications === 1 ? '' : 's'}
+                          </span>
+                        )}
+                        {s.selected && (
+                          <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-emerald-100 text-emerald-800 font-label-sm text-label-sm">Selected</span>
+                        )}
+                      </div>
                       {s.mustChangePassword && (
                         <span className="inline-flex items-center gap-1 mt-1 px-2 py-[2px] rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm">
                           <span className="material-symbols-outlined text-[14px]" aria-hidden="true">schedule</span>

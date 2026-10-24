@@ -84,9 +84,11 @@ const TAG = `P4B${Date.now() % 100000}`;
   const rowCount = () => page.locator('tbody tr').count();
   ok(await until(async () => (await rowCount()) === 2), 'search narrows to the 2 test students');
   ok(await hasText(page.locator('tbody'), 'Information Technology') && await hasText(page.locator('tbody'), 'Electronics & Communication Engineering'), 'table shows full branch names');
-  await page.selectOption('select[aria-label="Filter by branch"]', 'EC');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await page.getByLabel('Branch', { exact: true }).selectOption('EC');
   ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Nikhil Desai'), 'branch filter');
-  await page.selectOption('select[aria-label="Filter by branch"]', '');
+  ok(new URL(page.url()).searchParams.get('branch') === 'EC', 'filter is kept in the URL');
+  await page.getByLabel('Branch', { exact: true }).selectOption('');
   await until(async () => (await rowCount()) === 2);
 
   console.log('# Reset password dialog');

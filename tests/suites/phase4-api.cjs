@@ -62,7 +62,7 @@ const mkStudent = async (n, profile) => {
   r = await call('GET', `/api/admin/students?search=${TAG}&limit=100`, { cookie: admin });
   ok(r.status === 200 && r.json.data.length === 3, 'search by email/roll prefix finds 3');
   const keys = Object.keys(r.json.data[0]).sort().join(',');
-  ok(keys === 'branch,createdAt,email,firstName,graduationYear,id,institute,lastName,mustChangePassword,rollNumber', 'minimal DTO only', keys);
+  ok(keys === 'applications,branch,createdAt,email,firstName,graduationYear,id,institute,lastName,mustChangePassword,profileComplete,rollNumber,selected', 'minimal DTO only (no phone, CGPA or resume)', keys);
   ok(!/phone|cgpa|resume|passwordHash|tokenVersion|\$2[ab]\$/.test(r.text), 'no phone/CGPA/resume/hash in list');
   r = await call('GET', `/api/admin/students?search=bhavna`, { cookie: admin });
   ok(r.json.data.length === 1 && r.json.data[0].email === b.email, 'case-insensitive name search');

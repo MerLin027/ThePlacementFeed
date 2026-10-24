@@ -2,28 +2,39 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import ApplicantFilters from '../components/ApplicantFilters';
+import AdminFilterPanel from '../components/AdminFilterPanel';
 import ApplicantTable from '../components/ApplicantTable';
 import ApplicantDetailsModal from '../components/ApplicantDetailsModal';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
-import { APPLICATION_STATUSES } from '../constants/applications';
+import { APPLICATION_STATUSES, APPLICANT_SORTS, statusLabel } from '../constants/applications';
+import { useCatalog } from '../stores/catalog';
+import { useUrlFilters } from '../hooks/useUrlFilters';
+import { addNumber, addDay, addList, addOne } from '../utils/filterParams';
 import { parseApiError } from '../utils/formErrors';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const PAGE_SIZE = 25;
-const EMPTY_FILTERS = { search: '', status: '', branch: '', cgpaMin: '', cgpaMax: '', sort: 'newest' };
+const FILTER_DEFAULTS = {
+  search: '', status: [], branch: '', institute: '', gradYear: [], cgpaMin: '', cgpaMax: '', backlogsMax: '',
+  appliedFrom: '', appliedTo: '', account: '', sort: 'newest',
+};
+const SORT_VALUES = APPLICANT_SORTS.map((s) => s.value);
 
 // Query params for both the list and the export; empty / invalid values are left out
 const toParams = (filters, search) => {
-  const params = { sort: filters.sort };
+  const params = { sort: SORT_VALUES.includes(filters.sort) ? filters.sort : 'newest' };
   if (search) params.search = search;
-  if (filters.status) params.status = filters.status;
-  if (filters.branch) params.branch = filters.branch;
-  ['cgpaMin', 'cgpaMax'].forEach((k) => {
-    const n = Number(filters[k]);
-    if (filters[k] !== '' && Number.isFinite(n) && n >= 0 && n <= 10) params[k] = n;
-  });
+  addList(params, 'status', filters.status, APPLICATION_STATUSES);
+  addOne(params, 'branch', filters.branch);
+  addOne(params, 'institute', filters.institute);
+  addList(params, 'gradYear', filters.gradYear.filter((y) => /^\d{4}$/.test(y)));
+  addNumber(params, 'cgpaMin', filters.cgpaMin, { min: 0, max: 10 });
+  addNumber(params, 'cgpaMax', filters.cgpaMax, { min: 0, max: 10 });
+  addNumber(params, 'backlogsMax', filters.backlogsMax, { min: 0, max: 50, int: true });
+  addDay(params, 'appliedFrom', filters.appliedFrom);
+  addDay(params, 'appliedTo', filters.appliedTo);
+  addOne(params, 'account', filters.account, ['active', 'deleted']);
   return params;
 };
 
@@ -33,8 +44,11 @@ const AdminApplicants = () => {
   const [applicants, setApplicants] = useState([]);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const { branches } = useCatalog();
+  const [filters, setFilter, resetFilters] = useUrlFilters(FILTER_DEFAULTS);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search.trim());
+  // Institutes and graduation years present on this drive (from the list response)
+  const [facets, setFacets] = useState({ institutes: [], gradYears: [] });
   const [notFound, setNotFound] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
   const [busyIds, setBusyIds] = useState(() => new Set());
@@ -82,6 +96,7 @@ const AdminApplicants = () => {
         setDrive(res.data.drive);
         setApplicants(res.data.data);
         setStats(res.data.stats);
+        setFacets(res.data.facets || { institutes: [], gradYears: [] });
         setPagination(res.data.pagination);
         setSelected(new Set());
         setSettled({ key, error: '' });
@@ -216,13 +231,13 @@ const AdminApplicants = () => {
       {/* Status counts — click to filter */}
       <div className="flex flex-wrap gap-xs mb-md" role="group" aria-label="Filter by status">
         {APPLICATION_STATUSES.map((s) => {
-          const active = filters.status === s;
+          const active = filters.status.includes(s);
           return (
             <button
               key={s}
               type="button"
               aria-pressed={active}
-              onClick={() => setFilters((f) => ({ ...f, status: active ? '' : s }))}
+              onClick={() => setFilter('status', active ? filters.status.filter((x) => x !== s) : [...filters.status, s])}
               className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
                 active
                   ? 'bg-primary-container text-on-primary border-primary-container'
@@ -237,7 +252,31 @@ const AdminApplicants = () => {
       </div>
 
       <div className="mb-md">
-        <ApplicantFilters filters={filters} onChange={setFilters} />
+        <AdminFilterPanel
+          searchLabel="Search applicants"
+          searchPlaceholder="Name, email or roll number"
+          values={filters}
+          defaults={FILTER_DEFAULTS}
+          onChange={setFilter}
+          onReset={resetFilters}
+          sortOptions={APPLICANT_SORTS}
+          resultText={loading ? '' : `Showing ${applicants.length} of ${pagination.total} applicant${pagination.total === 1 ? '' : 's'}`}
+          fields={[
+            { key: 'status', label: 'Status', type: 'multi', options: APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })) },
+            { key: 'branch', label: 'Branch', type: 'select', options: [{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.code, label: b.name }))] },
+            {
+              key: 'institute', label: 'Institute', type: 'select',
+              options: [{ value: '', label: 'All institutes' }, ...facets.institutes.map((i) => ({ value: i, label: i }))],
+            },
+            { key: 'account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'active', label: 'Active accounts' }, { value: 'deleted', label: 'Deleted accounts' }] },
+            { key: 'cgpaMin', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
+            { key: 'cgpaMax', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
+            { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
+            { key: 'appliedFrom', label: 'Applied from', type: 'date', chip: (v) => `Applied from ${v}` },
+            { key: 'appliedTo', label: 'Applied until', type: 'date', chip: (v) => `Applied until ${v}` },
+            { key: 'gradYear', label: 'Graduation year', type: 'multi', options: facets.gradYears.map((y) => ({ value: String(y), label: String(y) })) },
+          ]}
+        />
       </div>
 
       {error && <div className="mb-md"><FormAlert>{error}</FormAlert></div>}

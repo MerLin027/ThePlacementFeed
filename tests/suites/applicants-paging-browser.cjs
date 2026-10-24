@@ -43,12 +43,12 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
   ok((await page.getByRole('button', { name: 'Page 2' }).getAttribute('aria-current')) === 'page', 'on page 2 with the last 5');
 
   // Changing a filter on page 2 must land on page 1 of the filtered list
-  await page.locator('select[aria-label="Filter by status"]').selectOption('Shortlisted');
+  await page.getByRole('button', { name: /^Shortlisted/ }).click();
   await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 4, null, { timeout: 10000 }).catch(() => {});
   ok((await rows.count()) === 4, `filter from page 2 shows all 4 shortlisted (page 1), not an empty page 2 (${await rows.count()})`);
   ok(!(await page.getByRole('navigation', { name: 'Pagination' }).count()), 'a single page of results needs no pagination');
 
-  await page.locator('select[aria-label="Filter by status"]').selectOption('');
+  await page.getByRole('button', { name: /^Shortlisted/ }).click();
   await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 25, null, { timeout: 10000 }).catch(() => {});
   ok((await rows.count()) === 25 && (await page.getByRole('button', { name: 'Page 1' }).getAttribute('aria-current')) === 'page', 'clearing the filter shows page 1 again');
 

@@ -86,12 +86,15 @@ const TAG = `P5B${Date.now() % 100000}`;
   await until(async () => (await rowCount()) === 3);
 
   console.log('# Filters');
-  await page.getByLabel('Filter by branch').selectOption('IT');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await page.getByLabel('Branch', { exact: true }).selectOption('IT');
   ok(await until(async () => (await rowCount()) === 2), 'branch filter');
-  await page.getByLabel('Minimum CGPA').fill('8');
+  await page.getByLabel('Min CGPA').fill('8');
   ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Chirag Modi'), 'CGPA filter');
-  await page.getByLabel('Minimum CGPA').fill('');
-  await page.getByLabel('Filter by branch').selectOption('');
+  // Two changes back to back (before a re-render) must both stick
+  await page.getByLabel('Min CGPA').fill('');
+  await page.getByLabel('Branch', { exact: true }).selectOption('');
+  ok(await until(async () => (await rowCount()) === 3 && !new URL(page.url()).search), 'quick successive changes both apply (URL cleared)', page.url());
   await page.getByLabel('Search applicants').fill(`${TAG}b`);
   ok(await until(async () => (await rowCount()) === 1) && await hasText(page.locator('tbody'), 'Bharat Shah'), 'search');
   await page.getByLabel('Search applicants').fill('');
@@ -105,7 +108,7 @@ const TAG = `P5B${Date.now() % 100000}`;
   await page.getByRole('region', { name: 'Bulk actions' }).getByRole('button', { name: 'Apply' }).click();
   ok(await hasText(page, '2 applicants set to Interviewing'), 'bulk toast');
   ok(await until(async () => (await Application.countDocuments({ driveId: drive._id, status: 'Interviewing' })) === 2), 'DB: 2 interviewing');
-  ok(await until(async () => !(await page.getByText('selected', { exact: false }).count())), 'selection cleared after update');
+  ok(await until(async () => !(await page.getByRole('region', { name: 'Bulk actions' }).count())), 'selection cleared after update');
 
   console.log('# Details modal');
   await page.getByLabel('View application from Asha Iyer').click();

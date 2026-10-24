@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const writeExcelFile = require('write-excel-file/node');
 const Application = require('../models/Application');
@@ -14,7 +13,7 @@ const {
   mongoIdParam,
   validate,
 } = require('../middleware/validate');
-const { escapeRegex } = require('../utils/escapeRegex');
+const { buildApplicantFilter, applicantQuery } = require('../services/adminFilters');
 const { logAdminAction } = require('../utils/auditLog');
 const { branchLabel } = require('../services/catalog');
 const { APPLICATION_STATUSES } = require('../models/Application');
@@ -53,36 +52,8 @@ const exportLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const SORTS = {
-  newest: { createdAt: -1 },
-  oldest: { createdAt: 1 },
-  cgpa_desc: { 'snapshot.cgpa': -1, createdAt: -1 },
-  cgpa_asc: { 'snapshot.cgpa': 1, createdAt: -1 },
-  name: { 'snapshot.firstName': 1, 'snapshot.lastName': 1 },
-  roll: { 'snapshot.rollNumber': 1 },
-};
-
-// Builds the Mongo filter from validated query params (shared by list and export)
-const buildFilter = (driveId, q) => {
-  const filter = { driveId: new mongoose.Types.ObjectId(driveId) };
-  if (q.status) filter.status = q.status;
-  if (q.branch) filter['snapshot.branch'] = q.branch;
-  if (q.cgpaMin !== undefined || q.cgpaMax !== undefined) {
-    filter['snapshot.cgpa'] = {};
-    if (q.cgpaMin !== undefined) filter['snapshot.cgpa'].$gte = q.cgpaMin;
-    if (q.cgpaMax !== undefined) filter['snapshot.cgpa'].$lte = q.cgpaMax;
-  }
-  if (q.search) {
-    const regex = new RegExp(escapeRegex(q.search), 'i');
-    filter.$or = [
-      { 'snapshot.firstName': regex },
-      { 'snapshot.lastName': regex },
-      { 'snapshot.email': regex },
-      { 'snapshot.rollNumber': regex },
-    ];
-  }
-  return filter;
-};
+// Filter (shared by list and export) and sorting live in services/adminFilters.js
+const buildFilter = buildApplicantFilter;
 
 // Accounts deleted by the admin leave a scrubbed, flagged application behind. Records scrubbed
 // before the flag existed are recognised by the scrubbed name (the migration flags them too).
@@ -129,18 +100,17 @@ router.get('/', readLimiter, applicantListRules, validate, async (req, res, next
     const limit = req.query.limit || 25;
     const filter = buildFilter(req.params.driveId, req.query);
 
-    const [apps, total, statusCounts] = await Promise.all([
-      Application.find(filter)
-        .sort(SORTS[req.query.sort] || SORTS.newest)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
+    const [apps, total, statusCounts, institutes, gradYears] = await Promise.all([
+      applicantQuery(filter, req.query.sort, { skip: (page - 1) * limit, limit }),
       Application.countDocuments(filter),
       // Stats cover the whole drive, independent of the current filters
       Application.aggregate([
         { $match: { driveId: drive._id } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
+      // Values present on this drive, for the institute and graduation-year filter options
+      Application.distinct('snapshot.institute', { driveId: drive._id }),
+      Application.distinct('snapshot.graduationYear', { driveId: drive._id }),
     ]);
 
     const stats = Object.fromEntries(APPLICATION_STATUSES.map((s) => [s, 0]));
@@ -159,6 +129,10 @@ router.get('/', readLimiter, applicantListRules, validate, async (req, res, next
       data: apps.map(toApplicantDTO),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       stats,
+      facets: {
+        institutes: institutes.filter(Boolean).sort(),
+        gradYears: gradYears.filter(Boolean).sort((x, y) => x - y),
+      },
     });
   } catch (error) {
     next(error);
@@ -207,6 +181,12 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
         branch: req.query.branch,
         cgpaMin: req.query.cgpaMin,
         cgpaMax: req.query.cgpaMax,
+        institute: req.query.institute ? true : undefined,
+        gradYear: req.query.gradYear,
+        backlogsMax: req.query.backlogsMax,
+        appliedFrom: req.query.appliedFrom,
+        appliedTo: req.query.appliedTo,
+        account: req.query.account,
         search: req.query.search ? true : undefined,
       },
     });
@@ -231,11 +211,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
     ];
     const rows = [columns.map((c) => ({ value: c.header, type: String, fontWeight: 'bold' }))];
 
-    const cursor = Application.find(filter)
-      .sort(SORTS[req.query.sort] || SORTS.newest)
-      .limit(EXPORT_ROW_CAP)
-      .lean()
-      .cursor();
+    const cursor = applicantQuery(filter, req.query.sort, { limit: EXPORT_ROW_CAP }).cursor();
 
     for await (const app of cursor) {
       const s = app.snapshot || {};

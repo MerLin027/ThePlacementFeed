@@ -6,7 +6,8 @@ const Application = require('../models/Application');
 const requireAdmin = require('../middleware/requireAdmin');
 const csrfCheck = require('../middleware/csrfCheck');
 const { adminStudentListRules, adminStudentDeleteRules, mongoIdParam, validate } = require('../middleware/validate');
-const { escapeRegex } = require('../utils/escapeRegex');
+const { buildStudentFilter, STUDENT_SORTS } = require('../services/adminFilters');
+const { REQUIRED_PROFILE_FIELDS } = require('../models/Student');
 const { logAdminAction } = require('../utils/auditLog');
 const { instituteRef } = require('../models/Student');
 const {
@@ -38,15 +39,9 @@ const actionLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const SORTS = {
-  newest: { createdAt: -1 },
-  oldest: { createdAt: 1 },
-  name: { firstName: 1, lastName: 1, createdAt: -1 },
-  roll: { rollNumber: 1 },
-};
-
-// Only what the admin needs to identify an account — no phone, CGPA or resume here
-const toAdminStudentDTO = (s) => ({
+// Only what the admin needs to identify an account — no phone, CGPA or resume here (those fields
+// are read only to tell whether the profile is complete)
+const toAdminStudentDTO = (s, counts) => ({
   id: s._id.toString(),
   email: s.email,
   rollNumber: s.rollNumber,
@@ -57,40 +52,42 @@ const toAdminStudentDTO = (s) => ({
   graduationYear: s.graduationYear ?? null,
   createdAt: s.createdAt,
   mustChangePassword: Boolean(s.mustChangePassword),
+  profileComplete: REQUIRED_PROFILE_FIELDS.every((f) => s[f] !== undefined && s[f] !== null && s[f] !== ''),
+  ...(counts && { applications: counts.applications, selected: counts.selected }),
 });
+
+const PROFILE_SELECT = `email rollNumber firstName lastName createdAt mustChangePassword ${REQUIRED_PROFILE_FIELDS.join(' ')}`;
 
 // GET /api/admin/students
 router.get('/', listLimiter, adminStudentListRules, validate, async (req, res, next) => {
   try {
     const page = req.query.page || 1;
     const limit = req.query.limit || 25;
-    const filter = {};
-
-    if (req.query.branch) filter.branch = req.query.branch;
-
-    if (req.query.search) {
-      const regex = new RegExp(escapeRegex(req.query.search), 'i');
-      filter.$or = [
-        { email: regex },
-        { rollNumber: regex },
-        { firstName: regex },
-        { lastName: regex },
-      ];
-    }
+    const filter = await buildStudentFilter(req.query);
 
     const [students, total] = await Promise.all([
       Student.find(filter)
-        .select('email rollNumber instituteId firstName lastName branch graduationYear createdAt mustChangePassword')
-        .sort(SORTS[req.query.sort] || SORTS.newest)
+        .select(PROFILE_SELECT)
+        .sort(STUDENT_SORTS[req.query.sort] || STUDENT_SORTS.newest)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
       Student.countDocuments(filter),
     ]);
 
+    // Applications per student on this page only
+    const perStudent = await Application.aggregate([
+      { $match: { studentId: { $in: students.map((s) => s._id) } } },
+      { $group: { _id: '$studentId', applications: { $sum: 1 }, selected: { $max: { $eq: ['$status', 'Offered'] } } } },
+    ]);
+    const counts = new Map(perStudent.map((c) => [c._id.toString(), c]));
+
     res.json({
       success: true,
-      data: students.map(toAdminStudentDTO),
+      data: students.map((s) => {
+        const c = counts.get(s._id.toString());
+        return toAdminStudentDTO(s, { applications: c?.applications || 0, selected: Boolean(c?.selected) });
+      }),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {

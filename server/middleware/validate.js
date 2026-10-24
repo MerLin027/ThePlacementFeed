@@ -6,6 +6,7 @@ const {
 } = require('../constants/auth');
 const catalog = require('../services/catalog');
 const { BRANCH_CODE_PATTERN } = require('../models/Branch');
+const { NONE, STUDENT_SORTS, APPLICANT_SORTS } = require('../services/adminFilters');
 const { APPLICATION_STATUSES } = require('../models/Application');
 
 const isHttpsUrl = (value) => {
@@ -390,7 +391,28 @@ const applicationSubmitRules = [
 
 // --- Admin: students ---
 
-const STUDENT_SORTS = ['newest', 'oldest', 'name', 'roll'];
+const SORT_LIST = (sorts) => Object.keys(sorts);
+
+// Comma-joined values ("Applied,Offered"), each checked; arrays (repeated keys) are rejected
+const commaList = (field, check, message) =>
+  query(field)
+    .optional()
+    .isString()
+    .withMessage(message)
+    .bail()
+    .custom((value) => value.split(',').length <= 20 && value.split(',').every((v) => v !== '' && check(v)))
+    .withMessage(message);
+
+const isYear = (v) => /^\d{4}$/.test(v) && Number(v) >= 2020 && Number(v) <= 2040;
+const isDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+
+// Filters both admin lists share
+const academicFilterRules = [
+  commaList('gradYear', isYear, 'gradYear must be years from 2020 to 2040'),
+  query('cgpaMin').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMin must be between 0 and 10').toFloat(),
+  query('cgpaMax').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMax must be between 0 and 10').toFloat(),
+  query('backlogsMax').optional().isInt({ min: 0, max: 50 }).withMessage('backlogsMax must be a whole number from 0 to 50').toInt(),
+];
 
 const adminStudentListRules = [
   query('page').optional().isInt({ min: 1, max: 10000 }).withMessage('page must be a positive integer').toInt(),
@@ -402,8 +424,13 @@ const adminStudentListRules = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('search cannot exceed 100 characters'),
-  query('branch').optional().custom((value) => catalog.isBranchCode(value)).withMessage('Unknown branch'),
-  query('sort').optional().isIn(STUDENT_SORTS).withMessage(`sort must be one of: ${STUDENT_SORTS.join(', ')}`),
+  query('branch').optional().custom((value) => value === NONE || catalog.isBranchCode(value)).withMessage('Unknown branch'),
+  query('institute').optional().custom((value) => value === NONE || /^[a-f0-9]{24}$/i.test(value)).withMessage('Unknown institute'),
+  ...academicFilterRules,
+  query('profile').optional().isIn(['complete', 'incomplete', 'no_institute']).withMessage('profile must be complete, incomplete or no_institute'),
+  query('account').optional().isIn(['reset_pending']).withMessage('account must be reset_pending'),
+  query('applications').optional().isIn(['applied', 'never', 'selected']).withMessage('applications must be applied, never or selected'),
+  query('sort').optional().isIn(SORT_LIST(STUDENT_SORTS)).withMessage(`sort must be one of: ${SORT_LIST(STUDENT_SORTS).join(', ')}`),
 ];
 
 const adminStudentDeleteRules = [
@@ -414,14 +441,15 @@ const mongoIdParam = (name) => [param(name).isMongoId().withMessage('Invalid ID'
 
 // --- Admin: applicants ---
 
-const APPLICANT_SORTS = ['newest', 'oldest', 'cgpa_desc', 'cgpa_asc', 'name', 'roll'];
-
 // Filters shared by the applicant list and the export
 const applicantFilterRules = [
-  query('status').optional().isIn(APPLICATION_STATUSES).withMessage('Unknown status'),
+  commaList('status', (v) => APPLICATION_STATUSES.includes(v), 'Unknown status'),
   query('branch').optional().custom((value) => catalog.isBranchCode(value)).withMessage('Unknown branch'),
-  query('cgpaMin').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMin must be between 0 and 10').toFloat(),
-  query('cgpaMax').optional().isFloat({ min: 0, max: 10 }).withMessage('cgpaMax must be between 0 and 10').toFloat(),
+  query('institute').optional().isString().withMessage('institute must be text').bail().isLength({ max: 120 }).withMessage('institute is too long'),
+  ...academicFilterRules,
+  query('appliedFrom').optional().custom(isDay).withMessage('appliedFrom must be a date (YYYY-MM-DD)'),
+  query('appliedTo').optional().custom(isDay).withMessage('appliedTo must be a date (YYYY-MM-DD)'),
+  query('account').optional().isIn(['active', 'deleted']).withMessage('account must be active or deleted'),
   query('search')
     .optional()
     .isString()
@@ -429,7 +457,7 @@ const applicantFilterRules = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('search cannot exceed 100 characters'),
-  query('sort').optional().isIn(APPLICANT_SORTS).withMessage(`sort must be one of: ${APPLICANT_SORTS.join(', ')}`),
+  query('sort').optional().isIn(SORT_LIST(APPLICANT_SORTS)).withMessage(`sort must be one of: ${SORT_LIST(APPLICANT_SORTS).join(', ')}`),
 ];
 
 const applicantListRules = [
