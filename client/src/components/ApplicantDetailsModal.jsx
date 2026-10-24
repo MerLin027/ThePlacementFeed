@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import { ApplicationStatusPill } from './ApplyButton';
@@ -19,18 +19,21 @@ const Row = ({ label, children }) => (
  * All student text is rendered as plain text (React escapes it).
  */
 const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
-  const [status, setStatus] = useState('Applied');
-  const [adminNote, setAdminNote] = useState('');
+  const [status, setStatus] = useState(applicant?.status ?? 'Applied');
+  const [adminNote, setAdminNote] = useState(applicant?.adminNote || '');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
+  // Showing another applicant resets the fields (adjusted during render, not in an effect)
+  const [shownFor, setShownFor] = useState(applicant);
+  if (shownFor !== applicant) {
+    setShownFor(applicant);
     if (applicant) {
       setStatus(applicant.status);
       setAdminNote(applicant.adminNote || '');
       setError('');
     }
-  }, [applicant]);
+  }
 
   if (!applicant) return null;
   const s = applicant.snapshot;
