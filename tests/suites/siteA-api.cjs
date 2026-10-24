@@ -7,6 +7,7 @@ const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
 const Student = require(path.join(SERVER, 'models/Student'));
 const Application = require(path.join(SERVER, 'models/Application'));
 const Placement = require(path.join(SERVER, 'models/Placement'));
+const ExcelJS = require('exceljs');
 
 const API = TEST.API;
 const ORIGIN = TEST.APP;
@@ -62,8 +63,12 @@ const resetAndLogin = async (s, admin) => {
   r = await call('GET', `/api/placements/${drive._id}/applicants`, { cookie: admin });
   ok(r.status === 200 && r.json.data[0] && !('historyBacklogs' in r.json.data[0].snapshot), 'applicant DTO leaves out an old snapshot value');
   const res = await fetch(`${API}/api/placements/${drive._id}/applicants/export`, { headers: { Cookie: admin, Origin: ORIGIN } });
-  const xlsx = Buffer.from(await res.arrayBuffer());
-  ok(res.status === 200 && !xlsx.includes('Backlog History') && xlsx.length > 0, 'export has no Backlog History column');
+  // An .xlsx is a zip, so read it rather than searching the raw bytes
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(Buffer.from(await res.arrayBuffer()));
+  const header = wb.getWorksheet('Applicants').getRow(1).values.filter(Boolean);
+  ok(res.status === 200 && header.includes('Active Backlogs') && !header.includes('Backlog History'), 'export has no Backlog History column', header.join(', '));
+  ok(header.includes('Institute'), 'export has an Institute column');
 
   console.log('# Reset without the temporary password');
   const b = await mkStudent('b', PROFILE);
