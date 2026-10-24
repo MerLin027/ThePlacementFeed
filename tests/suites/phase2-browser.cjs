@@ -196,7 +196,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.click('button:has-text("Save profile")');
   await page.waitForURL(/\/login\?expired=true/);
   ok(await hasText(page, 'session has expired'), 'expired student session -> /login?expired=true');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(500); // deliberate: proves no further redirect follows
   ok(/\/login\?expired=true&returnTo=%2Fprofile$/.test(page.url()), 'URL stays on expired login with returnTo', page.url());
   ok(await hasText(page, 'session has expired'), 'expired message still visible after settle');
 
@@ -216,7 +216,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
     await ctx.addCookies([{ name: 'admin_token', value: 'forged.token.value', url: API }]);
     await page.locator('button[title="Mark as postponed"]').first().click();
     await page.waitForURL(/\/admin\/login\?expired=true/);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(500); // deliberate: proves no further redirect follows
     ok(/\/admin\/login\?expired=true$/.test(page.url()), 'admin URL stays on expired login', page.url());
     ok(await hasText(page, 'Session expired'), 'admin expired message shown');
     await fetch(API + '/api/placements/' + placementId, { method: 'DELETE', headers: { Origin: APP, Cookie: adminCookie } });

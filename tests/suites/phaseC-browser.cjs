@@ -1,5 +1,6 @@
 // Phase C verification — frontend completeness. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -81,9 +82,16 @@ const TAG = `PC${Date.now() % 100000}`;
 
   console.log('# Route matrix');
   const routes = ['/', '/timeline', '/login', '/signup', '/profile', '/applications', '/change-password', '/admin/login', '/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`, `/placement/${d1._id}`, '/nope'];
-  const landing = async (route) => { await page.goto(APP + route); await wait(1200); return new URL(page.url()).pathname; };
+  // Where a route ends up after the session check and any redirect: waits (up to 5 s) for the expected
+  // path, and returns wherever the page actually is, so a wrong redirect still fails the assertion
+  const landing = async (route, expected) => {
+    await page.goto(APP + route);
+    await settled(page);
+    if (expected) await until(() => new URL(page.url()).pathname === expected, { timeout: 5000 });
+    return new URL(page.url()).pathname;
+  };
   // Restricted (reset pending) student: every student page funnels to /change-password
-  for (const r of ['/profile', '/applications']) ok((await landing(r)) === '/change-password', `restricted student ${r} -> /change-password`);
+  for (const r of ['/profile', '/applications']) ok((await landing(r, '/change-password')) === '/change-password', `restricted student ${r} -> /change-password`);
   await page.fill('#currentPassword', 'college123');
   await page.fill('#newPassword', 'brandnew789');
   await page.fill('#confirmPassword', 'brandnew789');
@@ -91,13 +99,13 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.waitForURL(/\/profile$/);
   // Student
   const studentExpect = { '/profile': '/profile', '/applications': '/applications', '/change-password': '/change-password', '/admin/dashboard': '/admin/login', '/admin/students': '/admin/login', [`/admin/drives/${d1._id}/applicants`]: '/admin/login', '/login': '/', '/signup': '/profile' };
-  for (const [r, exp] of Object.entries(studentExpect)) ok((await landing(r)) === exp, `student ${r} -> ${exp}`);
+  for (const [r, exp] of Object.entries(studentExpect)) ok((await landing(r, exp)) === exp, `student ${r} -> ${exp}`);
   // Guest
   await page.goto(APP + '/');
   await page.click('header nav >> text=Logout');
-  await wait(800);
+  await until(async () => (await page.locator('header nav').first().innerText()).includes('Login'));
   const guestExpect = { '/profile': '/login', '/applications': '/login', '/change-password': '/login', '/admin/dashboard': '/admin/login', '/admin/students': '/admin/login', '/timeline': '/timeline', '/nope': '/nope' };
-  for (const [r, exp] of Object.entries(guestExpect)) ok((await landing(r)) === exp, `guest ${r} -> ${exp}`);
+  for (const [r, exp] of Object.entries(guestExpect)) ok((await landing(r, exp)) === exp, `guest ${r} -> ${exp}`);
   ok(await hasText(page, 'Page not found') || await hasText(page, '404'), '404 page renders');
   // Admin
   await page.goto(APP + '/admin/login');
@@ -105,7 +113,7 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);
-  for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`]) ok((await landing(r)) === r, `admin ${r} reachable`);
+  for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`]) ok((await landing(r, r)) === r, `admin ${r} reachable`);
   const headerButtons = await page.locator('main h1').first().locator('xpath=../..').getByRole('button', { name: 'Logout' }).count();
   await landing('/admin/dashboard');
   ok((await page.locator('main').getByRole('button', { name: 'Logout' }).count()) === 0, 'no duplicate Logout inside the dashboard');
@@ -116,7 +124,7 @@ const TAG = `PC${Date.now() % 100000}`;
     const links = await page.locator('header nav').first().locator('a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
     for (const href of links) {
       await page.goto(APP + href);
-      await wait(800);
+      await settled(page);
       ok(!(await page.getByText('Page not found').count()), `${role} nav ${href} resolves`);
     }
   }

@@ -2,6 +2,7 @@
 // axe (serious/critical), >=44px targets, no horizontal scroll, no console errors. Saves "after" screenshots.
 const TEST = require('../lib/env.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
+const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -20,7 +21,7 @@ const istDate = (n) => new Date(Date.now() + 5.5 * 3600e3 + n * 86400e3).toISOSt
 const TAG = process.env.TAG || `PG${Date.now() % 100000}`;
 
 const audit = async (page, label, consoleErrors) => {
-  await wait(1500);
+  await settled(page);
   await settleAnimations(page);
 
   await page.addScriptTag({ path: AXE });
@@ -86,7 +87,7 @@ const audit = async (page, label, consoleErrors) => {
     await page.goto(APP + '/');
     if (vp === 'phone') await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('button', { name: 'Logout' }).last().click();
-    await wait(800);
+    await until(async () => !(await page.getByRole('button', { name: 'Logout' }).count()));
     await page.goto(APP + '/admin/login');
     await page.fill('#username', 'testadmin');
     await page.fill('#password', 'testadminpass');

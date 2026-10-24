@@ -61,7 +61,7 @@ const HOSTILE = [
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   await page.goto(`${APP}/placement/${id}`);
   await page.locator('.markdown-body').waitFor();
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(800); // deliberate: gives any injected handler (onload, onerror…) time to fire
   // Try to trigger handlers that might have survived
   await page.locator('.markdown-body details').first().click().catch(() => {});
   await page.locator('.markdown-body >> text=overlay').first().click({ timeout: 1000 }).catch(() => {});

@@ -2,6 +2,7 @@
 // exceljs/archiver (oldest deps in the tree) incl. formula-injection escaping; a production-mode boot
 // (cookie flags, no warnings); resetAdmin from the project root. Local stack only (API 5099, mongod 27099).
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -81,8 +82,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   let log = '';
   srv.stdout.on('data', (d) => { log += d; });
   srv.stderr.on('data', (d) => { log += d; });
-  let up = false;
-  for (let i = 0; i < 40 && !up; i++) { await wait(250); try { up = (await fetch('http://localhost:5098/api/health')).status === 200; } catch { /* not up yet */ } }
+  const up = await until(async () => (await fetch('http://localhost:5098/api/health')).status === 200, { every: 250 });
   ok(up, 'production server answers /api/health', log.slice(-300));
   const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
   const ck = pl.headers.getSetCookie().find((c) => c.startsWith('admin_token=')) || '';
@@ -92,7 +92,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ok(bad.status === 400 && !/stack|\bat /.test(badText), 'prod error response has no stack trace');
   const csrf = await fetch('http://localhost:5098/api/auth/logout', { method: 'POST', headers: { Origin: 'https://evil.example.test' } });
   ok(csrf.status === 403, `prod CSRF check rejects a foreign origin → ${csrf.status}`);
-  await wait(500);
+  await wait(500); // deliberate: lets late warnings reach the log before it is checked
   srv.kill();
   ok(!/DeprecationWarning|ExperimentalWarning|\[MONGOOSE\] Warning|\(node:\d+\)/.test(log), 'no runtime warnings in the production boot log', (log.match(/.*(Warning|\(node:).*/) || [''])[0]);
   ok(!/injecting env|dotenv/.test(log), 'no dotenv banner');

@@ -1,5 +1,6 @@
 // Phase A browser checks — admin status control, closed external drives, branch copy. Local stack only.
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -32,7 +33,7 @@ const TAG = `PAB${Date.now() % 100000}`;
   // Narrow to this test's drives (closing-soon order would push Ongoing ones past page 1 in a shared DB)
   await page.getByLabel('Search drives by company or role').fill(TAG);
   await card('OpenExt').waitFor();
-  await page.waitForTimeout(800);
+  await until(async () => (await card('ClosedExt').count()) > 0 && (await card('PostponedExt').count()) > 0);
   ok((await card('ClosedExt').innerText()).includes('Deadline passed') && !(await card('ClosedExt').innerText()).includes('Apply now'), 'external drive past deadline: no Apply now (S7)');
   ok((await card('PostponedExt').innerText()).includes('Drive postponed'), 'postponed external drive: no Apply now');
   ok((await card('OpenExt').innerText()).includes('Apply now'), 'open external drive still shows Apply now');
@@ -57,21 +58,21 @@ const TAG = `PAB${Date.now() % 100000}`;
   await page.getByPlaceholder('e.g. SDE Intern').fill('Analyst');
   await page.getByPlaceholder('e.g. 12').fill('4');
   await page.click('button[type=submit]:has-text("Add placement")');
-  await page.waitForTimeout(1500);
-  let made = await Placement.findOne({ company: `${TAG} FormMade` }).lean();
+  let made = await until(() => Placement.findOne({ company: `${TAG} FormMade` }).lean());
   ok(made && made.status === 'Ongoing' && made.statusManuallySet === false, 'saved as automatic Ongoing');
   const row = page.locator('tr', { hasText: `${TAG} FormMade` });
   await row.locator('button[title="Edit"]').click();
   await page.selectOption('#placement-status', 'Upcoming');
   ok(await hasText(page, "Fixed — dates won't change it"), 'manual choice explains itself');
   await page.click('button[type=submit]:has-text("Update placement")');
-  await page.waitForTimeout(1500);
-  made = await Placement.findOne({ company: `${TAG} FormMade` }).lean();
+  const findMade = () => Placement.findOne({ company: `${TAG} FormMade` }).lean();
+  made = await until(async () => { const d = await findMade(); return d.statusManuallySet === true ? d : null; }) || await findMade();
   ok(made.status === 'Upcoming' && made.statusManuallySet === true, 'saved as fixed Upcoming');
   await row.getByRole('button', { name: /Use automatic status/ }).click();
-  await page.waitForTimeout(1200);
-  made = await Placement.findOne({ company: `${TAG} FormMade` }).lean();
+  made = await until(async () => { const d = await findMade(); return d.statusManuallySet === false ? d : null; }) || await findMade();
   ok(made.status === 'Ongoing' && made.statusManuallySet === false, '"Use automatic status" restores and recomputes');
+  // The row re-renders with the new status before the edit button is used again
+  await row.getByRole('button', { name: /Use automatic status/ }).waitFor({ state: 'detached' }).catch(() => {});
   await row.locator('button[title="Edit"]').click();
   ok((await page.locator('#placement-status').inputValue()) === 'auto', 'edit form reopens on Automatic');
   await page.click('button:has-text("Cancel")');

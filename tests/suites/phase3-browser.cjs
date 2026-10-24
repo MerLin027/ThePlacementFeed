@@ -1,5 +1,6 @@
 // Phase 3 browser verification — apply flow, button states, admin config. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -87,7 +88,7 @@ const login = async (page, email, password = 'goodpass123') => {
   ok((await card(page, `${TAG} InApp`).innerText()).includes('Log in to apply'), 'in-app card: Log in to apply');
   ok((await card(page, `${TAG} External`).innerText()).includes('Apply now'), 'external card: Apply now');
   await card(page, `${TAG} External`).getByRole('button', { name: 'Apply now' }).click();
-  for (let i = 0; i < 50 && !popups.some((p) => p.url().includes('forms.gle/ext')); i++) await page.waitForTimeout(100);
+  await until(() => popups.some((p) => p.url().includes('forms.gle/ext')), { timeout: 5000 });
   ok(page.url() === APP + '/' && popups.some((p) => p.url().includes('forms.gle/ext')), 'external Apply opens form in new tab, page stays');
   for (const p of popups) await p.close().catch(() => {});
 
@@ -117,8 +118,8 @@ const login = async (page, email, password = 'goodpass123') => {
   console.log('# Card states for an eligible CE student');
   await page.goto(APP + '/');
   await card(page, `${TAG} InApp`).waitFor();
-  await page.waitForTimeout(500);
-  ok((await card(page, `${TAG} InApp`).innerText()).includes('Applied'), 'applied card shows Applied');
+  // The card's apply state settles once the student's applications have loaded
+  ok(await until(async () => (await card(page, `${TAG} InApp`).innerText()).includes('Applied')), 'applied card shows Applied');
   ok((await card(page, `${TAG} MeOnly`).innerText()).includes('Not eligible'), 'ME-only card shows Not eligible');
   ok((await card(page, `${TAG} Both`).innerText()).includes('Apply now'), "'both' card shows Apply now");
 
@@ -151,8 +152,7 @@ const login = async (page, email, password = 'goodpass123') => {
   await login(page, emailB);
   await page.waitForURL(APP + '/');
   await card(page, `${TAG} InApp`).waitFor();
-  await page.waitForTimeout(500);
-  ok((await card(page, `${TAG} InApp`).innerText()).includes('Complete profile to apply'), 'incomplete student card: Complete profile');
+  ok(await until(async () => (await card(page, `${TAG} InApp`).innerText()).includes('Complete profile to apply')), 'incomplete student card: Complete profile');
   await card(page, `${TAG} InApp`).getByRole('button', { name: 'Complete profile to apply' }).click();
   await page.waitForURL(/\/profile\?returnTo=/);
   await page.fill('#firstName', 'Mira');
@@ -187,8 +187,7 @@ const login = async (page, email, password = 'goodpass123') => {
   await page.locator('label:has-text("Required") input').first().check();
   await page.screenshot({ path: path.join(SHOTS, 'admin-form-apply-settings.png'), fullPage: true });
   await page.click('button[type=submit]:has-text("Add placement")');
-  await page.waitForTimeout(1500);
-  const made = await Placement.findOne({ company: `${TAG} AdminMade` }).lean();
+  const made = await until(() => Placement.findOne({ company: `${TAG} AdminMade` }).lean());
   ok(made && made.applicationMode === 'in_app' && made.customPrompts[0].question === 'Preferred location?' && made.customPrompts[0].required === true, 'admin-created drive saved with mode + required question');
 
   // Edit keeps settings

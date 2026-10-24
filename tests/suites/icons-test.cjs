@@ -3,6 +3,7 @@
 // page is in that list, and that each one draws as a glyph (not as its name in plain text).
 // Needs internet access (the font comes from fonts.googleapis.com). Local stack only otherwise.
 const TEST = require('../lib/env.cjs');
+const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
@@ -35,7 +36,7 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
   const browser = await chromium.launch();
   const seen = new Map(); // name -> { glyph: boolean, where }
   const collect = async (page, where) => {
-    await page.waitForTimeout(600);
+    await settled(page);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => [...document.fonts].some((f) => /Material Symbols/.test(f.family) && f.status === 'loaded'), null, { timeout: 15000 }).catch(() => {});
     const found = await page.evaluate(() => [...document.querySelectorAll('.material-symbols-outlined')].filter((el) => el.offsetParent !== null).map((el) => {
@@ -59,13 +60,15 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
     await page.waitForURL((u) => !u.pathname.startsWith('/login')).catch(() => {});
     for (const r of ['/', '/profile', '/applications', '/change-password', `/placement/${drive._id}`]) { await page.goto(APP + r); await collect(page, `${vp} student ${r}`); }
     await page.goto(APP + '/'); if (vp === 'phone') await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('button', { name: 'Logout' }).last().click(); await page.waitForTimeout(600);
+    await page.getByRole('button', { name: 'Logout' }).last().click();
+    await until(async () => !(await page.getByRole('button', { name: 'Logout' }).count()));
     // admin pages
     await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
     await page.waitForURL(/dashboard/).catch(() => {});
     for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${drive._id}/applicants`]) { await page.goto(APP + r); await collect(page, `${vp} admin ${r}`); }
     await page.goto(APP + '/admin/dashboard'); await page.getByRole('button', { name: 'Add placement' }).click(); await collect(page, `${vp} drive form`);
-    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await page.keyboard.press('Escape');
+    await until(async () => !(await page.getByRole('dialog').count()));
     await page.getByRole('button', { name: /delete/i }).first().click().catch(() => {}); await collect(page, `${vp} delete dialog`);
     await ctx.close();
   }
