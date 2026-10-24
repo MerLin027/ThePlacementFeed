@@ -4,9 +4,10 @@ import { usePageTitle } from '../hooks/usePageTitle';
 const NotFound = () => {
   usePageTitle('Page not found');
   return (
-    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-xl flex items-center justify-center min-h-[60vh]">
-      <div className="text-center max-w-(--container-md)">
-        <div className="w-20 h-20 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-md">
+    <div className="relative isolate w-full max-w-container-max mx-auto px-sm md:px-lg py-xl flex items-center justify-center min-h-[60vh]">
+      <div className="absolute inset-x-0 top-0 h-96 -z-10 hero-wash pointer-events-none" aria-hidden="true" />
+      <div className="text-center max-w-(--container-md) motion-safe:animate-rise-in">
+        <div className="w-20 h-20 bg-surface-container-lowest border border-outline-variant shadow-lift rounded-3xl flex items-center justify-center mx-auto mb-md">
           <span className="material-symbols-outlined text-[40px] text-on-surface-variant" aria-hidden="true">explore_off</span>
         </div>
         <p className="font-label-md text-label-md text-on-surface-variant mb-base">Error 404</p>

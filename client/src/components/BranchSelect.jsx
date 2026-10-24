@@ -18,7 +18,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
         <button
           type="button"
           onClick={selectAll}
-          className="min-h-[44px] min-w-[44px] px-2 rounded-lg font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-[44px] min-w-[44px] px-2 rounded-full font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           Select all
         </button>
@@ -26,7 +26,7 @@ const BranchSelect = ({ selected = [], onChange }) => {
         <button
           type="button"
           onClick={clearAll}
-          className="min-h-[44px] min-w-[44px] px-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-[44px] min-w-[44px] px-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           Clear
         </button>

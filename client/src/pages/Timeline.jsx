@@ -75,7 +75,7 @@ const Timeline = () => {
 
   return (
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
-      <div className="text-center mb-lg">
+      <div className="text-center mb-lg motion-safe:animate-rise-in">
         <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement timeline</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">Every drive by month, latest first.</p>
       </div>
@@ -97,8 +97,8 @@ const Timeline = () => {
               <section key={g.key} className="mb-lg" aria-labelledby={`month-${g.key}`}>
                 <div className="relative flex items-center gap-sm mb-md">
                   <div
-                    className={`w-12 sm:w-16 h-12 sm:h-16 rounded-xl flex flex-col items-center justify-center z-10 shrink-0 leading-tight ${
-                      isPastMonth ? 'bg-surface-container-high text-on-surface' : 'bg-primary-container text-on-primary'
+                    className={`w-12 sm:w-16 h-12 sm:h-16 rounded-2xl flex flex-col items-center justify-center z-10 shrink-0 leading-tight ${
+                      isPastMonth ? 'bg-surface-container-high text-on-surface' : 'bg-primary-container text-on-primary shadow-lift'
                     }`}
                     aria-hidden="true"
                   >
@@ -114,7 +114,7 @@ const Timeline = () => {
                 </div>
 
                 <ol className="space-y-sm ml-6 sm:ml-8 pl-8 sm:pl-10">
-                  {g.drives.map((p) => {
+                  {g.drives.map((p, i) => {
                     const past = driveDay(p).getTime() < today;
                     return (
                       <Fragment key={p._id}>
@@ -127,11 +127,18 @@ const Timeline = () => {
                             <span className="flex-1 h-px bg-primary/30" aria-hidden="true" />
                           </li>
                         )}
-                        <li>
+                        <li className="group/item relative motion-safe:rise-in-stagger" style={{ '--i': i }}>
+                          {/* Marker on the rail; grows when its card is hovered */}
+                          <span
+                            className={`absolute top-1/2 -mt-1 -left-[36px] sm:-left-[44px] w-2 h-2 rounded-full ring-4 ring-background transition-transform duration-200 ease-snappy group-hover/item:[transform:scale(1.5)] ${
+                              past ? 'bg-outline' : 'bg-primary-container'
+                            }`}
+                            aria-hidden="true"
+                          />
                           <Link
                             to={`/placement/${p._id}`}
-                            className={`block rounded-xl border p-md transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-                              past ? 'bg-surface-container-low border-outline-variant' : 'bg-surface-container-lowest border-outline-variant'
+                            className={`block rounded-2xl border p-md transition-control group-hover/item:shadow-lift group-hover/item:border-primary-30 group-hover/item:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+                              past ? 'bg-surface-container-low border-outline-variant' : 'bg-surface-container-lowest border-outline-variant shadow-soft'
                             }`}
                           >
                             <div className="flex items-start justify-between gap-sm">

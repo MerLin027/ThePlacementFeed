@@ -13,7 +13,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 
 const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 const iconButton =
-  'inline-flex items-center justify-center w-[44px] h-[44px] rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
+  'inline-flex items-center justify-center w-[44px] h-[44px] rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
 
 const AdminDashboard = () => {
   usePageTitle('Admin dashboard');
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
         aria-disabled={!!toggling[p._id]}
         aria-busy={!!toggling[p._id]}
         title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
-        className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`inline-flex items-center gap-1 min-h-[44px] px-3.5 rounded-full font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
           p.isPostponed
             ? 'bg-red-100 text-red-800 hover:bg-red-200'
             : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-surface-variant'
@@ -208,7 +208,7 @@ const AdminDashboard = () => {
           aria-disabled={!!toggling[p._id]}
           aria-busy={!!toggling[p._id]}
           title="Status is fixed by hand. Click to let it follow the dates again."
-          className="inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg font-label-md text-label-md bg-primary-fixed text-on-primary-fixed hover:bg-primary/15 transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          className="inline-flex items-center gap-1 min-h-[44px] px-3.5 rounded-full font-label-md text-label-md bg-primary-fixed text-on-primary-fixed hover:bg-primary/15 transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           {toggling[p._id] ? (
             <Spinner size="xs" tone="current" />
@@ -257,21 +257,21 @@ const AdminDashboard = () => {
 
       {/* Search */}
       <div className="mb-md">
-        <div className="relative max-w-(--container-md)">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" aria-hidden="true">search</span>
+        <div className="group/s relative max-w-(--container-md)">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px] group-focus-within/s:text-primary transition-colors duration-200" aria-hidden="true">search</span>
           <input
             type="search"
             aria-label="Search drives"
             placeholder="Search placements..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input-field pl-10!"
+            className="input-field rounded-full! pl-11! hover:shadow-soft"
           />
         </div>
       </div>
 
       {/* Desktop / tablet: table */}
-      <div className="hidden md:block bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+      <div className="hidden md:block bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -322,7 +322,7 @@ const AdminDashboard = () => {
         {loading ? (
           <div className="space-y-xs" role="status" aria-label="Loading drives">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm space-y-xs" aria-hidden="true">
+              <div key={i} className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm space-y-xs" aria-hidden="true">
                 <span className="skeleton h-5 w-2/3" />
                 <span className="skeleton h-4 w-1/3" />
                 <span className="skeleton h-[44px] w-full" />
@@ -330,13 +330,13 @@ const AdminDashboard = () => {
             ))}
           </div>
         ) : placements.length === 0 ? (
-          <p className="bg-surface-container-lowest border border-outline-variant rounded-xl px-sm py-lg text-center font-body-sm text-body-sm text-on-surface-variant">
+          <p className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft px-sm py-lg text-center font-body-sm text-body-sm text-on-surface-variant">
             {emptyText}
           </p>
         ) : (
           <ul className="space-y-xs" aria-label="Drives">
             {placements.map((p) => (
-              <li key={p._id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm">
+              <li key={p._id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm">
                 <div className="flex items-start justify-between gap-sm">
                   <div className="min-w-0">
                     <p className="font-label-md text-label-md text-on-surface">{p.company}</p>

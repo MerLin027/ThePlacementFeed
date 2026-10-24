@@ -25,7 +25,7 @@ const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
     disabled={disabled}
     aria-label={label}
     title={label}
-    className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed ${
+    className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed ${
       danger
         ? 'text-on-surface-variant hover:text-error hover:bg-error-container'
         : 'text-on-surface-variant hover:text-primary hover:bg-primary/5'
@@ -144,8 +144,8 @@ const AdminStudents = () => {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-sm mb-md">
-        <div className="relative w-full sm:max-w-(--container-md)">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" aria-hidden="true">search</span>
+        <div className="group/s relative w-full sm:max-w-(--container-md)">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px] group-focus-within/s:text-primary transition-colors duration-200" aria-hidden="true">search</span>
           <input
             type="search"
             placeholder="Search by name, email or roll number"
@@ -153,7 +153,7 @@ const AdminStudents = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             maxLength={100}
-            className="input-field pl-10!"
+            className="input-field rounded-full! pl-11! hover:shadow-soft"
           />
         </div>
         <select
@@ -175,7 +175,7 @@ const AdminStudents = () => {
       {error && <div className="mb-md"><FormAlert>{error}</FormAlert></div>}
 
       {/* Table */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

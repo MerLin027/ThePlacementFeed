@@ -4,11 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../Notifications/NotificationBell';
 import logo from '../../assets/logo.png';
 
+// The underline is a pseudo-element that grows from the centre (scale only, no layout shift)
 const desktopLinkClass = (active) =>
-  `h-16 flex items-center px-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xs ${
+  `relative h-16 flex items-center px-sm transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xs after:absolute after:inset-x-sm after:bottom-0 after:h-0.5 after:rounded-full after:transition-transform after:duration-200 after:ease-snappy ${
     active
-      ? 'text-primary font-bold border-b-2 border-primary'
-      : 'text-on-surface-variant hover:text-primary'
+      ? 'text-primary font-bold after:bg-primary'
+      : 'text-on-surface-variant hover:text-primary after:bg-primary-30 after:[transform:scaleX(0)] hover:after:[transform:scaleX(1)]'
   }`;
 
 const mobileLinkClass = (active) =>
@@ -119,7 +120,7 @@ const Navbar = () => {
             aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isMobileOpen}
             aria-controls="mobile-menu"
-            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
               {isMobileOpen ? 'close' : 'menu'}

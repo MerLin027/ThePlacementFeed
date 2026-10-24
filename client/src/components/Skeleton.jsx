@@ -6,7 +6,7 @@
 export const Skeleton = ({ className = '' }) => <span className={`skeleton ${className}`} aria-hidden="true" />;
 
 export const DriveCardSkeleton = () => (
-  <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm" aria-hidden="true">
+  <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-md flex flex-col gap-sm" aria-hidden="true">
     <div className="flex justify-between items-start">
       <Skeleton className="w-12 h-12 rounded-lg" />
       <Skeleton className="w-20 h-6 rounded-full" />
@@ -36,7 +36,7 @@ export const TimelineSkeleton = () => (
       <Skeleton className="h-6 w-40" />
     </div>
     {Array.from({ length: 4 }, (_, i) => (
-      <div key={i} className="ml-16 bg-surface-container-lowest border border-outline-variant rounded-xl p-sm flex justify-between gap-sm">
+      <div key={i} className="ml-16 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm flex justify-between gap-sm">
         <div className="flex-1 space-y-xs">
           <Skeleton className="h-5 w-1/2" />
           <Skeleton className="h-4 w-1/3" />
@@ -52,25 +52,25 @@ export const DetailSkeleton = () => (
     <Skeleton className="h-4 w-28 mb-sm" />
     <div className="grid grid-cols-1 md:grid-cols-12 gap-sm items-start" aria-hidden="true">
       <div className="md:col-span-4 space-y-sm">
-        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm space-y-xs">
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm space-y-xs">
           <Skeleton className="w-10 h-10 rounded-lg" />
           <Skeleton className="h-7 w-3/4" />
           <Skeleton className="h-5 w-1/2" />
           <Skeleton className="h-6 w-1/3" />
           <Skeleton className="h-[44px] w-full rounded-lg" />
         </div>
-        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm space-y-xs">
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm space-y-xs">
           <Skeleton className="h-4 w-1/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
         </div>
       </div>
       <div className="md:col-span-8 space-y-sm">
-        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm space-y-xs">
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm space-y-xs">
           <Skeleton className="h-6 w-1/3" />
           <Skeleton className="h-16 w-full" />
         </div>
-        <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm space-y-xs">
+        <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm space-y-xs">
           <Skeleton className="h-6 w-1/2" />
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className={`h-4 ${i % 3 === 2 ? 'w-2/3' : 'w-full'}`} />

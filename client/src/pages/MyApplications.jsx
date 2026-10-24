@@ -55,7 +55,7 @@ const MyApplications = () => {
       {loading ? (
         <PageSpinner />
       ) : !error && applications.length === 0 ? (
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-md py-lg text-center">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft px-md py-lg text-center">
           <span className="material-symbols-outlined text-[40px] text-outline" aria-hidden="true">work_history</span>
           <h2 className="font-headline-sm text-headline-sm text-on-surface mt-xs">No applications yet</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-base max-w-(--container-md) mx-auto">
@@ -65,12 +65,12 @@ const MyApplications = () => {
         </div>
       ) : (
         <ul className="space-y-xs" aria-label="Your applications">
-          {applications.map((a) => (
-            <li key={a.id}>
+          {applications.map((a, i) => (
+            <li key={a.id} className="group/row motion-safe:rise-in-stagger" style={{ '--i': i }}>
               {a.driveId ? (
                 <Link
                   to={`/placement/${a.driveId}`}
-                  className="flex flex-col sm:flex-row sm:items-center gap-xs sm:gap-sm bg-surface-container-lowest border border-outline-variant rounded-xl p-sm hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-shadow duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex flex-col sm:flex-row sm:items-center gap-xs sm:gap-sm bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm group-hover/row:shadow-lift group-hover/row:border-primary-30 group-hover/row:-translate-y-0.5 transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-label-md text-label-md text-on-surface truncate">{a.company}</p>
@@ -82,7 +82,7 @@ const MyApplications = () => {
                   <ApplicationStatusPill status={a.status} />
                 </Link>
               ) : (
-                <div className="flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-xl p-sm">
+                <div className="flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-2xl p-sm">
                   <p className="flex-1 font-body-sm text-body-sm text-on-surface-variant">This drive was removed.</p>
                   <ApplicationStatusPill status={a.status} />
                 </div>

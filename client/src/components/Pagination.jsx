@@ -28,7 +28,7 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
         aria-label="Previous page"
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="w-[44px] h-[44px] flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+        className="w-[44px] h-[44px] flex items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant
                    hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_left</span>
@@ -63,7 +63,7 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
         aria-label="Next page"
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="w-[44px] h-[44px] flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant
+        className="w-[44px] h-[44px] flex items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant
                    hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>

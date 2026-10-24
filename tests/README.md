@@ -53,5 +53,9 @@ for `DeprecationWarning`.
 | `eligibility-unit` | eligibility text |
 | `upgrade2-test` … `upgrade5-test`, `upgrade9-test` | Helmet/bcrypt/rate-limit, Express 5 + sanitiser, Mongoose 9, markdown XSS, Node 24 runtime checks |
 
+Before every axe scan the browser suites call `settleAnimations(page)` (`lib/settle.cjs`), which waits
+for the page's entrance animations to finish, so colour contrast is measured on the settled page and
+not on a half-faded frame.
+
 Known limitation: browser suites still use some fixed waits (`waitForTimeout`); on a slow machine a
 check may occasionally need a re-run.

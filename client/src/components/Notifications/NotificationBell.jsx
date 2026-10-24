@@ -73,7 +73,7 @@ const NotificationBell = () => {
           id={panelId}
           role="region"
           aria-label="Notifications"
-          className="absolute right-0 mt-2 w-88 max-w-[calc(100vw-1rem)] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh]"
+          className="absolute right-0 mt-2 w-88 max-w-[calc(100vw-1rem)] bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-pop z-50 origin-top-right animate-menu-in flex flex-col max-h-[80vh]"
         >
           <div className="flex items-center justify-between gap-sm px-sm py-xs border-b border-outline-variant">
             <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Notifications</h3>

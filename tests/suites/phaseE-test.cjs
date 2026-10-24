@@ -1,5 +1,6 @@
 // Phase E verification — student-facing pages. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { settleAnimations } = require('../lib/settle.cjs');
 const path = require('path');
 const { chromium, devices } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -18,6 +19,8 @@ const istDate = (n) => new Date(Date.now() + 5.5 * 3600e3 + n * 86400e3).toISOSt
 const TAG = `PE${Date.now() % 100000}`;
 
 const axeScan = async (page, label) => {
+  await settleAnimations(page);
+
   await page.addScriptTag({ path: AXE });
   const v = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations
     .filter((x) => x.impact === 'serious' || x.impact === 'critical')

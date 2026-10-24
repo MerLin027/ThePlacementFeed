@@ -7,6 +7,7 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import RequireRole from './components/RequireRole';
 import RouteEffects from './components/RouteEffects';
+import PageTransition from './components/PageTransition';
 import Home from './pages/Home';
 import PlacementDetail from './pages/PlacementDetail';
 import Timeline from './pages/Timeline';
@@ -36,9 +37,23 @@ function App() {
             </a>
             <RouteEffects />
             {/* Bottom-centre: never covers the header, the bell or its open panel (desktop or phone) */}
-            <Toaster position="bottom-center" containerStyle={{ bottom: 16 }} />
+            <Toaster
+              position="bottom-center"
+              containerStyle={{ bottom: 16 }}
+              toastOptions={{
+                className: 'font-body-sm text-body-sm',
+                style: {
+                  borderRadius: '1rem',
+                  padding: '10px 14px',
+                  color: 'var(--color-on-surface)',
+                  border: '1px solid var(--color-outline-variant)',
+                  boxShadow: 'var(--shadow-pop)',
+                },
+              }}
+            />
             <Navbar />
           <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto content-scrollbar focus:outline-hidden">
+            <PageTransition>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/placement/:id" element={<PlacementDetail />} />
@@ -96,6 +111,7 @@ function App() {
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </PageTransition>
           </main>
           <Footer />
         </div>

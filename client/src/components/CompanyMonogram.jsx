@@ -28,9 +28,9 @@ const SIZES = {
   sm: 'w-10 h-10 text-[0.95rem]',
 };
 
-const CompanyMonogram = ({ name, size = 'md' }) => (
+const CompanyMonogram = ({ name, size = 'md', className = '' }) => (
   <span
-    className={`${SIZES[size]} ${tintFor(name)} rounded-lg flex items-center justify-center font-headline-sm font-semibold shrink-0 select-none`}
+    className={`${SIZES[size]} ${tintFor(name)} rounded-xl flex items-center justify-center font-headline-sm font-semibold shrink-0 select-none ${className}`}
     aria-hidden="true"
   >
     {initials(name)}

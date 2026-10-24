@@ -17,7 +17,7 @@ const Row = ({ icon, children, title }) => (
  * whole card so the card is clickable, while the apply button sits above it
  * (no interactive element nested inside another).
  */
-const PlacementCard = ({ placement }) => {
+const PlacementCard = ({ placement, index = 0 }) => {
   const { _id, company, role, ctc, status, isPostponed, driveDate, deadline, eligibility } = placement;
   const branches = eligibility?.branches?.length > 0 ? formatBranches(eligibility.branches) : 'All branches';
   const closing = status === 'Upcoming' && !isPostponed ? deadlineInfo(deadline) : null;
@@ -40,33 +40,40 @@ const PlacementCard = ({ placement }) => {
     timing = <Row icon="event">Dates to be announced</Row>;
   }
 
+  // Hover is detected on the wrapper, which never moves, so the lifted card cannot slide out from
+  // under a resting pointer and flicker
   return (
-    <article className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col h-full hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:border-outline transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
-      <div className="flex justify-between items-start gap-sm mb-sm">
-        <CompanyMonogram name={company} />
-        <StatusBadge status={status} isPostponed={isPostponed} />
-      </div>
+    <div className="group/card h-full">
+      <article
+        style={{ '--i': index }}
+        className="relative bg-surface-container-lowest border border-outline-variant rounded-2xl p-md flex flex-col h-full shadow-soft group-hover/card:shadow-lift group-hover/card:border-primary-30 group-hover/card:-translate-y-0.5 transition-control focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 motion-safe:rise-in-stagger"
+      >
+        <div className="flex justify-between items-start gap-sm mb-sm">
+          <CompanyMonogram name={company} className="group-hover/card:scale-105 transition-transform duration-200 ease-snappy" />
+          <StatusBadge status={status} isPostponed={isPostponed} />
+        </div>
 
-      <h3 className="font-headline-md text-headline-md text-on-surface mb-[2px] truncate">
-        <Link
-          to={`/placement/${_id}`}
-          className="after:absolute after:inset-0 after:rounded-xl focus:outline-hidden"
-        >
-          {company}
-        </Link>
-      </h3>
-      <p className="font-body-md text-body-md text-on-surface-variant mb-sm truncate">{role}</p>
+        <h3 className="font-headline-md text-headline-md text-on-surface mb-[2px] truncate group-hover/card:text-primary transition-colors duration-200">
+          <Link
+            to={`/placement/${_id}`}
+            className="after:absolute after:inset-0 after:rounded-2xl focus:outline-hidden"
+          >
+            {company}
+          </Link>
+        </h3>
+        <p className="font-body-md text-body-md text-on-surface-variant mb-sm truncate">{role}</p>
 
-      <div className="space-y-xs mb-md grow">
-        <Row icon="payments">
-          <span className="font-label-md text-label-md text-on-surface tabular-nums">₹{ctc} LPA</span>
-        </Row>
-        <Row icon="school" title={branches}>{branches}</Row>
-        {timing}
-      </div>
+        <div className="space-y-xs mb-md grow">
+          <Row icon="payments">
+            <span className="font-label-md text-label-md text-on-surface tabular-nums">₹{ctc} LPA</span>
+          </Row>
+          <Row icon="school" title={branches}>{branches}</Row>
+          {timing}
+        </div>
 
-      <CardApplyButton drive={placement} />
-    </article>
+        <CardApplyButton drive={placement} />
+      </article>
+    </div>
   );
 };
 

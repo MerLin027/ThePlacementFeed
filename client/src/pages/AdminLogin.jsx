@@ -48,13 +48,14 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-full flex items-center justify-center py-lg px-sm">
+    <div className="relative isolate min-h-full flex items-center justify-center py-lg px-sm">
+      <div className="absolute inset-x-0 top-0 h-96 -z-10 hero-wash pointer-events-none" aria-hidden="true" />
       <div className="w-full max-w-(--container-md)">
         {/* Card */}
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+        <div className="bg-surface-container-lowest rounded-3xl shadow-lift border border-outline-variant overflow-hidden motion-safe:animate-rise-in">
           {/* Header */}
           <div className="px-md pt-md pb-md text-center">
-            <div className="w-14 h-14 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-sm">
+            <div className="w-14 h-14 bg-primary-container rounded-2xl shadow-glow flex items-center justify-center mx-auto mb-sm">
               <span className="material-symbols-outlined text-on-primary text-[28px]">lock</span>
             </div>
             <h1 className="font-headline-md text-headline-md text-on-surface mb-base">Admin login</h1>
@@ -65,7 +66,7 @@ const AdminLogin = () => {
           <form onSubmit={handleSubmit} className="px-md pb-md space-y-sm">
             {/* Session expired alert */}
             {expired && !error && (
-              <div className="p-sm bg-amber-50 border border-amber-200 rounded-lg font-body-sm text-body-sm text-amber-700 flex items-center gap-xs">
+              <div className="p-sm bg-amber-50 border border-amber-200 rounded-xl font-body-sm text-body-sm text-amber-700 flex items-center gap-xs">
                 <span className="material-symbols-outlined text-[18px] shrink-0">warning</span>
                 Session expired. Please log in again.
               </div>
@@ -73,7 +74,7 @@ const AdminLogin = () => {
 
             {/* Error alert */}
             {error && (
-              <div className="p-sm bg-error-container border border-error/20 rounded-lg font-body-sm text-body-sm text-on-error-container">
+              <div className="p-sm bg-error-container border border-error/20 rounded-xl font-body-sm text-body-sm text-on-error-container">
                 {error}
               </div>
             )}

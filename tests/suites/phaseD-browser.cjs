@@ -1,5 +1,6 @@
 // Phase D verification — UI foundation: a11y scan, focus, titles, targets, motion, loading states.
 const TEST = require('../lib/env.cjs');
+const { settleAnimations } = require('../lib/settle.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -18,6 +19,8 @@ const TAG = `PD${Date.now() % 100000}`;
 const ONLY = process.env.AXE_REPORT === '1';
 
 const axeScan = async (page, label) => {
+  await settleAnimations(page);
+
   await page.addScriptTag({ path: AXE });
   const result = await page.evaluate(async () => {
     // eslint-disable-next-line no-undef

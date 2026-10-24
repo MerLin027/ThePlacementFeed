@@ -1,6 +1,7 @@
 // Phase G final audit — every page, guest/student/admin, desktop (1280) and phone (390):
 // axe (serious/critical), >=44px targets, no horizontal scroll, no console errors. Saves "after" screenshots.
 const TEST = require('../lib/env.cjs');
+const { settleAnimations } = require('../lib/settle.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -20,6 +21,8 @@ const TAG = process.env.TAG || `PG${Date.now() % 100000}`;
 
 const audit = async (page, label, consoleErrors) => {
   await wait(1500);
+  await settleAnimations(page);
+
   await page.addScriptTag({ path: AXE });
   const violations = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations
     .filter((x) => x.impact === 'serious' || x.impact === 'critical')

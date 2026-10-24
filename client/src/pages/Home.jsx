@@ -40,10 +40,11 @@ const baseParams = (filters) => {
   return params;
 };
 
-const DriveGrid = ({ drives }) => (
+// Cards rise in with a short stagger; `from` keeps a "show more" batch from waiting on earlier cards
+const DriveGrid = ({ drives, from = 0 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
-    {drives.map((p) => (
-      <PlacementCard key={p._id} placement={p} />
+    {drives.map((p, i) => (
+      <PlacementCard key={p._id} placement={p} index={Math.max(0, i - from)} />
     ))}
   </div>
 );
@@ -124,10 +125,15 @@ const Home = () => {
   const noun = (n) => `drive${n === 1 ? '' : 's'}`;
 
   return (
-    <div className="w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
-      <div className="mb-md md:mb-lg">
-        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">{heading.title}</h1>
-        <p className="font-body-lg text-body-lg text-on-surface-variant">{heading.subtitle}</p>
+    <div className="relative isolate w-full max-w-container-max mx-auto px-sm md:px-lg pt-md pb-xl md:pt-lg md:pb-xl">
+      <div className="absolute inset-x-0 top-0 h-80 -z-10 hero-wash pointer-events-none" aria-hidden="true" />
+      <div className="mb-md md:mb-lg md:text-center motion-safe:animate-rise-in">
+        <p className="inline-flex items-center gap-xs mb-sm px-3 py-1 rounded-full border border-outline-variant bg-surface-container-lowest shadow-soft font-label-sm text-label-sm text-on-surface-variant">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
+          CHARUSAT CDPC placement drives
+        </p>
+        <h1 className="font-display-lg text-display-lg md:text-[2.75rem] md:leading-[3.25rem] text-on-surface mb-xs">{heading.title}</h1>
+        <p className="font-body-lg text-body-lg text-on-surface-variant max-w-(--container-xl) md:mx-auto">{heading.subtitle}</p>
       </div>
 
       <FilterBar
@@ -137,7 +143,7 @@ const Home = () => {
       />
 
       {!loading && (
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-md" role="status" aria-live="polite">
+        <p className="font-body-sm text-body-sm text-on-surface-variant mb-sm tabular-nums" role="status" aria-live="polite">
           {pagination.total === 0
             ? `No ${splitView ? 'open ' : ''}drives found`
             : `Showing ${placements.length} of ${pagination.total} ${splitView ? 'open ' : ''}${noun(pagination.total)}`}
@@ -180,7 +186,7 @@ const Home = () => {
             onClick={() => setPastOpen((v) => !v)}
             aria-expanded={pastOpen}
             aria-controls="past-drives"
-            className="w-full flex items-center justify-between gap-sm min-h-[52px] px-md rounded-xl border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            className="w-full flex items-center justify-between gap-sm min-h-[56px] px-md rounded-2xl border border-outline-variant bg-surface-container-low hover:bg-surface-container-lowest hover:shadow-soft text-on-surface transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span className="flex items-center gap-xs font-headline-sm text-headline-sm">
               <span className="material-symbols-outlined text-[22px] text-on-surface-variant" aria-hidden="true">history</span>
@@ -197,7 +203,7 @@ const Home = () => {
 
           {pastOpen && (
             <div id="past-drives" className="mt-md">
-              <DriveGrid drives={past.items} />
+              <DriveGrid drives={past.items} from={(past.page - 1) * PAST_PAGE_SIZE} />
               {past.page < past.totalPages && (
                 <div className="flex justify-center mt-md">
                   <button

@@ -15,7 +15,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
   const allSelected = applicants.length > 0 && applicants.every((a) => selected.has(a.id));
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+    <div className="bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -111,7 +111,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                         type="button"
                         onClick={() => onView(a)}
                         aria-label={`View application from ${name}`}
-                        className="inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        className="inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/5 font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">visibility</span>
                         <span className="hidden lg:inline">View</span>

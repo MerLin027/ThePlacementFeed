@@ -142,7 +142,7 @@ const StudentProfile = () => {
         <ProfileCompletionBanner missingFields={profile.missingFields} />
 
         {/* Account (locked) */}
-        <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm md:p-md" aria-labelledby="account-heading">
+        <section className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md" aria-labelledby="account-heading">
           <h2 id="account-heading" className="font-headline-sm text-headline-sm text-on-surface mb-xs">Account</h2>
           <dl>
             <ReadOnlyRow label="Email" value={profile.email} />
@@ -166,7 +166,7 @@ const StudentProfile = () => {
           ref={formRef}
           onSubmit={handleSubmit}
           noValidate
-          className="bg-surface-container-lowest border border-outline-variant rounded-xl p-sm md:p-md space-y-sm"
+          className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md space-y-sm"
           aria-labelledby="details-heading"
         >
           <h2 id="details-heading" className="font-headline-sm text-headline-sm text-on-surface">Your details</h2>
