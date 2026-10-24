@@ -108,8 +108,9 @@ npm test         # starts the API and the website itself, then runs every suite
 ## Deployment
 
 - **Website:** Vercel, building `client/`. `vercel.json` sends every path to the single-page app and
-  sets the security headers (Content-Security-Policy, no framing, no MIME sniffing). The policy lets
-  the site call any HTTPS API; name your API's address in `connect-src` to tighten it.
+  sets the security headers (Content-Security-Policy, no framing, no MIME sniffing). The policy only
+  lets the site call its own origin and the API at `https://theplacementfeed-api.onrender.com`. If the
+  API moves, or you add another outside service, update `connect-src` (or the matching directive) too.
 - **API:** Render, with the root directory set to `server`. It builds on Node 24, as set by
   `engines` in `server/package.json`. The free tier sleeps when idle, so the first request after a
   quiet spell can take up to a minute. The site shows a "waking up" message meanwhile.
