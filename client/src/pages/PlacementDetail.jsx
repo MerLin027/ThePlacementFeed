@@ -59,16 +59,24 @@ const PlacementDetail = () => {
   const applyRequested = searchParams.get('apply') === '1';
   const applyKind = useApplyState(placement || { _id: id }).kind;
   const { loading: authLoading } = useAuth();
-  useEffect(() => {
-    // Wait for the session check too, or a logged-in student would look logged out
-    if (!placement || !applyRequested || authLoading) return;
+  // Wait for the drive and the session check (or a logged-in student would look logged out). Each
+  // ?apply=1 is handled once, during render; the effect below only removes it from the URL.
+  const applyReady = Boolean(placement) && applyRequested && !authLoading;
+  const [applyHandled, setApplyHandled] = useState(false);
+  if (applyReady && !applyHandled) {
+    setApplyHandled(true);
     if (applyKind === 'apply') setIsApplyOpen(true);
+  } else if (!applyRequested && applyHandled) {
+    setApplyHandled(false);
+  }
+  useEffect(() => {
+    if (!applyReady) return;
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete('apply');
       return next;
     }, { replace: true });
-  }, [placement, applyRequested, applyKind, authLoading, setSearchParams]);
+  }, [applyReady, setSearchParams]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
