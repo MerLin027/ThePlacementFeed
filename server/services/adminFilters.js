@@ -53,6 +53,13 @@ const buildStudentFilter = async (q) => {
 
   if (q.account === 'reset_pending') and.push({ mustChangePassword: true });
 
+  if (q.joinedFrom || q.joinedTo) {
+    const createdAt = {};
+    if (q.joinedFrom) createdAt.$gte = istDayStart(q.joinedFrom);
+    if (q.joinedTo) createdAt.$lt = istDayEnd(q.joinedTo);
+    and.push({ createdAt });
+  }
+
   if (q.applications) {
     // A bounded id list: one entry per student who applied (or was selected) at least once
     const match = q.applications === 'selected' ? { status: 'Offered' } : {};
@@ -77,7 +84,8 @@ const STUDENT_SORTS = {
 
 // --- Applicants (one drive) ---
 
-const buildApplicantFilter = (driveId, q) => {
+// promptCount: the drive's number of custom questions (for "answered every question")
+const buildApplicantFilter = (driveId, q, { promptCount = 0 } = {}) => {
   const filter = { driveId: new mongoose.Types.ObjectId(driveId) };
   const statuses = list(q.status);
   if (statuses.length === 1) filter.status = statuses[0];
@@ -101,6 +109,12 @@ const buildApplicantFilter = (driveId, q) => {
   const and = [];
   if (q.account === 'deleted') and.push(deleted);
   else if (q.account === 'active') and.push({ $nor: [deleted] });
+
+  // Answers are stored only when given, so "answered everything" = as many answers as questions
+  if (q.answers === 'note') and.push({ coverNote: { $exists: true, $nin: [null, ''] } });
+  else if (q.answers === 'all_questions') {
+    and.push(promptCount > 0 ? { $expr: { $eq: [{ $size: { $ifNull: ['$customAnswers', []] } }, promptCount] } } : { _id: null });
+  }
 
   if (q.search) {
     const regex = new RegExp(escapeRegex(q.search), 'i');

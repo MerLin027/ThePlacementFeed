@@ -4,6 +4,8 @@ import {
 } from 'recharts';
 import api from '../../api/axios';
 import ChartCard from './ChartCard';
+import { INK, GRID, SURFACE, ACCENT, SELECTED, AXIS, compact } from './chartTheme';
+import { ChartTooltip, ChartLegend, EmptyChart } from './chartParts';
 import { FormAlert } from '../AuthCard';
 import { APPLICATION_STATUSES, STATUS_META, statusLabel } from '../../constants/applications';
 import { useCatalog } from '../../stores/catalog';
@@ -11,15 +13,6 @@ import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { useCountUp } from '../../hooks/useCountUp';
 import { parseApiError } from '../../utils/formErrors';
 
-// Chart ink and structure: text in the text tokens (never the series colour), recessive hairline grid
-const INK = '#434655';
-const GRID = '#e1e3e4';
-const SURFACE = '#ffffff';
-const ACCENT = '#2563eb';
-const SELECTED = '#059669';
-const AXIS = { fill: INK, fontSize: 12 };
-
-const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n));
 const shortDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 const pct = (part, whole) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
@@ -37,45 +30,6 @@ const StatTile = ({ label, value, note, icon }) => {
   );
 };
 
-// One tooltip look for every chart: a label line, then a swatch + name + value per series
-const ChartTooltip = ({ active, payload, label, labelFormat }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-pop px-3 py-2 font-body-sm text-body-sm">
-      {label !== undefined && <p className="font-label-md text-label-md text-on-surface mb-1">{labelFormat ? labelFormat(label) : label}</p>}
-      {payload.map((p) => (
-        <p key={p.dataKey} className="flex items-center gap-xs text-on-surface-variant">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.payload?.fill || p.color }} aria-hidden="true" />
-          {p.name}
-          <span className="ml-auto pl-sm font-label-md text-label-md text-on-surface tabular-nums">{p.value}</span>
-        </p>
-      ))}
-    </div>
-  );
-};
-
-// Legend in a fixed order: a colour swatch beside text in the text colour (never coloured text)
-const ChartLegend = ({ items }) => (
-  <ul className="flex flex-wrap justify-center gap-x-sm gap-y-1 mt-xs font-body-sm text-body-sm text-on-surface-variant">
-    {items.map((item) => (
-      <li key={item.label} className="inline-flex items-center gap-1.5">
-        <span className="w-2.5 h-2.5 rounded-sm" style={{ background: item.color }} aria-hidden="true" />
-        {item.label}
-      </li>
-    ))}
-  </ul>
-);
-
-const EmptyChart = ({ text }) => (
-  <div className="h-full min-h-[200px] flex items-center justify-center rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant">
-    {text}
-  </div>
-);
-
-/**
- * The admin dashboard's overview: headline numbers and four charts from GET /api/admin/insights.
- * Loaded as its own chunk (React.lazy in AdminDashboard), so the chart library only downloads here.
- */
 const DashboardInsights = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');

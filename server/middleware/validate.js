@@ -430,6 +430,8 @@ const adminStudentListRules = [
   query('profile').optional().isIn(['complete', 'incomplete', 'no_institute']).withMessage('profile must be complete, incomplete or no_institute'),
   query('account').optional().isIn(['reset_pending']).withMessage('account must be reset_pending'),
   query('applications').optional().isIn(['applied', 'never', 'selected']).withMessage('applications must be applied, never or selected'),
+  query('joinedFrom').optional().custom(isDay).withMessage('joinedFrom must be a date (YYYY-MM-DD)'),
+  query('joinedTo').optional().custom(isDay).withMessage('joinedTo must be a date (YYYY-MM-DD)'),
   query('sort').optional().isIn(SORT_LIST(STUDENT_SORTS)).withMessage(`sort must be one of: ${SORT_LIST(STUDENT_SORTS).join(', ')}`),
 ];
 
@@ -450,6 +452,7 @@ const applicantFilterRules = [
   query('appliedFrom').optional().custom(isDay).withMessage('appliedFrom must be a date (YYYY-MM-DD)'),
   query('appliedTo').optional().custom(isDay).withMessage('appliedTo must be a date (YYYY-MM-DD)'),
   query('account').optional().isIn(['active', 'deleted']).withMessage('account must be active or deleted'),
+  query('answers').optional().isIn(['note', 'all_questions']).withMessage('answers must be note or all_questions'),
   query('search')
     .optional()
     .isString()

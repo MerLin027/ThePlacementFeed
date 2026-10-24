@@ -175,6 +175,33 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   ex = await exportRolls(`appliedTo=${istDate(-3)}`);
   ok(ex.names.join() === 'Bharat', 'export: date filter');
 
+  console.log('# Joined, answers and per-drive insights');
+  // Bharat signed up 10 days ago; Aditi wrote a note; Aditi answered the drive's one question
+  await Student.collection.updateOne({ _id: new mongoose.Types.ObjectId(S.b.id) }, { $set: { createdAt: new Date(Date.now() - 10 * 86400e3) } });
+  x = await students(`joinedTo=${istDate(-5)}`);
+  ok(x.status === 200 && x.names.join() === 'Bharat', 'students joinedTo', x.names.join());
+  x = await students(`joinedFrom=${istDate(-1)}`);
+  ok(sameSet(x.names, ['Aditi', 'Chirag', 'Diya', 'Esha']), 'students joinedFrom', x.names.join());
+  r = await call('GET', '/api/admin/students?joinedFrom=last-week', { cookie: admin });
+  ok(r.status === 400, 'bad joinedFrom -> 400');
+  await Placement.collection.updateOne({ _id: drive._id }, { $set: { customPrompts: [{ _id: new mongoose.Types.ObjectId(), question: 'Why us?', required: false }] } });
+  await Application.collection.updateOne({ driveId: drive._id, studentId: new mongoose.Types.ObjectId(S.a.id) }, { $set: { coverNote: 'Keen', customAnswers: [{ question: 'Why us?', answer: 'Because' }] } });
+  x = await applicants('answers=note');
+  ok(x.names.join() === 'Aditi', 'applicants answers=note', x.names.join());
+  x = await applicants('answers=all_questions');
+  ok(x.names.join() === 'Aditi', 'applicants answers=all_questions', x.names.join());
+  ok(x.json.drive.promptCount === 1, 'list reports the drive\'s question count');
+  r = await call('GET', `/api/placements/${drive._id}/applicants?answers=maybe`, { cookie: admin });
+  ok(r.status === 400, 'bad answers -> 400');
+  r = await call('GET', `/api/placements/${drive._id}/applicants/insights`);
+  ok(r.status === 401, 'drive insights without a session -> 401');
+  r = await call('GET', `/api/placements/${drive._id}/applicants/insights`, { cookie: admin });
+  const di = r.json.data;
+  const bucket = (label) => di.cgpa.find((b) => b.bucket === label)?.applicants;
+  ok(r.status === 200 && di.cgpa.length === 9 && bucket('Below 6') === 0 && bucket('6.5–7') === 1 && bucket('7–7.5') === 1 && bucket('8.5–9') === 1, 'CGPA buckets (6.9, 7.4, 8.5)', JSON.stringify(di.cgpa));
+  const ce = di.branches.find((b) => b.code === 'CE');
+  ok(ce && ce.applications === 2 && ce.selected === 1 && di.branches.find((b) => b.code === 'IT')?.applications === 1, 'branch split with selections', JSON.stringify(di.branches));
+
   console.log('# Dashboard insights');
   r = await call('GET', '/api/admin/insights');
   ok(r.status === 401, 'insights without a session -> 401');

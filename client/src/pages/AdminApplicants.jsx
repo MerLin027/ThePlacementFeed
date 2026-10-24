@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Link, useParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import AdminFilterPanel from '../components/AdminFilterPanel';
 import StatusStrip from '../components/charts/StatusStrip';
+
+// The CGPA and branch charts (and the chart library) load only when "Insights" is opened
+const DriveInsights = lazy(() => import('../components/charts/DriveInsights'));
 import ApplicantTable from '../components/ApplicantTable';
 import ApplicantDetailsModal from '../components/ApplicantDetailsModal';
 import Pagination from '../components/Pagination';
@@ -18,7 +21,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 const PAGE_SIZE = 25;
 const FILTER_DEFAULTS = {
   search: '', status: [], branch: '', institute: '', gradYear: [], cgpaMin: '', cgpaMax: '', backlogsMax: '',
-  appliedFrom: '', appliedTo: '', account: '', sort: 'newest',
+  appliedFrom: '', appliedTo: '', account: '', answers: '', sort: 'newest',
 };
 const SORT_VALUES = APPLICANT_SORTS.map((s) => s.value);
 
@@ -36,6 +39,7 @@ const toParams = (filters, search) => {
   addDay(params, 'appliedFrom', filters.appliedFrom);
   addDay(params, 'appliedTo', filters.appliedTo);
   addOne(params, 'account', filters.account, ['active', 'deleted']);
+  addOne(params, 'answers', filters.answers, ['note', 'all_questions']);
   return params;
 };
 
@@ -58,6 +62,7 @@ const AdminApplicants = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [viewing, setViewing] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [showInsights, setShowInsights] = useState(false);
   usePageTitle(drive ? `Applicants · ${drive.company}` : 'Applicants');
 
   useEffect(() => {
@@ -231,6 +236,27 @@ const AdminApplicants = () => {
 
       <StatusStrip stats={stats} />
 
+      <div className="mb-sm">
+        <button
+          type="button"
+          onClick={() => setShowInsights((v) => !v)}
+          aria-expanded={showInsights}
+          aria-controls="drive-insights"
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">bar_chart</span>
+          {showInsights ? 'Hide insights' : 'Show insights'}
+          <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${showInsights ? 'rotate-180' : ''}`} aria-hidden="true">expand_more</span>
+        </button>
+        {showInsights && (
+          <div id="drive-insights" className="mt-xs">
+            <Suspense fallback={<span className="skeleton h-64 rounded-2xl" role="status" aria-label="Loading the insights" />}>
+              <DriveInsights driveId={driveId} reloadKey={reloadKey} />
+            </Suspense>
+          </div>
+        )}
+      </div>
+
       {/* Status counts — click to filter */}
       <div className="flex flex-wrap gap-xs mb-md" role="group" aria-label="Filter by status">
         {APPLICATION_STATUSES.map((s) => {
@@ -278,6 +304,14 @@ const AdminApplicants = () => {
             { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
             { key: 'appliedFrom', label: 'Applied from', type: 'date', chip: (v) => `Applied from ${v}` },
             { key: 'appliedTo', label: 'Applied until', type: 'date', chip: (v) => `Applied until ${v}` },
+            {
+              key: 'answers', label: 'Answers', type: 'select',
+              options: [
+                { value: '', label: 'Any' },
+                { value: 'note', label: 'Wrote a note' },
+                ...(drive?.promptCount > 0 ? [{ value: 'all_questions', label: 'Answered every question' }] : []),
+              ],
+            },
             { key: 'gradYear', label: 'Graduation year', type: 'multi', options: facets.gradYears.map((y) => ({ value: String(y), label: String(y) })) },
           ]}
         />

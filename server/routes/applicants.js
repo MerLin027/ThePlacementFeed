@@ -53,7 +53,7 @@ const exportLimiter = rateLimit({
 });
 
 // Filter (shared by list and export) and sorting live in services/adminFilters.js
-const buildFilter = buildApplicantFilter;
+const buildFilter = (drive, q) => buildApplicantFilter(drive._id.toString(), q, { promptCount: drive.customPrompts?.length || 0 });
 
 // Accounts deleted by the admin leave a scrubbed, flagged application behind. Records scrubbed
 // before the flag existed are recognised by the scrubbed name (the migration flags them too).
@@ -98,7 +98,7 @@ router.get('/', readLimiter, applicantListRules, validate, async (req, res, next
 
     const page = req.query.page || 1;
     const limit = req.query.limit || 25;
-    const filter = buildFilter(req.params.driveId, req.query);
+    const filter = buildFilter(drive, req.query);
 
     const [apps, total, statusCounts, institutes, gradYears] = await Promise.all([
       applicantQuery(filter, req.query.sort, { skip: (page - 1) * limit, limit }),
@@ -125,6 +125,7 @@ router.get('/', readLimiter, applicantListRules, validate, async (req, res, next
         company: drive.company,
         role: drive.role,
         applicationMode: drive.applicationMode,
+        promptCount: drive.customPrompts?.length || 0,
       },
       data: apps.map(toApplicantDTO),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -132,6 +133,51 @@ router.get('/', readLimiter, applicantListRules, validate, async (req, res, next
       facets: {
         institutes: institutes.filter(Boolean).sort(),
         gradYears: gradYears.filter(Boolean).sort((x, y) => x - y),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// CGPA buckets for the per-drive histogram: below 6, then half-point steps up to 10
+const CGPA_BOUNDARIES = [0, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10.001];
+const bucketLabel = (lo, hi) => (lo === 0 ? 'Below 6' : hi > 10 ? '9.5–10' : `${lo}–${hi}`);
+
+// GET /api/placements/:driveId/applicants/insights — CGPA spread and branch split for one drive
+router.get('/insights', readLimiter, async (req, res, next) => {
+  try {
+    const drive = await loadDrive(req.params.driveId);
+    if (!drive) {
+      return res.status(404).json({ success: false, message: 'Placement not found' });
+    }
+    const match = { driveId: drive._id };
+    const [cgpa, branches] = await Promise.all([
+      Application.aggregate([
+        { $match: { ...match, 'snapshot.cgpa': { $type: 'number' } } },
+        { $bucket: { groupBy: '$snapshot.cgpa', boundaries: CGPA_BOUNDARIES, default: 'other', output: { n: { $sum: 1 } } } },
+      ]),
+      Application.aggregate([
+        { $match: { ...match, 'snapshot.branch': { $type: 'string', $ne: '' } } },
+        {
+          $group: {
+            _id: '$snapshot.branch',
+            applications: { $sum: 1 },
+            selected: { $sum: { $cond: [{ $eq: ['$status', 'Offered'] }, 1, 0] } },
+          },
+        },
+        { $sort: { applications: -1 } },
+      ]),
+    ]);
+    const counts = new Map(cgpa.map((b) => [b._id, b.n]));
+    res.json({
+      success: true,
+      data: {
+        cgpa: CGPA_BOUNDARIES.slice(0, -1).map((lo, i) => ({
+          bucket: bucketLabel(lo, CGPA_BOUNDARIES[i + 1]),
+          applicants: counts.get(lo) || 0,
+        })),
+        branches: branches.map((b) => ({ code: b._id, applications: b.applications, selected: b.selected })),
       },
     });
   } catch (error) {
@@ -171,7 +217,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
       return res.status(404).json({ success: false, message: 'Placement not found' });
     }
 
-    const filter = buildFilter(req.params.driveId, req.query);
+    const filter = buildFilter(drive, req.query);
     const prompts = (drive.customPrompts || []).map((p) => p.question);
 
     logAdminAction(req, 'applicants.export', {
@@ -187,6 +233,7 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
         appliedFrom: req.query.appliedFrom,
         appliedTo: req.query.appliedTo,
         account: req.query.account,
+        answers: req.query.answers,
         search: req.query.search ? true : undefined,
       },
     });

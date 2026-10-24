@@ -9,7 +9,7 @@ import { useCatalog } from '../stores/catalog';
 import AdminFilterPanel from '../components/AdminFilterPanel';
 import { STUDENT_SORTS } from '../constants/applications';
 import { useUrlFilters } from '../hooks/useUrlFilters';
-import { addNumber, addList, addOne, gradYearOptions } from '../utils/filterParams';
+import { addNumber, addList, addOne, addDay, gradYearOptions } from '../utils/filterParams';
 import { parseApiError } from '../utils/formErrors';
 import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -19,7 +19,7 @@ const NONE = '__none'; // "not set" option for branch / institute
 
 const FILTER_DEFAULTS = {
   search: '', branch: '', institute: '', gradYear: [], profile: '', cgpaMin: '', cgpaMax: '', backlogsMax: '',
-  account: '', applications: '', sort: 'newest',
+  account: '', applications: '', joinedFrom: '', joinedTo: '', sort: 'newest',
 };
 const SORT_VALUES = STUDENT_SORTS.map((s) => s.value);
 
@@ -36,6 +36,8 @@ const toParams = (filters, search) => {
   addNumber(params, 'backlogsMax', filters.backlogsMax, { min: 0, max: 50, int: true });
   addOne(params, 'account', filters.account, ['reset_pending']);
   addOne(params, 'applications', filters.applications, ['applied', 'never', 'selected']);
+  addDay(params, 'joinedFrom', filters.joinedFrom);
+  addDay(params, 'joinedTo', filters.joinedTo);
   return params;
 };
 
@@ -264,6 +266,8 @@ const AdminStudents = () => {
           { key: 'cgpaMax', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
           { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
           { key: 'account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'reset_pending', label: 'Password reset pending' }] },
+          { key: 'joinedFrom', label: 'Joined from', type: 'date', chip: (v) => `Joined from ${v}` },
+          { key: 'joinedTo', label: 'Joined until', type: 'date', chip: (v) => `Joined until ${v}` },
           { key: 'gradYear', label: 'Graduation year', type: 'multi', options: gradYearOptions().map((y) => ({ value: y, label: y })) },
         ]}
       />
@@ -281,16 +285,17 @@ const AdminStudents = () => {
                 <th className={`${thClass} hidden sm:table-cell`}>Branch</th>
                 <th className={`${thClass} hidden md:table-cell`}>Institute</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Grad year</th>
+                <th className={`${thClass} hidden lg:table-cell text-right`}>Applications</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Joined</th>
                 <th className={`${thClass} text-right`}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-variant">
               {loading ? (
-                <TableRowsSkeleton columns={7} label="Loading students" />
+                <TableRowsSkeleton columns={8} label="Loading students" />
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
+                  <td colSpan={8} className="px-sm py-xl text-center font-body-sm text-body-sm text-on-surface-variant">
                     {paramsKey !== JSON.stringify(toParams(FILTER_DEFAULTS, '')) ? 'No students match these filters.' : 'No students have signed up yet.'}
                   </td>
                 </tr>
@@ -306,11 +311,6 @@ const AdminStudents = () => {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {!s.profileComplete && (
                           <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Profile incomplete</span>
-                        )}
-                        {s.applications > 0 && (
-                          <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm tabular-nums">
-                            {s.applications} application{s.applications === 1 ? '' : 's'}
-                          </span>
                         )}
                         {s.selected && (
                           <span className="inline-flex items-center px-2 py-[2px] rounded-full bg-emerald-100 text-emerald-800 font-label-sm text-label-sm">Selected</span>
@@ -331,6 +331,7 @@ const AdminStudents = () => {
                       {s.institute ? s.institute.name : <span className="text-on-surface-variant italic">Not chosen yet</span>}
                     </td>
                     <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface">{s.graduationYear ?? '—'}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface text-right tabular-nums">{s.applications ?? 0}</td>
                     <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{formatDate(s.createdAt)}</td>
                     <td className="px-sm py-xs">
                       <div className="flex items-center justify-end gap-1">
