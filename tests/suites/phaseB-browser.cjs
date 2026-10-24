@@ -1,5 +1,6 @@
 // Phase B verification — notification system. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium, devices } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -21,12 +22,26 @@ const call = async (method, url, body) => {
   return res.json().catch(() => null);
 };
 const mkDrive = async (name, extra = {}) => (await call('POST', '/api/placements', { company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 5, deadline: istDate(4), driveDate: istDate(8), ...extra })).data;
+// Waiting on the poll itself instead of a fixed sleep: run `action` and wait for the request it
+// triggers (drive changes, and/or the student's application summary). The short pause after the
+// response is deliberate: it lets the toast render, and the "no toast" checks rely on it.
+const isChanges = (r) => r.url().includes('/api/placements/changes');
+const isSummary = (r) => r.url().includes('/api/applications/my/summary');
+const RENDER_MS = 300;
+const afterPoll = async (page, action, { changes = true, summary = false } = {}) => {
+  const responses = [];
+  if (changes) responses.push(page.waitForResponse(isChanges, { timeout: 15000 }));
+  if (summary) responses.push(page.waitForResponse(isSummary, { timeout: 15000 }));
+  await Promise.all([...responses, action()]);
+  await wait(RENDER_MS);
+};
 // Force an immediate poll (the app polls on tab focus)
-const poll = async (page, ms = 1500) => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await wait(ms); };
+const focusTab = (page) => page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+const poll = (page, opts) => afterPoll(page, () => focusTab(page), opts);
 const toastCount = (page, text) => page.locator('[role=status]', { hasText: text }).count();
 const bellItems = async (page) => {
   await page.getByRole('button', { name: /^Notifications/ }).click();
-  await wait(300);
+  await page.locator('[role=region][aria-label=Notifications]').waitFor();
   const items = await page.locator('[role=region][aria-label=Notifications] li').allInnerTexts();
   await page.keyboard.press('Escape');
   return items;
@@ -55,8 +70,7 @@ const bellItems = async (page) => {
   page.on('console', (m) => { if (m.type() === 'log') logs.push(m.text()); });
 
   console.log('# First visit is silent');
-  await page.goto(APP + '/');
-  await wait(2500);
+  await afterPoll(page, () => page.goto(APP + '/'));
   ok((await page.locator('[role=status]').filter({ hasText: /Welcome|New drive/ }).count()) === 0, 'no welcome / fake "new drive" toast');
   ok((await bellItems(page)).length === 0, 'bell empty on first visit');
   const legacy = await page.evaluate(() => ['placement_notifications', 'lastPollTime', 'dismissedNotifIds'].map((k) => localStorage.getItem(k)));
@@ -65,8 +79,7 @@ const bellItems = async (page) => {
 
   console.log('# New drive -> exactly one notification, even with overlapping polls');
   const d1 = await mkDrive('Fresh');
-  await page.evaluate(() => { for (let i = 0; i < 6; i++) document.dispatchEvent(new Event('visibilitychange')); });
-  await wait(2000);
+  await afterPoll(page, () => page.evaluate(() => { for (let i = 0; i < 6; i++) document.dispatchEvent(new Event('visibilitychange')); }));
   ok((await toastCount(page, `New drive: ${TAG} Fresh`)) === 1, 'one toast despite 6 concurrent poll triggers');
   let items = await bellItems(page);
   ok(items.filter((t) => t.includes(`New drive: ${TAG} Fresh`)).length === 1, 'one bell item');
@@ -92,8 +105,7 @@ const bellItems = async (page) => {
 
   console.log('# Persistence, no repeat after reload');
   const before = (await bellItems(page)).length;
-  await page.reload();
-  await wait(2500);
+  await afterPoll(page, () => page.reload());
   ok((await page.locator('[role=status]').filter({ hasText: TAG }).count()) === 0, 'no toasts repeat after reload');
   ok((await bellItems(page)).length === before, `list persisted (${before})`);
 
@@ -107,11 +119,10 @@ const bellItems = async (page) => {
 
   console.log('# Second tab does not repeat toasts');
   const page2 = await ctx.newPage();
-  await page2.goto(APP + '/');
-  await wait(2000);
+  await afterPoll(page2, () => page2.goto(APP + '/'));
   await mkDrive('TwoTabs');
-  await poll(page, 2000);
-  await poll(page2, 2000);
+  await poll(page);
+  await poll(page2);
   const t1 = await toastCount(page, `New drive: ${TAG} TwoTabs`);
   const t2 = await toastCount(page2, `New drive: ${TAG} TwoTabs`);
   ok(t1 + t2 === 1, `toast shown in one tab only (${t1}+${t2})`);
@@ -122,27 +133,23 @@ const bellItems = async (page) => {
   await bell.click();
   await page.getByRole('button', { name: 'Clear all' }).click();
   await page.keyboard.press('Escape');
-  await page.reload();
-  await wait(2500);
+  await afterPoll(page, () => page.reload());
   await poll(page);
   ok((await bellItems(page)).length === 0, 'cleared notifications never come back');
 
   console.log('# Touch device dismiss');
   const mctx = await browser.newContext({ ...devices['Pixel 7'] });
   const mpage = await mctx.newPage();
-  await mpage.goto(APP + '/');
-  await wait(2000);
+  await afterPoll(mpage, () => mpage.goto(APP + '/'));
   await mkDrive('Touch');
-  await poll(mpage, 2000);
+  await poll(mpage);
   await mpage.getByRole('button', { name: /^Notifications/ }).tap();
   const dismiss = mpage.getByRole('button', { name: `Dismiss: New drive: ${TAG} Touch` });
   const box = await dismiss.boundingBox();
   ok(box && box.width >= 40 && (await dismiss.isVisible()), `dismiss visible on touch (${box && Math.round(box.width)}px)`);
   await dismiss.tap();
-  await wait(300);
-  ok(!(await mpage.locator('[role=region][aria-label=Notifications]').getByText(`New drive: ${TAG} Touch`).count()), 'dismissed on tap');
-  await mpage.reload();
-  await wait(2500);
+  ok(await until(async () => !(await mpage.locator('[role=region][aria-label=Notifications]').getByText(`New drive: ${TAG} Touch`).count())), 'dismissed on tap');
+  await afterPoll(mpage, () => mpage.reload());
   await poll(mpage);
   await mpage.getByRole('button', { name: /^Notifications/ }).tap();
   ok(!(await mpage.locator('[role=region][aria-label=Notifications]').getByText(`New drive: ${TAG} Touch`).count()), 'stays dismissed after reload');
@@ -160,20 +167,19 @@ const bellItems = async (page) => {
   await sp.goto(APP + '/login');
   await sp.fill('#email', email);
   await sp.fill('#password', 'goodpass123');
-  await sp.click('button[type=submit]');
+  // Logging in is a client-side navigation: only the student's summary is fetched, not drive changes
+  await afterPoll(sp, () => sp.click('button[type=submit]'), { changes: false, summary: true });
   await sp.waitForURL(APP + '/');
-  await wait(2500);
   ok((await sp.locator('[role=status]').filter({ hasText: 'Your application' }).count()) === 0, 'no notification for existing statuses on first load');
   await call('PATCH', `/api/placements/${inApp._id}/applicants/${ap.data.id}`, { adminNote: 'note only' });
-  await poll(sp, 2500);
+  await poll(sp, { changes: false, summary: true });
   ok((await sp.locator('[role=status]').filter({ hasText: 'Your application' }).count()) === 0, 'admin note change is not announced');
   await call('PATCH', `/api/placements/${inApp._id}/applicants/${ap.data.id}`, { status: 'Shortlisted' });
-  await poll(sp, 2500);
+  await poll(sp, { changes: false, summary: true });
   ok((await toastCount(sp, `Your application to ${TAG} InApp: Shortlisted`)) === 1, 'student told about Shortlisted');
   const sItems = await bellItems(sp);
   ok(sItems.some((t) => t.includes(`Your application to ${TAG} InApp: Shortlisted`)), 'in the bell too');
-  await sp.reload();
-  await wait(3000);
+  await afterPoll(sp, () => sp.reload(), { summary: true });
   ok((await sp.locator('[role=status]').filter({ hasText: 'Your application' }).count()) === 0, 'not repeated after reload');
   await sctx.close();
 
