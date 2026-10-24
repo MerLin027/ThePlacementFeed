@@ -1,6 +1,7 @@
 // Phase E verification — student-facing pages. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
+const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium, devices } = require('playwright');
 const SERVER = TEST.SERVER;
@@ -73,8 +74,9 @@ const axeScan = async (page, label) => {
   console.log('# Home');
   await page.goto(APP + '/');
   await page.getByLabel('Search drives by company or role').fill(TAG);
-  await wait(1500);
-  const cards = await page.locator('main article h3').allInnerTexts();
+  const headings = () => page.locator('main article h3').allInnerTexts();
+  await until(async () => (await headings()).length === 6 && (await headings()).every((t) => t.startsWith(TAG)));
+  const cards = await headings();
   ok(cards.map((t) => t.replace(`${TAG} `, '')).join(',') === 'Bolt,Cyan,Apex,Dune,Echo,Flux', `open drives first, closing soonest first (${cards.join(',')})`);
   const card = (n) => page.locator('article', { hasText: `${TAG} ${n}` }).first();
   ok((await card('Bolt').innerText()).includes('Closes tomorrow'), 'urgency chip: Closes tomorrow');
@@ -94,7 +96,7 @@ const axeScan = async (page, label) => {
 
   // Stretched link: clicking the card body opens the drive; the apply button does its own thing
   await card('Apex').getByRole('button', { name: 'Apply now' }).click();
-  for (let i = 0; i < 50 && !popups.some((p) => p.url().includes('forms.gle/apex')); i++) await wait(100);
+  await until(() => popups.some((p) => p.url().includes('forms.gle/apex')), { timeout: 5000 });
   ok(page.url() === APP + '/' && popups.some((p) => p.url().includes('forms.gle/apex')), 'apply button opens the form, not the card link');
   for (const p of popups) await p.close().catch(() => {});
   await card('Apex').getByText('₹6 LPA').click({ force: true }); // lands on the stretched link overlay
@@ -105,9 +107,8 @@ const axeScan = async (page, label) => {
   await page.getByRole('button', { name: /^Filters/ }).click();
   await page.getByLabel('Status', { exact: true }).selectOption('Completed');
   await page.getByLabel('Search drives by company or role').fill(TAG);
-  await wait(1500);
-  ok(await hasText(page, 'Past drives') && (await page.locator('main h1').innerText()) === 'Past drives', 'heading follows the status filter');
-  ok((await page.locator('main article h3').allInnerTexts()).join(',') === `${TAG} Gale`, 'only completed drives');
+  ok(await hasText(page, 'Past drives') && await until(async () => (await page.locator('main h1').innerText()) === 'Past drives'), 'heading follows the status filter');
+  ok(await until(async () => (await page.locator('main article h3').allInnerTexts()).join(',') === `${TAG} Gale`), 'only completed drives');
   ok(!(await page.getByRole('button', { name: /^Past drives/ }).count()), 'no separate past section when filtering by status');
   ok(await page.getByLabel('Sort by').isVisible() && await page.getByLabel('Branch', { exact: true }).isVisible(), 'filter controls are labelled');
   await axeScan(page, 'home with filters open');
@@ -121,11 +122,14 @@ const axeScan = async (page, label) => {
   ok(dates.x < elig.x, 'desktop: dates in the left column, eligibility on the right');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${APP}/placement/${B._id}`);
-  await wait(1200);
-  const order = await page.evaluate(() => ['Eligibility criteria', 'Important dates', 'Selection process', 'Job description'].map((t) => {
+  const headingTops = () => page.evaluate(() => ['Eligibility criteria', 'Important dates', 'Selection process', 'Job description'].map((t) => {
     const h = [...document.querySelectorAll('main h2')].find((x) => x.textContent.trim() === t);
     return h ? Math.round(h.getBoundingClientRect().top) : null;
   }));
+  // All four sections rendered (the job description loads lazily) and entrance animations finished
+  await until(async () => (await headingTops()).every((v) => v !== null));
+  await settleAnimations(page);
+  const order = await headingTops();
   const apply = await box('main h1');
   ok(order.every((v) => v !== null) && apply.y < order[0] && order[0] < order[1] && order[1] < order[2] && order[2] < order[3], `mobile order: drive → eligibility → dates → process → description (${order.join(',')})`);
   await page.screenshot({ path: path.join(TEST.OUT, 'shots', 'E-detail-mobile.png'), fullPage: true });
@@ -136,8 +140,9 @@ const axeScan = async (page, label) => {
   // Inserted directly: the admin API is rate-limited to 50 changes per 15 minutes
   await Placement.insertMany(Array.from({ length: 52 }, (_, i) => ({ company: `${TAG} Bulk${String(i).padStart(2, '0')}`, role: 'Analyst', type: 'Full-Time', ctc: 5, status: 'Upcoming', driveDate: new Date(istDate(20 + (i % 10))) })));
   await page.goto(APP + '/timeline');
-  await wait(3000);
-  const tlCount = await page.locator('main li a', { hasText: TAG }).count();
+  const timelineLinks = page.locator('main li a', { hasText: TAG });
+  await until(async () => (await timelineLinks.count()) >= 59, { timeout: 15000 }); // every page of drives fetched
+  const tlCount = await timelineLinks.count();
   ok(tlCount === 59, `timeline lists every drive past the 50-per-page cap (${tlCount}/59)`);
   ok(await hasText(page, 'Today ·'), '"Today" divider');
   ok(await hasText(page, 'This month'), 'current month marked');
@@ -162,9 +167,8 @@ const axeScan = async (page, label) => {
   for (let i = 0; i < 25; i++) await page.keyboard.press('Tab');
   ok(await page.evaluate(() => Boolean(document.activeElement?.closest('[role=dialog]'))), 'Tab stays inside the dialog');
   await page.keyboard.press('Escape');
-  await wait(300);
-  ok(!(await dialog.count()), 'Escape closes it');
-  ok(await page.evaluate(() => document.activeElement?.textContent?.trim() === 'Apply now'), 'focus returns to the Apply button');
+  ok(await until(async () => !(await dialog.count())), 'Escape closes it');
+  ok(await until(() => page.evaluate(() => document.activeElement?.textContent?.trim() === 'Apply now')), 'focus returns to the Apply button');
 
   const mctx = await browser.newContext({ ...devices['Pixel 7'] });
   const mp = await mctx.newPage();
