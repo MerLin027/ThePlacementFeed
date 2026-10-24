@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const Application = require('../models/Application');
 const Placement = require('../models/Placement');
@@ -41,9 +42,22 @@ const toStudentApplicationDTO = (app, drive) => ({
   driveId: app.driveId ? app.driveId.toString() : null,
   company: drive?.company ?? null,
   role: drive?.role ?? null,
+  type: drive?.type ?? null,
+  ctc: drive?.ctc ?? null,
+  driveDate: drive?.driveDate ?? null,
+  driveStatus: drive?.status ?? null,
+  isPostponed: Boolean(drive?.isPostponed),
   status: app.status,
   submittedAt: app.createdAt,
+  updatedAt: app.updatedAt,
 });
+
+// Tabs on the My applications page
+const STATUS_GROUPS = {
+  active: ['Applied', 'Shortlisted', 'Interviewing'],
+  selected: ['Offered'],
+  closed: ['Rejected'],
+};
 
 // POST /api/applications — submit an in-app application
 router.post(
@@ -142,22 +156,37 @@ router.get('/my/summary', readLimiter, requireStudent, async (req, res, next) =>
   }
 });
 
-// GET /api/applications/my — paginated list of own applications
+// GET /api/applications/my[?group=active|selected|closed] — paginated list of own applications,
+// with counts per group for the tabs
 router.get('/my', readLimiter, requireStudent, async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
-    const filter = { studentId: req.student.id };
+    const { group } = req.query;
+    if (group !== undefined && !(typeof group === 'string' && Object.hasOwn(STATUS_GROUPS, group))) {
+      return res.status(400).json({ success: false, message: 'group must be active, selected or closed' });
+    }
+    const studentId = new mongoose.Types.ObjectId(req.student.id);
+    const filter = group ? { studentId, status: { $in: STATUS_GROUPS[group] } } : { studentId };
 
-    const [apps, total] = await Promise.all([
+    const [apps, total, byStatus] = await Promise.all([
       Application.find(filter)
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('driveId', 'company role')
+        .populate('driveId', 'company role type ctc driveDate status isPostponed')
         .lean(),
       Application.countDocuments(filter),
+      Application.aggregate([{ $match: { studentId } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
     ]);
+    const statusCount = Object.fromEntries(byStatus.map((s) => [s._id, s.n]));
+    const sum = (statuses) => statuses.reduce((t, s) => t + (statusCount[s] || 0), 0);
+    const counts = {
+      all: sum(Object.values(STATUS_GROUPS).flat()),
+      active: sum(STATUS_GROUPS.active),
+      selected: sum(STATUS_GROUPS.selected),
+      closed: sum(STATUS_GROUPS.closed),
+    };
 
     res.json({
       success: true,
@@ -166,6 +195,7 @@ router.get('/my', readLimiter, requireStudent, async (req, res, next) => {
         return toStudentApplicationDTO({ ...a, driveId: drive?._id ?? a.driveId }, drive);
       }),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      counts,
     });
   } catch (error) {
     next(error);

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialogFocus } from '../hooks/useDialogFocus';
+import { AnimatePresence, m } from 'motion/react';
+import { dialogOverlay, dialogBackdrop, dialogPanel } from '../utils/motion';
+import PresenceGuard from './PresenceGuard';
 
 const BUTTON_TONES = {
   danger: 'btn-danger',
@@ -36,24 +39,27 @@ const TwoStepConfirmDialog = ({ isOpen, onClose, first, second }) => {
     if (isOpen && step === 1) safeRef.current?.focus({ preventScroll: true });
   }, [isOpen, step]);
 
-  if (!isOpen || !first) return null;
-
-  const current = step === 0 ? first : second;
+  const open = Boolean(isOpen && first);
+  const current = (step === 0 ? first : second) || {};
   const run = (fn) => () => {
     fn?.();
     onClose();
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-sm">
-      <div className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs animate-fade-in" onClick={onClose} aria-hidden="true" />
-      <div
+    <AnimatePresence>
+    {open && (
+    <m.div key="two-step" {...dialogOverlay} className="fixed inset-0 z-50 flex items-center justify-center px-sm">
+      <PresenceGuard>
+      <m.div {...dialogBackdrop} className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs" onClick={onClose} aria-hidden="true" />
+      <m.div
+        {...dialogPanel}
         ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="two-step-title"
         aria-describedby="two-step-message"
-        className="relative bg-surface-container-lowest rounded-2xl shadow-pop w-full max-w-(--container-md) z-10 p-md animate-dialog-in"
+        className="relative bg-surface-container-lowest rounded-2xl shadow-pop w-full max-w-(--container-md) z-10 p-md"
       >
         <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-sm bg-error-container">
           <span className="material-symbols-outlined text-[24px] text-error" aria-hidden="true">
@@ -111,8 +117,11 @@ const TwoStepConfirmDialog = ({ isOpen, onClose, first, second }) => {
             ))}
           </div>
         )}
-      </div>
-    </div>,
+      </m.div>
+      </PresenceGuard>
+    </m.div>
+    )}
+    </AnimatePresence>,
     document.body
   );
 };

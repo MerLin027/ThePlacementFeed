@@ -49,7 +49,6 @@ const AdminLogin = () => {
 
   return (
     <div className="relative isolate min-h-full flex items-center justify-center py-lg px-sm">
-      <div className="absolute inset-x-0 top-0 h-96 -z-10 hero-wash pointer-events-none" aria-hidden="true" />
       <div className="w-full max-w-(--container-md)">
         {/* Card */}
         <div className="bg-surface-container-lowest rounded-3xl shadow-lift border border-outline-variant overflow-hidden motion-safe:animate-rise-in">

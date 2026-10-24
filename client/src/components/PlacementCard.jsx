@@ -51,8 +51,6 @@ const PlacementCard = ({ placement, index = 0 }) => {
         style={{ '--i': index }}
         className="relative bg-surface-container-lowest border border-outline-variant rounded-2xl p-md flex flex-col h-full shadow-soft group-hover/card:shadow-lift group-hover/card:border-primary-30 group-hover/card:-translate-y-0.5 transition-control focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 motion-safe:rise-in-stagger"
       >
-        {/* Colour-coded by drive type: a strip along the top edge and a chip next to the role */}
-        {typeMeta && <span className={`absolute -top-px -inset-x-px h-1 rounded-t-2xl ${typeMeta.bar}`} aria-hidden="true" />}
         <div className="flex justify-between items-start gap-sm mb-sm">
           <CompanyMonogram name={company} className="group-hover/card:scale-105 transition-transform duration-200 ease-snappy" />
           <StatusBadge status={status} isPostponed={isPostponed} />
@@ -84,6 +82,9 @@ const PlacementCard = ({ placement, index = 0 }) => {
         </div>
 
         <CardApplyButton drive={placement} />
+        {/* Colour-coded by drive type: a strip along the top edge (after the content, so the
+            monogram stays the card's first decorative element) and a chip next to the role */}
+        {typeMeta && <span className={`absolute -top-px -inset-x-px h-1 rounded-t-2xl ${typeMeta.bar}`} aria-hidden="true" />}
       </article>
     </div>
   );

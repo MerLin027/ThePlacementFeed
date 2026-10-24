@@ -8,6 +8,7 @@ import { FormAlert } from '../AuthCard';
 import { APPLICATION_STATUSES, STATUS_META, statusLabel } from '../../constants/applications';
 import { useCatalog } from '../../stores/catalog';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { useCountUp } from '../../hooks/useCountUp';
 import { parseApiError } from '../../utils/formErrors';
 
 // Chart ink and structure: text in the text tokens (never the series colour), recessive hairline grid
@@ -22,16 +23,19 @@ const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K`
 const shortDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 const pct = (part, whole) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
-const StatTile = ({ label, value, note, icon }) => (
+const StatTile = ({ label, value, note, icon }) => {
+  const shown = useCountUp(value);
+  return (
   <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm">
     <p className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
       <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{icon}</span>
       {label}
     </p>
-    <p className="font-display-lg text-display-lg text-on-surface mt-1">{value.toLocaleString('en-IN')}</p>
+    <p className="font-display-lg text-display-lg text-on-surface mt-1">{shown.toLocaleString('en-IN')}</p>
     {note && <p className="font-body-sm text-body-sm text-on-surface-variant mt-[2px]">{note}</p>}
   </div>
-);
+  );
+};
 
 // One tooltip look for every chart: a label line, then a swatch + name + value per series
 const ChartTooltip = ({ active, payload, label, labelFormat }) => {

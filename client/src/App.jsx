@@ -4,11 +4,13 @@ import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { MyApplicationsProvider } from './context/MyApplicationsContext';
 import { Toaster } from 'react-hot-toast';
+import { LazyMotion, MotionConfig } from 'motion/react';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import RequireRole, { PageSpinner } from './components/RequireRole';
 import RouteEffects from './components/RouteEffects';
 import PageTransition from './components/PageTransition';
+import Backdrop from './components/backdrop/Backdrop';
 import Home from './pages/Home';
 import PlacementDetail from './pages/PlacementDetail';
 import Timeline from './pages/Timeline';
@@ -26,9 +28,15 @@ const AdminStudents = lazy(() => import('./pages/AdminStudents'));
 const AdminApplicants = lazy(() => import('./pages/AdminApplicants'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 
+// Motion's features load after the first render (motionFeatures.js); `strict` keeps code on the
+// lightweight `m.` components
+const loadMotionFeatures = () => import('./motionFeatures').then((mod) => mod.default);
+
 function App() {
   return (
     <BrowserRouter>
+      <MotionConfig reducedMotion="user">
+      <LazyMotion features={loadMotionFeatures} strict>
       <AuthProvider>
         <MyApplicationsProvider>
         <NotificationProvider>
@@ -40,6 +48,7 @@ function App() {
               Skip to main content
             </a>
             <RouteEffects />
+            <Backdrop />
             {/* Bottom-centre: never covers the header, the bell or its open panel (desktop or phone) */}
             <Toaster
               position="bottom-center"
@@ -132,6 +141,8 @@ function App() {
         </NotificationProvider>
         </MyApplicationsProvider>
       </AuthProvider>
+      </LazyMotion>
+      </MotionConfig>
     </BrowserRouter>
   );
 }

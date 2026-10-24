@@ -3,13 +3,14 @@ import { Link, useLocation } from 'react-router';
 import { useAuth } from '../../context/auth';
 import NotificationBell from '../Notifications/NotificationBell';
 import logo from '../../assets/logo.png';
+import { m } from 'motion/react';
+import { dropDown, pillSpring } from '../../utils/motion';
 
-// Desktop: links sit in one rounded track; the current page gets a raised white pill
+// Desktop: links sit in one rounded track; the current page gets a raised white pill that slides
+// between links (Motion layoutId), drawn behind the link's own content
 const desktopLinkClass = (active) =>
-  `relative inline-flex items-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md whitespace-nowrap transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-    active
-      ? 'bg-surface-container-lowest text-primary shadow-soft'
-      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest/70'
+  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md whitespace-nowrap transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+    active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest/70'
   }`;
 
 const mobileLinkClass = (active) =>
@@ -134,6 +135,9 @@ const Navbar = () => {
                   : desktopLinkClass(isActive(link.to))
               }
             >
+              {isActive(link.to) && !link.cta && (
+                <m.span layoutId="nav-pill" transition={pillSpring} className="absolute inset-0 -z-10 rounded-full bg-surface-container-lowest shadow-soft" aria-hidden="true" />
+              )}
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{link.icon}</span>
               <span className={link.cta ? '' : labelClass}>{link.label}</span>
             </Link>
@@ -188,10 +192,14 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu — mirrors the desktop links */}
+      {/* Enters with a short drop; leaves at once (a dismissed menu must be gone immediately) */}
       {isMobileOpen && (
-        <nav
+        <m.nav
+          initial={dropDown.initial}
+          animate={dropDown.animate}
+          transition={dropDown.transition}
           id="mobile-menu"
-          className="md:hidden border-t border-outline-variant bg-surface-container-lowest/95 px-sm py-sm space-y-1 shadow-lift animate-menu-in"
+          className="md:hidden border-t border-outline-variant bg-surface-container-lowest/95 px-sm py-sm space-y-1 shadow-lift"
           aria-label="Main"
         >
           {navLinks.map((link) => (
@@ -219,7 +227,7 @@ const Navbar = () => {
               Logout
             </button>
           )}
-        </nav>
+        </m.nav>
       )}
     </header>
   );

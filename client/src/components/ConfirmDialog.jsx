@@ -1,6 +1,9 @@
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialogFocus } from '../hooks/useDialogFocus';
+import { AnimatePresence, m } from 'motion/react';
+import { dialogOverlay, dialogBackdrop, dialogPanel } from '../utils/motion';
+import PresenceGuard from './PresenceGuard';
 
 /**
  * Confirmation dialog. Defaults to the destructive "Delete" variant used across
@@ -21,25 +24,29 @@ const ConfirmDialog = ({
   const panelRef = useRef(null);
   useDialogFocus(isOpen, panelRef, onClose, cancelRef);
 
-  if (!isOpen) return null;
-
   const isDanger = tone === 'danger';
 
-  // Rendered at the end of <body>: no page wrapper (fade-in layer, transforms) can sit above it
+  // Rendered at the end of <body>: no page wrapper (fade-in layer, transforms) can sit above it.
+  // AnimatePresence keeps it mounted for its short exit after closing.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-sm">
-      <div
-        className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs animate-fade-in"
+    <AnimatePresence>
+    {isOpen && (
+    <m.div key="confirm" {...dialogOverlay} className="fixed inset-0 z-50 flex items-center justify-center px-sm">
+      <PresenceGuard>
+      <m.div
+        {...dialogBackdrop}
+        className="fixed inset-0 bg-on-surface/50 backdrop-blur-xs"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div
+      <m.div
+        {...dialogPanel}
         ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-surface-container-lowest rounded-2xl shadow-pop w-full max-w-(--container-md) z-10 p-md animate-dialog-in"
+        className="relative bg-surface-container-lowest rounded-2xl shadow-pop w-full max-w-(--container-md) z-10 p-md"
       >
         <div
           className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-sm ${
@@ -76,8 +83,11 @@ const ConfirmDialog = ({
             {confirmLabel}
           </button>
         </div>
-      </div>
-    </div>,
+      </m.div>
+      </PresenceGuard>
+    </m.div>
+    )}
+    </AnimatePresence>,
     document.body
   );
 };

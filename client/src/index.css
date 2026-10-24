@@ -321,6 +321,39 @@
   @apply bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft transition-control;
 }
 
+/* Site-wide backdrop (components/backdrop/Backdrop.jsx): a CSS dot grid (the still version, and the
+   fallback whenever the cursor-reactive canvas isn't running) and two softly drifting glows. The
+   whole layer fades towards the bottom so it never competes with content further down a page. */
+@layer components {
+  .backdrop {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgb(0 0 0 / 0.35) 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 45%, rgb(0 0 0 / 0.35) 100%);
+  }
+
+  .backdrop-dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgb(0 74 198 / 0.2) 1px, transparent 0);
+    background-size: 22px 22px;
+    transition: opacity 300ms ease-out;
+  }
+  [data-intensity='content'] .backdrop-dots { opacity: 0.65; }
+  [data-intensity='static'] .backdrop-dots { opacity: 0.45; }
+  [data-backdrop='live'] .backdrop-dots { opacity: 0; }
+
+  .backdrop-glow {
+    position: absolute;
+    inset: -20% -10% auto;
+    height: 75vh;
+    background:
+      radial-gradient(32% 55% at 36% 22%, rgb(0 90 253 / 0.1), transparent 70%),
+      radial-gradient(28% 50% at 66% 34%, rgb(56 189 248 / 0.12), transparent 70%);
+    animation: wash-glow 16s ease-in-out infinite alternate;
+  }
+  [data-intensity='content'] .backdrop-glow { opacity: 0.6; }
+  [data-intensity='static'] .backdrop-glow { opacity: 0.35; animation: none; }
+}
+
 /* Faint dot grid behind page headers; fades out on every side so it never competes with content */
 @utility hero-wash {
   background-image:
