@@ -3,6 +3,7 @@
 // (no admin cookie) and the admin (no student cookie) browse a few pages; no probe may answer 401.
 // A cookie that is present but invalid must still get 401 (covered in phase1-test and upgrade3-test).
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -46,8 +47,7 @@ const PROBES = /\/api\/(students\/)?auth\/check$/;
   ok(seen.some((p) => p.path === '/api/students/auth/check' && p.status === 200), 'student session recognised');
   ok(seen.every((p) => p.status === 200), 'student: the admin probe does not answer 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
   ok(await page.getByRole('link', { name: 'My applications' }).first().isVisible(), 'student navigation shown');
-  await page.getByRole('button', { name: 'Logout' }).first().click();
-  await until(async () => !(await page.getByRole('button', { name: 'Logout' }).count()));
+  await logout(page);
 
   console.log('# admin');
   await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');

@@ -1,5 +1,6 @@
 // Phase 4 browser verification — admin Students page + full branch names. Local stack only.
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { chooseInstitute } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
@@ -70,7 +71,7 @@ const TAG = `P4B${Date.now() % 100000}`;
   await page.click('button:has-text("Filters")').catch(() => {});
   const filterOptions = await page.locator('select:has(option:text("All Branches")) option').allInnerTexts().catch(() => []);
   ok(filterOptions.includes('Mechanical Engineering'), 'home branch filter shows full names', filterOptions.join('|'));
-  await page.click('header nav >> text=Logout');
+  await logout(page);
 
   console.log('# Admin Students page');
   await page.goto(APP + '/admin/login');

@@ -87,9 +87,9 @@ const axeViolations = async (page) => {
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);
-  ok((await page.locator('header nav').first().innerText()).includes('Settings'), 'admin nav links to Settings');
+  ok((await page.locator('header nav').first().innerText()).includes('Setup'), 'admin nav links to Setup');
   await page.goto(APP + '/admin/settings');
-  await page.waitForSelector('h1:has-text("Settings")');
+  await page.waitForSelector('h1:has-text("Setup")');
   ok(await page.inputValue('#universityName') === `${TAG} University`, 'university field shows the current name');
   violations = await axeViolations(page);
   ok(violations.length === 0, 'settings page: no serious axe violations', violations.join('\n    '));

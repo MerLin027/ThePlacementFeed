@@ -3,6 +3,7 @@
 // page is in that list, and that each one draws as a glyph (not as its name in plain text).
 // Needs internet access (the font comes from fonts.googleapis.com). Local stack only otherwise.
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
 const fs = require('fs');
@@ -59,9 +60,7 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
     await page.goto(APP + '/login'); await page.fill('#email', email); await page.fill('#password', 'goodpass123'); await page.click('button[type=submit]');
     await page.waitForURL((u) => !u.pathname.startsWith('/login')).catch(() => {});
     for (const r of ['/', '/profile', '/applications', '/change-password', `/placement/${drive._id}`]) { await page.goto(APP + r); await collect(page, `${vp} student ${r}`); }
-    await page.goto(APP + '/'); if (vp === 'phone') await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('button', { name: 'Logout' }).last().click();
-    await until(async () => !(await page.getByRole('button', { name: 'Logout' }).count()));
+    await page.goto(APP + '/'); await logout(page);
     // admin pages
     await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
     await page.waitForURL(/dashboard/).catch(() => {});

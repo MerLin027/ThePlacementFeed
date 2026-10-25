@@ -17,7 +17,7 @@ export const PageSpinner = () => (
  * sends them there first.
  */
 const RequireRole = ({ role, allowPendingPasswordChange = false, children }) => {
-  const { isAdmin, adminSessionExpired, student, studentSessionExpired, loading } = useAuth();
+  const { isAdmin, adminSessionExpired, student, studentSessionExpired, studentSignedOut, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -30,6 +30,8 @@ const RequireRole = ({ role, allowPendingPasswordChange = false, children }) => 
   }
 
   if (!student) {
+    // Logged out on purpose: home, not "log in to come back here"
+    if (studentSignedOut) return <Navigate to="/" replace />;
     const returnTo = encodeURIComponent(location.pathname + location.search);
     const expired = studentSessionExpired ? `expired=${studentSessionExpired}&` : '';
     return <Navigate to={`/login?${expired}returnTo=${returnTo}`} replace />;

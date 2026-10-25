@@ -1,5 +1,6 @@
 // Phase 2 browser + API verification against local throwaway server (5099) and Vite (5173).
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { pickInstituteInUi } = require('../lib/institute.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -62,7 +63,8 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.click('button[type=submit]');
   ok(await page.waitForURL(/\/profile$/).then(() => true, () => false), 'signup -> /profile');
   nav = await navTexts(page);
-  ok(nav.includes('Profile') && nav.includes('Logout') && !nav.includes('Sign up'), 'student nav', nav);
+  ok(nav.includes('Profile') && !nav.includes('Log out') && !nav.includes('Sign up'), 'student nav (log out is in the avatar menu)', nav);
+  ok(await page.getByRole('button', { name: 'Your account' }).isVisible(), 'student avatar menu shown');
 
   console.log('# Profile');
   await page.waitForSelector('text=Finish your profile');
@@ -124,7 +126,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   ok(nav.includes('Dashboard') && !nav.includes('Profile'), 'admin nav takes precedence', nav);
   r = await fetch(API + '/api/students/auth/check', { headers: { Cookie: cookieHeader } });
   ok(r.status === 200, 'student session still valid alongside admin');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await page.waitForURL(/\/admin\/login/);
   nav = await navTexts(page);
   ok(nav.includes('Profile'), 'after admin logout, student nav returns', nav);
@@ -148,14 +150,16 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   ok(r === 200, 'current browser session reissued and valid');
 
   console.log('# Logout + open-redirect guard');
-  await page.click('header nav >> text=Logout');
+  await logout(page); // from /profile, a student-only page
   await page.waitForURL(APP + '/');
+  await new Promise((r) => setTimeout(r, 600)); // the page guard must not bounce to the login page afterwards
+  ok(page.url() === APP + '/', 'logging out on a student page lands on home, not the login page', page.url());
   await page.goto(APP + '/login?returnTo=//evil.com');
   await page.fill('#email', email);
   await page.fill('#password', 'newpass1234');
   await page.click('button[type=submit]');
   ok(await page.waitForURL((u) => u.origin === APP && u.pathname === '/').then(() => true, () => false), 'returnTo=//evil.com ignored -> /');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await page.waitForURL(APP + '/');
   await page.goto(APP + '/login?returnTo=%2Fprofile');
   await page.fill('#email', email);

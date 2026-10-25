@@ -53,7 +53,7 @@ const Section = ({ id, title, description, children }) => (
  * archived (hidden from new choices) or, after a two-step prompt, deleted anyway.
  */
 const AdminSettings = () => {
-  usePageTitle('Settings');
+  usePageTitle('Setup');
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -306,7 +306,7 @@ const AdminSettings = () => {
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-md md:py-xl">
       <div className="mb-md">
-        <h1 className="font-display-lg text-display-lg text-on-surface">Settings</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface">Setup</h1>
         <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
           The lists students and drives choose from.
         </p>

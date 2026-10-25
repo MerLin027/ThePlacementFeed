@@ -16,6 +16,9 @@ export const AuthProvider = ({ children }) => {
   // tell the user why they're back on the login page: true, or 'temp' when a reset password's
   // 72-hour window ran out
   const [studentSessionExpired, setStudentSessionExpired] = useState(false);
+  // True right after the student chose to log out: student-only pages then send them home instead of
+  // to the login page (the guard can render before the navigation home lands)
+  const [studentSignedOut, setStudentSignedOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -83,12 +86,14 @@ export const AuthProvider = ({ children }) => {
 
   const loginStudent = async (email, password) => {
     const res = await api.post('/api/students/auth/login', { email, password });
+    setStudentSignedOut(false);
     const next = await refreshStudent();
     return { ...res.data, student: next };
   };
 
   const signupStudent = async ({ email, rollNumber, password }) => {
     const res = await api.post('/api/students/auth/signup', { email, rollNumber, password });
+    setStudentSignedOut(false);
     const next = await refreshStudent();
     return { ...res.data, student: next };
   };
@@ -99,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // Even if the request fails, clear local state
     }
+    setStudentSignedOut(true);
     setStudent(null);
     navigate('/');
   };
@@ -113,6 +119,7 @@ export const AuthProvider = ({ children }) => {
         adminSessionExpired,
         student,
         studentSessionExpired,
+        studentSignedOut,
         loading,
         loginAdmin,
         logoutAdmin,

@@ -1,5 +1,6 @@
 // Phase C verification — frontend completeness. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { chooseInstitute } = require('../lib/institute.cjs');
 const { until, settled } = require('../lib/wait.cjs');
 const path = require('path');
@@ -72,7 +73,7 @@ const TAG = `PC${Date.now() % 100000}`;
   ok(await page.waitForURL(APP + '/').then(() => true, () => false), 'Browse drives goes home');
 
   console.log('# Forced reset wording');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await page.waitForURL(APP + '/');
   await Student.updateOne({ email }, { passwordHash: await bcrypt.hash('college123', 12), mustChangePassword: true, tempPasswordExpiresAt: new Date(Date.now() + 72 * 3600e3), $inc: { tokenVersion: 1 } });
   await page.goto(APP + '/login');
@@ -103,7 +104,7 @@ const TAG = `PC${Date.now() % 100000}`;
   for (const [r, exp] of Object.entries(studentExpect)) ok((await landing(r, exp)) === exp, `student ${r} -> ${exp}`);
   // Guest
   await page.goto(APP + '/');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await until(async () => (await page.locator('header nav').first().innerText()).includes('Login'));
   const guestExpect = { '/profile': '/login', '/applications': '/login', '/change-password': '/login', '/admin/dashboard': '/admin/login', '/admin/students': '/admin/login', '/timeline': '/timeline', '/nope': '/nope' };
   for (const [r, exp] of Object.entries(guestExpect)) ok((await landing(r, exp)) === exp, `guest ${r} -> ${exp}`);
@@ -115,10 +116,10 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);
   for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`]) ok((await landing(r, r)) === r, `admin ${r} reachable`);
-  const headerButtons = await page.locator('main h1').first().locator('xpath=../..').getByRole('button', { name: 'Logout' }).count();
+  const headerButtons = await page.locator('main h1').first().locator('xpath=../..').getByRole('button', { name: 'Log out' }).count();
   await landing('/admin/dashboard');
-  ok((await page.locator('main').getByRole('button', { name: 'Logout' }).count()) === 0, 'no duplicate Logout inside the dashboard');
-  ok((await page.locator('header').getByRole('button', { name: 'Logout' }).count()) >= 1, 'Logout still in the navbar');
+  ok((await page.locator('main').getByRole('button', { name: 'Log out' }).count()) === 0, 'no duplicate Log out inside the dashboard');
+  ok((await page.locator('header').getByRole('button', { name: 'Log out' }).count()) >= 1, 'Log out still in the navbar');
 
   console.log('# Every nav link resolves (no 404)');
   for (const role of ['admin']) {

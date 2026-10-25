@@ -255,7 +255,7 @@ const AdminDashboard = () => {
             <p className="font-semibold">Students can&apos;t apply in-app yet</p>
             <p className="mt-[2px]">
               Every student needs an institute before applying, and there are none to choose from.{' '}
-              <Link to="/admin/settings" className="font-semibold underline underline-offset-2">Add institutes in Settings</Link>.
+              <Link to="/admin/settings" className="font-semibold underline underline-offset-2">Add institutes in Setup</Link>.
             </p>
           </FormAlert>
         </div>

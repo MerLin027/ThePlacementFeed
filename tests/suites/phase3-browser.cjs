@@ -1,5 +1,6 @@
 // Phase 3 browser verification — apply flow, button states, admin config. Local throwaway stack only.
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { chooseInstitute, pickInstituteInUi } = require('../lib/institute.cjs');
 const { until } = require('../lib/wait.cjs');
 const path = require('path');
@@ -148,7 +149,7 @@ const login = async (page, email, password = 'goodpass123') => {
   await page.setViewportSize({ width: 1280, height: 900 });
 
   console.log('# Incomplete profile -> complete -> form opens');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await page.waitForURL(APP + '/');
   await page.goto(APP + '/login');
   await login(page, emailB);
@@ -171,7 +172,7 @@ const login = async (page, email, password = 'goodpass123') => {
   await page.keyboard.press('Escape');
 
   console.log('# Admin: application settings + delete warning');
-  await page.click('header nav >> text=Logout');
+  await logout(page);
   await page.goto(APP + '/admin/login');
   await page.fill('#username', 'testadmin');
   await page.fill('#password', 'testadminpass');

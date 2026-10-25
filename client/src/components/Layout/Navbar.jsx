@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../../context/auth';
 import NotificationBell from '../Notifications/NotificationBell';
+import AccountMenu from './AccountMenu';
 import logo from '../../assets/logo.png';
 import { m } from 'motion/react';
 import { dropDown, pillSpring } from '../../utils/motion';
@@ -26,15 +27,15 @@ const mobileLinkClass = (active) =>
       : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
   }`;
 
-const initialsOf = (student) => {
-  const name = `${student?.firstName || ''}`.trim();
-  return name ? name.slice(0, 1).toUpperCase() : (student?.email || '?').slice(0, 1).toUpperCase();
-};
+// The frosted look shared by the bar and the bell's circle (blur on ::before, see below)
+const FROSTED = 'before:absolute before:inset-0 before:-z-10 before:bg-surface-container-lowest/80 before:backdrop-blur-md before:ring-1 before:ring-[rgb(3_21_54/0.06)] transition-shadow duration-300 shadow-[0_1px_2px_rgb(3_21_54/0.04),0_8px_24px_-12px_rgb(3_21_54/0.12)] data-scrolled:shadow-[0_2px_4px_rgb(3_21_54/0.05),0_14px_32px_-12px_rgb(3_21_54/0.2)]';
 
 /**
- * The site header: one floating, rounded bar a few pixels below the top of the window, with the
- * dotted background showing around it. No full-width border line; the bar is set apart by a
+ * The site header: a floating, rounded bar a few pixels below the top of the window, with the
+ * dotted background showing around it, and the notification bell in its own round button beside it
+ * (so it never crowds the student's avatar). No full-width border line; both are set apart by a
  * near-invisible hairline and a soft shadow that grows a little once the page scrolls.
+ * Students log out from their avatar menu; the admin keeps "Log out" in the nav.
  */
 const Navbar = () => {
   const { role, student, logoutAdmin, logoutStudent } = useAuth();
@@ -81,7 +82,7 @@ const Navbar = () => {
     navLinks.push(
       { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
       { to: '/admin/students', label: 'Students', icon: 'group' },
-      { to: '/admin/settings', label: 'Settings', icon: 'settings' }
+      { to: '/admin/settings', label: 'Setup', icon: 'tune' }
     );
   } else if (role === 'student') {
     navLinks.push(
@@ -103,11 +104,12 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full px-xs sm:px-sm md:px-lg pt-2 md:pt-3 pb-1">
+      <div className="mx-auto w-full max-w-container-max flex items-start gap-xs md:gap-sm">
       {/* The blur sits on ::before, not on the bar itself: backdrop-filter on an element makes it the
           containing block of fixed-position children */}
       <div
         data-scrolled={scrolled || undefined}
-        className="relative isolate mx-auto w-full max-w-container-max rounded-2xl transition-shadow duration-300 shadow-[0_1px_2px_rgb(3_21_54/0.04),0_8px_24px_-12px_rgb(3_21_54/0.12)] data-scrolled:shadow-[0_2px_4px_rgb(3_21_54/0.05),0_14px_32px_-12px_rgb(3_21_54/0.2)] before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-surface-container-lowest/80 before:backdrop-blur-md before:ring-1 before:ring-[rgb(3_21_54/0.06)]"
+        className={`relative isolate flex-1 min-w-0 rounded-2xl before:rounded-2xl ${FROSTED}`}
       >
         <div className="flex items-center h-[56px] md:h-[60px] pl-xs pr-1.5 md:pl-sm md:pr-2 gap-sm">
 
@@ -125,7 +127,7 @@ const Navbar = () => {
                 height={108}
                 className="h-8 w-auto object-contain transition-transform duration-300 ease-out-soft group-hover/logo:-rotate-6"
               />
-              <span className="font-headline-sm text-headline-sm font-semibold hidden sm:block md:hidden lg:block whitespace-nowrap tracking-tight">
+              <span className="font-headline-sm text-headline-sm font-semibold hidden min-[360px]:block md:hidden lg:block whitespace-nowrap tracking-tight">
                 <span className="text-brand-navy">The </span>
                 <span className="text-brand-blue">Placement</span>
                 <span className="text-brand-navy"> Feed</span>
@@ -162,9 +164,9 @@ const Navbar = () => {
                 <span className="material-symbols-outlined text-[18px] -mr-1 ml-0.5 transition-transform duration-200 ease-out-soft group-hover/cta:translate-x-0.5" aria-hidden="true">arrow_forward</span>
               </Link>
             ))}
-            {logout && (
-              <button type="button" onClick={logout} title="Logout" className={`${desktopLinkClass(false)} hover:text-error! hover:before:bg-error-container/50!`}>
-                <span className={labelClass}>Logout</span>
+            {role === 'admin' && (
+              <button type="button" onClick={logout} className={`${desktopLinkClass(false)} hover:text-error! hover:before:bg-error-container/50!`}>
+                <span className={labelClass}>Log out</span>
                 <span className={`material-symbols-outlined text-[20px] order-first ${iconClass}`} aria-hidden="true">logout</span>
               </button>
             )}
@@ -178,21 +180,10 @@ const Navbar = () => {
                 Admin
               </span>
             )}
-            <NotificationBell />
             {role === 'student' && (
-              <Link
-                to="/profile"
-                aria-label="Your profile"
-                title="Your profile"
-                className="hidden md:inline-flex items-center justify-center w-[44px] h-[44px] rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <span
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-container text-on-primary font-label-md text-label-md"
-                  aria-hidden="true"
-                >
-                  {initialsOf(student)}
-                </span>
-              </Link>
+              <div className="hidden md:block">
+                <AccountMenu student={student} onLogout={logoutStudent} />
+              </div>
             )}
             <button
               ref={menuButtonRef}
@@ -234,20 +225,32 @@ const Navbar = () => {
               </Link>
             ))}
             {logout && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileOpen(false);
-                  logout();
-                }}
-                className={mobileLinkClass(false)}
-              >
-                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
-                Logout
-              </button>
+              <>
+                <div className="h-px mx-sm my-1 bg-outline-variant/70" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                    logout();
+                  }}
+                  className={`${mobileLinkClass(false)} text-error! hover:bg-error-container/50!`}
+                >
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
+                  Log out
+                </button>
+              </>
             )}
           </m.nav>
         )}
+      </div>
+
+      {/* The bell, in its own frosted circle beside the bar (same height); its panel opens below it */}
+      <div
+        data-scrolled={scrolled || undefined}
+        className={`relative isolate shrink-0 flex items-center justify-center w-[56px] h-[56px] md:w-[60px] md:h-[60px] rounded-full before:rounded-full ${FROSTED}`}
+      >
+        <NotificationBell />
+      </div>
       </div>
     </header>
   );

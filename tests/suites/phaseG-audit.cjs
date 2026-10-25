@@ -1,6 +1,7 @@
 // Phase G final audit — every page, guest/student/admin, desktop (1280) and phone (390):
 // axe (serious/critical), >=44px targets, no horizontal scroll, no console errors. Saves "after" screenshots.
 const TEST = require('../lib/env.cjs');
+const { logout } = require('../lib/logout.cjs');
 const { chooseInstitute } = require('../lib/institute.cjs');
 const { settleAnimations } = require('../lib/settle.cjs');
 const { until, settled } = require('../lib/wait.cjs');
@@ -87,9 +88,7 @@ const audit = async (page, label, consoleErrors) => {
     }
     // Student logs out, admin logs in
     await page.goto(APP + '/');
-    if (vp === 'phone') await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('button', { name: 'Logout' }).last().click();
-    await until(async () => !(await page.getByRole('button', { name: 'Logout' }).count()));
+    await logout(page);
     await page.goto(APP + '/admin/login');
     await page.fill('#username', 'testadmin');
     await page.fill('#password', 'testadminpass');
