@@ -63,8 +63,8 @@ const StudentSignup = () => {
 
   return (
     <AuthCard
-      kicker="Step 1 of 3"
-      title="Create your account"
+      kicker="Students"
+      title="Sign up to start applying"
       formTitle="Account details"
       intro={
         <>

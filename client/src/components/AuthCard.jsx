@@ -5,13 +5,13 @@ const SheetFooter = ({ className = '', children }) => (
   <div className={`pt-sm border-t border-outline-variant font-body-sm text-body-sm text-on-surface-variant space-y-xs ${className}`}>{children}</div>
 );
 
-// Form controls inside the sheet: sentence-case labels, small corners
+// Form controls inside the sheet: sentence-case labels
 const FORM_SCOPE =
-  '[&_.label]:normal-case [&_.label]:tracking-normal [&_.label]:text-label-md [&_.label]:font-medium [&_.label]:text-on-surface [&_.input-field]:rounded-md [&_.btn-primary]:rounded-md';
+  '[&_.label]:normal-case [&_.label]:tracking-normal [&_.label]:text-label-md [&_.label]:font-medium [&_.label]:text-on-surface';
 
 /**
  * Shell for the sign-in style pages (student login and signup, admin login, change password): one
- * flat sheet (thin border, small corners, no shadow), halves split by a rule.
+ * flat sheet (thin border, rounded corners, no shadow), halves split by a rule.
  * - `drives`: the left half is the notice of upcoming drives, the form on the right (login).
  * - `intro`: the left half holds the heading, the intro and the footer; the form sits on the right
  *   under `formTitle` (signup).
@@ -41,7 +41,7 @@ const AuthCard = ({
 
   return (
     <div className="relative isolate min-h-full flex items-center justify-center py-lg px-sm">
-      <div className={`w-full bg-surface-container-lowest border border-outline-variant rounded-lg ${layout}`}>
+      <div className={`w-full overflow-hidden bg-surface-container-lowest border border-outline-variant rounded-[1.25rem] ${layout}`}>
         {drives && (
           <div className="order-last lg:order-first flex flex-col p-md md:p-lg border-t lg:border-t-0 lg:border-r border-outline-variant">
             <AuthNotice />

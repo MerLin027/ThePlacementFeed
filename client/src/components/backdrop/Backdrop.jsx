@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { useLocation } from 'react-router';
 import { createDotField } from './dotField';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
@@ -12,37 +11,31 @@ const subscribePointer = (onChange) => {
 };
 const finePointerSnapshot = () => window.matchMedia(FINE_POINTER).matches;
 
-// Home gets the full effect; the sign-in pages (a flat notice sheet) and admin pages stay still;
-// the rest is subtle
-const intensityFor = (pathname) => {
-  if (pathname === '/') return 'hero';
-  if (['/login', '/signup'].includes(pathname) || pathname.startsWith('/admin')) return 'static';
-  return 'content';
-};
-
 // VITE_BACKDROP=static turns the moving dots off site-wide without a code change
 const FORCE_STATIC = import.meta.env.VITE_BACKDROP === 'static';
 
+// Every page uses the landing page's effect
+const INTENSITY = 'hero';
+
 /**
- * The site-wide dotted background, fixed behind everything (outside <main>, so no page wrapper ever
- * gets a transform). A CSS dot grid and two slowly drifting glows are always there; with a mouse
- * and motion allowed, a canvas (dotField.js) takes over the dots and makes them react to the cursor.
- * Touch screens, reduced motion and admin pages keep the still grid.
+ * The site-wide dotted background: the same on every page, fixed behind everything (outside <main>,
+ * so no page wrapper ever gets a transform). A CSS dot grid and a soft glow are always there; with a
+ * mouse and motion allowed, a canvas (dotField.js) takes over the dots and makes them react to the
+ * cursor. Touch screens and reduced motion keep the still grid. It is mounted once (App.jsx), so
+ * moving between pages never rebuilds it.
  */
 const Backdrop = () => {
-  const { pathname } = useLocation();
-  const intensity = intensityFor(pathname);
   const reduced = usePrefersReducedMotion();
   const finePointer = useSyncExternalStore(subscribePointer, finePointerSnapshot, () => false);
   const [failed, setFailed] = useState(false);
   const canvasRef = useRef(null);
 
-  const live = !FORCE_STATIC && !failed && !reduced && finePointer && intensity !== 'static';
+  const live = !FORCE_STATIC && !failed && !reduced && finePointer;
 
   useEffect(() => {
     if (!live || !canvasRef.current) return undefined;
     const field = createDotField(canvasRef.current, {
-      intensity,
+      intensity: INTENSITY,
       // Frame counter for the regression tests (dev builds only)
       onFrame: import.meta.env.DEV ? () => { window.__tpfBackdropFrames = (window.__tpfBackdropFrames || 0) + 1; } : undefined,
     });
@@ -51,14 +44,13 @@ const Backdrop = () => {
       return undefined;
     }
     return () => field.destroy();
-    // A route change between hero and content rebuilds the field (about the cost of a resize)
-  }, [live, intensity]);
+  }, [live]);
 
   return (
     <div
       aria-hidden="true"
       data-backdrop={live ? 'live' : 'static'}
-      data-intensity={intensity}
+      data-intensity={INTENSITY}
       className="backdrop fixed inset-0 -z-10 pointer-events-none overflow-hidden"
     >
       <div className="backdrop-glow" />

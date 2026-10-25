@@ -15,10 +15,10 @@ import { EASE_OUT_SOFT } from '../utils/motion';
 const PAGE_SIZE = 20;
 
 const TABS = [
-  { key: 'all', label: 'All', empty: 'No applications yet', hint: 'When you apply to a drive here, it shows up on this page with its latest status.' },
-  { key: 'active', label: 'In progress', empty: 'Nothing in progress', hint: 'Applications waiting for a decision show up here.' },
-  { key: 'selected', label: 'Selected', empty: 'No selections yet', hint: 'Keep going: drives where you are selected show up here.' },
-  { key: 'closed', label: 'Closed', empty: 'Nothing closed', hint: 'Applications that ended without a selection show up here.' },
+  { key: 'all', label: 'All', dot: null, empty: 'No applications yet', hint: 'When you apply to a drive here, it shows up on this page with its latest status.' },
+  { key: 'active', label: 'In progress', dot: STATUS_META.Shortlisted.dot, empty: 'Nothing in progress', hint: 'Applications waiting for a decision show up here.' },
+  { key: 'selected', label: 'Selected', dot: STATUS_META.Offered.dot, empty: 'No selections yet', hint: 'Keep going: drives where you are selected show up here.' },
+  { key: 'closed', label: 'Closed', dot: STATUS_META.Rejected.dot, empty: 'Nothing closed', hint: 'Applications that ended without a selection show up here.' },
 ];
 
 // The pipeline a student moves through; Rejected ends it early
@@ -33,16 +33,33 @@ const daysAgo = (d) => {
   return `${days} days ago`;
 };
 
-const SummaryTile = ({ label, value, dot }) => {
-  const shown = useCountUp(value);
+// A count that is also the filter for its group (a tab); the highlight slides to the chosen one
+const FilterTile = ({ tab, count, selected, onSelect }) => {
+  const shown = useCountUp(count);
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft px-sm py-xs">
-      <p className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-        {dot && <span className={`w-2 h-2 rounded-full ${dot}`} aria-hidden="true" />}
-        {label}
-      </p>
-      <p className="font-headline-md text-headline-md text-on-surface mt-[2px]">{shown}</p>
-    </div>
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      onClick={onSelect}
+      className={`group/tile relative isolate text-left px-sm py-xs rounded-2xl border bg-surface-container-lowest shadow-soft active:scale-[0.98] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+        selected ? 'border-primary-30' : 'border-outline-variant hover:border-outline hover:shadow-lift'
+      }`}
+    >
+      {selected && (
+        <m.span
+          layoutId="apps-tile"
+          className="absolute inset-0 -z-10 rounded-2xl bg-primary-fixed/60 ring-1 ring-primary/25"
+          transition={{ type: 'spring', stiffness: 480, damping: 40 }}
+          aria-hidden="true"
+        />
+      )}
+      <span className={`flex items-center gap-1.5 font-label-md text-label-md ${selected ? 'text-on-primary-fixed-variant' : 'text-on-surface-variant'}`}>
+        {tab.dot && <span className={`w-2 h-2 rounded-full ${tab.dot}`} aria-hidden="true" />}
+        {tab.label}
+      </span>
+      <span className={`block mt-[2px] font-headline-md text-headline-md tabular-nums ${selected ? 'text-primary' : 'text-on-surface'}`}>{shown}</span>
+    </button>
   );
 };
 
@@ -63,11 +80,11 @@ const StatusStepper = ({ status }) => {
           transition={{ duration: 0.6, ease: EASE_OUT_SOFT, delay: 0.1 }}
         />
       </div>
-      <div className="flex justify-between mt-1 font-label-sm text-label-sm">
+      <div className="flex justify-between mt-1.5 font-label-sm text-label-sm">
         {STEPS.map((step, i) => {
           const done = !rejected && i <= reached;
           return (
-            <span key={step} className={`inline-flex items-center gap-1 ${done ? 'text-on-surface' : 'text-outline'}`}>
+            <span key={step} className={`inline-flex items-center gap-1 ${i === reached ? 'text-on-surface font-semibold' : done ? 'text-on-surface' : 'text-outline'}`}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: done ? color : 'var(--color-outline-variant)' }} />
               {STATUS_META[step].label}
             </span>
@@ -136,44 +153,24 @@ const MyApplications = () => {
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
       <div className="mb-md">
-        <h1 className="font-headline-md text-headline-md text-on-surface">My Applications</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-base">
+        <h1 className="font-display-lg text-display-lg text-on-surface">My Applications</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-1">
           Drives you applied to through The Placement Feed, and where each one stands.
         </p>
       </div>
 
+      {/* The counts are the filter: one tile per group, the chosen one highlighted */}
       {counts && counts.all > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-xs mb-md">
-          <SummaryTile label="Applied" value={counts.all} />
-          <SummaryTile label="In progress" value={counts.active} dot={STATUS_META.Shortlisted.dot} />
-          <SummaryTile label="Selected" value={counts.selected} dot={STATUS_META.Offered.dot} />
-          <SummaryTile label="Closed" value={counts.closed} dot={STATUS_META.Rejected.dot} />
-        </div>
-      )}
-
-      {counts && counts.all > 0 && (
-        <div role="tablist" aria-label="Show applications" className="inline-flex flex-wrap gap-1 p-1 mb-sm rounded-full bg-surface-container-low border border-outline-variant">
-          {TABS.map((t) => {
-            const selected = t.key === tab;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setSearchParams(t.key === 'all' ? {} : { tab: t.key }, { replace: true })}
-                className={`relative isolate inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-full font-label-md text-label-md transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-                  selected ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                {selected && (
-                  <m.span layoutId="apps-tab" className="absolute inset-0 -z-10 rounded-full bg-surface-container-lowest shadow-soft" transition={{ type: 'spring', stiffness: 520, damping: 42 }} />
-                )}
-                {t.label}
-                <span className="tabular-nums text-on-surface-variant">{counts[t.key]}</span>
-              </button>
-            );
-          })}
+        <div role="tablist" aria-label="Show applications" className="grid grid-cols-2 sm:grid-cols-4 gap-xs mb-md">
+          {TABS.map((t) => (
+            <FilterTile
+              key={t.key}
+              tab={t}
+              count={counts[t.key] ?? 0}
+              selected={t.key === tab}
+              onSelect={() => setSearchParams(t.key === 'all' ? {} : { tab: t.key }, { replace: true })}
+            />
+          ))}
         </div>
       )}
 
@@ -206,13 +203,13 @@ const MyApplications = () => {
                   {a.driveId ? (
                     <Link
                       to={`/placement/${a.driveId}`}
-                      className="block bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm group-hover/row:shadow-lift group-hover/row:border-primary-30 group-hover/row:-translate-y-0.5 transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      className="block bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md group-hover/row:shadow-lift group-hover/row:border-primary-30 group-hover/row:-translate-y-0.5 transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <div className="flex items-start gap-sm">
                         <CompanyMonogram name={a.company} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-xs">
-                            <p className="font-label-md text-label-md text-on-surface truncate">{a.company}</p>
+                          <div className="flex flex-wrap items-center gap-x-xs gap-y-0.5">
+                            <p className="font-headline-sm text-headline-sm text-on-surface truncate">{a.company}</p>
                             {typeMeta && (
                               <span className={`inline-flex items-center px-2 py-[1px] rounded-full font-label-sm text-label-sm ${typeMeta.pill}`}>{typeMeta.short}</span>
                             )}
@@ -225,11 +222,27 @@ const MyApplications = () => {
                         <ApplicationStatusPill status={a.status} />
                       </div>
                       <StatusStepper status={a.status} />
-                      <p className="mt-xs font-body-sm text-body-sm text-on-surface-variant">
-                        Applied {formatDate(a.submittedAt)}
-                        {a.updatedAt && new Date(a.updatedAt) - new Date(a.submittedAt) > 60000 && <> · updated {daysAgo(a.updatedAt)}</>}
-                        {a.isPostponed ? <> · drive postponed</> : a.driveDate && <> · drive {a.driveStatus === 'Completed' ? 'held' : 'on'} {formatDate(a.driveDate)}</>}
-                      </p>
+                      <div className="mt-sm pt-xs border-t border-outline-variant/60 flex flex-wrap items-center gap-x-md gap-y-1 font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">event_available</span>
+                          Applied {formatDate(a.submittedAt)}
+                          {a.updatedAt && new Date(a.updatedAt) - new Date(a.submittedAt) > 60000 && <> · updated {daysAgo(a.updatedAt)}</>}
+                        </span>
+                        {a.isPostponed ? (
+                          <span className="inline-flex items-center gap-1 text-red-700">
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">pause_circle</span>
+                            Drive postponed
+                          </span>
+                        ) : a.driveDate && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">event</span>
+                            Drive {a.driveStatus === 'Completed' ? 'held' : 'on'} {formatDate(a.driveDate)}
+                          </span>
+                        )}
+                        <span className="ml-auto material-symbols-outlined text-[18px] text-outline transition-transform duration-200 ease-out-soft group-hover/row:translate-x-1 group-hover/row:text-primary" aria-hidden="true">
+                          arrow_forward
+                        </span>
+                      </div>
                     </Link>
                   ) : (
                     <div className="flex items-center gap-sm bg-surface-container-low border border-outline-variant rounded-2xl p-sm">

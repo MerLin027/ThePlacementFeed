@@ -78,9 +78,11 @@ const inkAround = (page, x, y) => page.evaluate(([px, py]) => {
   await sleep(700);
   const after = await inkAround(page, 640, 420);
   ok(await frames(page) === f2 && Math.abs(after - before) <= before * 0.02, 'dots spring back and the loop stops again', `${before} vs ${after}`);
-  await page.goto(APP + '/timeline');
-  await settled(page);
-  ok(await bd.getAttribute('data-intensity') === 'content' && await bd.getAttribute('data-backdrop') === 'live', 'content pages: subtler, still live');
+  for (const route of ['/timeline', '/login', '/signup']) {
+    await page.goto(APP + route);
+    await settled(page);
+    ok(await bd.getAttribute('data-intensity') === 'hero' && await bd.getAttribute('data-backdrop') === 'live', `${route}: the same live background as the home page`);
+  }
   await ctx.close();
 
   console.log('# Reduced motion and touch: the still grid');

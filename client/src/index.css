@@ -350,8 +350,6 @@
     background-size: 22px 22px;
     transition: opacity 300ms ease-out;
   }
-  [data-intensity='content'] .backdrop-dots { opacity: 0.75; }
-  [data-intensity='static'] .backdrop-dots { opacity: 0.55; }
   [data-backdrop='live'] .backdrop-dots { opacity: 0; }
 
   /* One soft, centred, still wash at the top (two drifting glows read as uneven blotches) */
@@ -361,8 +359,6 @@
     height: 60vh;
     background: radial-gradient(55% 70% at 50% 0%, rgb(0 90 253 / 0.07), transparent 75%);
   }
-  [data-intensity='content'] .backdrop-glow { opacity: 0.6; }
-  [data-intensity='static'] .backdrop-glow { opacity: 0.4; }
 }
 
 /* Faint dot grid behind page headers; fades out on every side so it never competes with content */
