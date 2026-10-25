@@ -180,6 +180,18 @@ const axeViolations = async (page) => {
   await settled(page);
   ok(!(await hasText(page, "Students can't apply in-app yet", 1500)), 'banner gone once an institute exists');
 
+  console.log('# The header logo goes home, and back to the top when already there');
+  const logo = page.getByRole('link', { name: 'The Placement Feed — home' });
+  await logo.click();
+  ok(await until(() => new URL(page.url()).pathname === '/'), 'logo opens the home page');
+  await page.setViewportSize({ width: 1280, height: 500 });
+  await settled(page);
+  const scrolledBy = await page.evaluate(() => { const m = document.getElementById('main-content'); m.scrollTo({ top: 400 }); return m.scrollTop; });
+  await logo.click();
+  const backTop = await until(() => page.evaluate(() => document.getElementById('main-content').scrollTop === 0), { timeout: 4000 });
+  ok(scrolledBy > 0 && backTop, 'logo on the home page scrolls back to the top', `scrolled ${scrolledBy}`);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   ok(errors.length === 0, 'no page errors', errors.join('\n    '));
 
   // cleanup

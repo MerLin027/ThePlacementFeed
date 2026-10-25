@@ -100,6 +100,10 @@ const Navbar = () => {
   const logout = role === 'admin' ? logoutAdmin : role === 'student' ? logoutStudent : null;
 
   const isActive = (path) => location.pathname === path;
+  // Already home: the logo and Home link take you back to the top instead of doing nothing
+  const onHomeClick = () => {
+    if (location.pathname === '/') document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   // Desktop links are text from lg (xl for the longer admin nav); narrower, they become icons and the
   // label stays as the accessible name
   const wide = navLinks.length > 4;
@@ -121,6 +125,7 @@ const Navbar = () => {
           <div className="flex-1 flex items-center min-w-0">
             <Link
               to="/"
+              onClick={onHomeClick}
               aria-label="The Placement Feed — home"
               className="group/logo flex items-center gap-xs min-h-[44px] rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
@@ -145,6 +150,7 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
+                onClick={link.to === '/' ? onHomeClick : undefined}
                 aria-current={isActive(link.to) ? 'page' : undefined}
                 className={desktopLinkClass(isActive(link.to))}
               >
@@ -224,7 +230,10 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  if (link.to === '/') onHomeClick();
+                }}
                 aria-current={isActive(link.to) ? 'page' : undefined}
                 className={mobileLinkClass(isActive(link.to))}
               >
