@@ -58,7 +58,6 @@ const ChangePassword = () => {
 
   return (
     <AuthCard
-      icon="key"
       title={isReset ? 'Set a new password to continue' : 'Change password'}
       subtitle={isReset ? 'Required before you can use your account' : "You'll stay logged in here; other devices will be signed out"}
       footer={

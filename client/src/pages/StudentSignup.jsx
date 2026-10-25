@@ -63,9 +63,11 @@ const StudentSignup = () => {
 
   return (
     <AuthCard
-      icon="person_add"
+      drives
+      steps={['Account', 'Profile', 'Apply']}
+      currentStep={0}
       title="Create your account"
-      subtitle="Apply to campus drives in a few clicks"
+      subtitle="It takes a minute. Next you fill in your profile, then you can apply."
       footer={
         <p>
           Already have an account?{' '}
@@ -81,14 +83,14 @@ const StudentSignup = () => {
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {error && <FormAlert icon="info">{error}</FormAlert>}
 
-        <FormAlert tone="info" icon="info">
-          <p className="font-semibold mb-[2px]">A quick heads-up</p>
-          <p>
-            Your email and roll number are used only once and can&apos;t be changed later, and each
-            can belong to just one account. Please double-check them before you sign up. If you ever
-            make a mistake, the CDPC admin can help you out.
-          </p>
-        </FormAlert>
+        <p className="flex items-start gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px] shrink-0 text-primary" aria-hidden="true">info</span>
+          <span>
+            <span className="font-semibold text-on-surface">A quick heads-up: </span>
+            your email and roll number can&apos;t be changed later, and each can belong to just one
+            account, so please double-check them. If you ever make a mistake, the CDPC admin can help.
+          </span>
+        </p>
 
         <FormField
           id="email"

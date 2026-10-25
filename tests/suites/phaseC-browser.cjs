@@ -77,6 +77,7 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.waitForURL(APP + '/');
   await Student.updateOne({ email }, { passwordHash: await bcrypt.hash('college123', 12), mustChangePassword: true, tempPasswordExpiresAt: new Date(Date.now() + 72 * 3600e3), $inc: { tokenVersion: 1 } });
   await page.goto(APP + '/login');
+  await page.getByText('Trouble logging in?').click(); // the reset hints sit in a disclosure
   ok(await hasText(page, 'Log in with the temporary password the admin gave you'), 'login page hint for reset students');
   await loginStudent('college123');
   await page.waitForURL(/\/change-password/);

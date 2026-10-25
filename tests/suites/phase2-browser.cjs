@@ -49,7 +49,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   const body = await page.locator('main').innerText();
   ok(body.includes('A quick heads-up') && body.includes("can't be changed later"), 'mellow notice shown');
   ok(body.includes('This becomes your login') && body.includes('One account per roll number'), 'field helpers shown');
-  const noticeClass = await page.locator('[role=status]').first().getAttribute('class');
+  const noticeClass = await page.locator('p', { hasText: 'A quick heads-up' }).first().getAttribute('class');
   ok(!/error|amber|red/.test(noticeClass), 'notice uses neutral (non-warning) styling', noticeClass);
   await page.fill('#email', email);
   await page.fill('#rollNumber', roll);

@@ -50,26 +50,30 @@ const StudentLogin = () => {
 
   return (
     <AuthCard
-      icon="login"
-      title="Student login"
-      subtitle="Log in to apply to drives and manage your profile"
-      footer={
+      drives
+      title="Log in"
+      subtitle="Welcome back. Use the email you signed up with."
+      // A failed attempt opens the help (forgot / reset password)
+      helpOpen={Boolean(error)}
+      help={
         <>
-          <p>
-            New here?{' '}
-            <Link
-              to={`/signup${rawReturnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
-              className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
-            >
-              Create an account
-            </Link>
-          </p>
           <p>Forgot your password? Please ask the CDPC admin to reset it.</p>
           <p>
             Password just reset? Log in with the temporary password the admin gave you — you&apos;ll
             choose a new one straight after.
           </p>
         </>
+      }
+      footer={
+        <p>
+          New here?{' '}
+          <Link
+            to={`/signup${rawReturnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
+            className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
+          >
+            Create an account
+          </Link>
+        </p>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
