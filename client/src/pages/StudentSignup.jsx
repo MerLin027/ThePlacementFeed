@@ -63,10 +63,33 @@ const StudentSignup = () => {
 
   return (
     <AuthCard
-      drives
-      steps={['Account', 'Profile', 'Apply']}
-      currentStep={0}
+      kicker="Step 1 of 3"
       title="Create your account"
+      formTitle="Account details"
+      intro={
+        <>
+          {/* Where signing up leads; this page is step 1 */}
+          <ol className="divide-y divide-outline-variant/70 border-b border-outline-variant/70">
+            {[
+              ['Account', 'Your email, roll number and a password. This page.'],
+              ['Profile', 'Your name, branch, CGPA, phone and a resume link.'],
+              ['Apply', 'Any drive you\u2019re eligible for, in a couple of clicks.'],
+            ].map(([step, text], i) => (
+              <li key={step} className="flex gap-sm py-xs" aria-current={i === 0 ? 'step' : undefined}>
+                <span className={`w-5 shrink-0 font-label-md text-label-md tabular-nums ${i === 0 ? 'text-primary' : 'text-outline'}`}>{i + 1}</span>
+                <span>
+                  <span className={`block font-label-md text-label-md ${i === 0 ? 'text-on-surface' : 'text-on-surface-variant'}`}>{step}</span>
+                  <span className="block font-body-sm text-body-sm text-on-surface-variant">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-md font-body-sm text-body-sm text-on-surface-variant">
+            <span className="font-semibold text-on-surface">A quick heads-up: </span>
+            your email and roll number can&apos;t be changed later. If something goes wrong, the CDPC admin can help.
+          </p>
+        </>
+      }
       footer={
         <p>
           Already have an account?{' '}
@@ -81,15 +104,6 @@ const StudentSignup = () => {
     >
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {error && <FormAlert icon="info">{error}</FormAlert>}
-
-        <p className="flex items-start gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px] shrink-0 text-primary" aria-hidden="true">info</span>
-          <span>
-            <span className="font-semibold text-on-surface">A quick heads-up: </span>
-            your email and roll number can&apos;t be changed later, and each can belong to just one
-            account, so please double-check them. If you ever make a mistake, the CDPC admin can help.
-          </span>
-        </p>
 
         <FormField
           id="email"

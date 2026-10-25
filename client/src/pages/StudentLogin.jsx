@@ -51,6 +51,7 @@ const StudentLogin = () => {
   return (
     <AuthCard
       drives
+      kicker="Students"
       title="Log in"
       subtitle="Use the email you signed up with."
       // A failed attempt opens the help (forgot / reset password)

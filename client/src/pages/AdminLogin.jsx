@@ -50,6 +50,7 @@ const AdminLogin = () => {
 
   return (
     <AuthCard
+      kicker="CDPC"
       title="Admin login"
       subtitle="Sign in to manage placement drives."
       footer={
