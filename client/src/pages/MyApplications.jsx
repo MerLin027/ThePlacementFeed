@@ -93,7 +93,7 @@ const CardSkeleton = () => (
 
 // Every in-app application the student has made, newest first, with where each one stands
 const MyApplications = () => {
-  usePageTitle('My applications');
+  usePageTitle('My Applications');
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = TABS.some((t) => t.key === searchParams.get('tab')) ? searchParams.get('tab') : 'all';
   const [page, setPage] = useState(1);
@@ -136,7 +136,7 @@ const MyApplications = () => {
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
       <div className="mb-md">
-        <h1 className="font-headline-md text-headline-md text-on-surface">My applications</h1>
+        <h1 className="font-headline-md text-headline-md text-on-surface">My Applications</h1>
         <p className="font-body-md text-body-md text-on-surface-variant mt-base">
           Drives you applied to through The Placement Feed, and where each one stands.
         </p>

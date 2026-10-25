@@ -42,17 +42,20 @@ const Navbar = () => {
   const location = useLocation();
   const menuButtonRef = useRef(null);
 
-  // The mobile menu remembers the page it was opened on, so navigating closes it without an
-  // effect; Escape also closes it (focus back to the menu button)
-  const [menuOpenOn, setMenuOpenOn] = useState(null);
-  const isMobileOpen = menuOpenOn === location.pathname;
-  const setIsMobileOpen = (open) => setMenuOpenOn(open ? location.pathname : null);
+  // The mobile menu closes for good on any page change (adjusted during render, not in an effect);
+  // Escape also closes it (focus back to the menu button)
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [menuShownOn, setMenuShownOn] = useState(location.pathname);
+  if (menuShownOn !== location.pathname) {
+    setMenuShownOn(location.pathname);
+    if (isMobileOpen) setIsMobileOpen(false);
+  }
 
   useEffect(() => {
     if (!isMobileOpen) return undefined;
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        setMenuOpenOn(null);
+        setIsMobileOpen(false);
         menuButtonRef.current?.focus();
       }
     };
@@ -85,9 +88,10 @@ const Navbar = () => {
       { to: '/admin/settings', label: 'Setup', icon: 'tune' }
     );
   } else if (role === 'student') {
+    // Profile lives in the avatar menu; phones (no avatar) get it in their menu
     navLinks.push(
-      { to: '/applications', label: 'My applications', icon: 'work_history' },
-      { to: '/profile', label: 'Profile', icon: 'person' }
+      { to: '/applications', label: 'My Applications', icon: 'work_history' },
+      { to: '/profile', label: 'Profile', icon: 'person', phoneOnly: true }
     );
   } else {
     navLinks.push({ to: '/login', label: 'Login', icon: 'login' }, { to: '/signup', label: 'Sign up', icon: 'person_add', cta: true });
@@ -137,7 +141,7 @@ const Navbar = () => {
 
           {/* Centre — desktop links */}
           <nav className="hidden md:flex items-center gap-0.5" aria-label="Main">
-            {navLinks.filter((link) => !link.cta).map((link) => (
+            {navLinks.filter((link) => !link.cta && !link.phoneOnly).map((link) => (
               <Link
                 key={link.to}
                 to={link.to}

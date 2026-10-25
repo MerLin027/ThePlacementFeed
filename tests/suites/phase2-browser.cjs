@@ -1,6 +1,7 @@
 // Phase 2 browser + API verification against local throwaway server (5099) and Vite (5173).
 const TEST = require('../lib/env.cjs');
 const { logout } = require('../lib/logout.cjs');
+const { until } = require('../lib/wait.cjs');
 const { pickInstituteInUi } = require('../lib/institute.cjs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -63,8 +64,20 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.click('button[type=submit]');
   ok(await page.waitForURL(/\/profile$/).then(() => true, () => false), 'signup -> /profile');
   nav = await navTexts(page);
-  ok(nav.includes('Profile') && !nav.includes('Log out') && !nav.includes('Sign up'), 'student nav (log out is in the avatar menu)', nav);
+  ok(nav.includes('My Applications') && !nav.includes('Profile') && !nav.includes('Log out') && !nav.includes('Sign up'), 'student nav (profile and log out are in the avatar menu)', nav);
   ok(await page.getByRole('button', { name: 'Your account' }).isVisible(), 'student avatar menu shown');
+  // The avatar menu closes for good once you leave the page, even when you come back to it
+  await page.goto(APP + '/');
+  await page.getByRole('button', { name: 'Your account' }).click();
+  const accountPanel = page.locator('header').getByRole('link', { name: 'Change password' });
+  ok(await until(() => accountPanel.isVisible()), 'avatar menu opens');
+  await page.locator('header').getByRole('link', { name: 'Profile' }).click();
+  await page.waitForURL(/\/profile$/);
+  await page.locator('header nav').getByRole('link', { name: 'Home' }).click();
+  await page.waitForURL(APP + '/');
+  await new Promise((r) => setTimeout(r, 400));
+  ok(!(await accountPanel.isVisible()), 'avatar menu stays closed after Profile, then Home');
+  await page.goto(APP + '/profile');
 
   console.log('# Profile');
   await page.waitForSelector('text=Finish your profile');
@@ -129,7 +142,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await logout(page);
   await page.waitForURL(/\/admin\/login/);
   nav = await navTexts(page);
-  ok(nav.includes('Profile'), 'after admin logout, student nav returns', nav);
+  ok(nav.includes('My Applications'), 'after admin logout, student nav returns', nav);
 
   console.log('# Password change revokes old cookie');
   await page.goto(APP + '/profile');

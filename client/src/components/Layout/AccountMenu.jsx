@@ -13,28 +13,32 @@ const itemClass =
   'flex items-center gap-sm w-full min-h-[44px] px-sm rounded-xl font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface active:scale-[0.98] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
 
 /**
- * The student's avatar in the header: opens a small panel with who is signed in, links to the
- * profile and applications, and Log out. A disclosure (button + panel), closed by Escape (focus goes
- * back to the avatar), a click outside, or moving to another page.
+ * The student's avatar in the header: opens a small panel with who is signed in, the profile, a
+ * shortcut to changing the password, and Log out. A disclosure (button + panel), closed by Escape
+ * (focus goes back to the avatar), a click outside, or moving to another page.
  */
 const AccountMenu = ({ student, onLogout }) => {
   const { pathname } = useLocation();
   const panelId = useId();
   const wrapRef = useRef(null);
   const buttonRef = useRef(null);
-  // Remembers the page it was opened on, so navigating closes it without an effect
-  const [openOn, setOpenOn] = useState(null);
-  const open = openOn === pathname;
+  const [open, setOpen] = useState(false);
+  // Any page change closes it for good (adjusted during render, not in an effect)
+  const [shownOn, setShownOn] = useState(pathname);
+  if (shownOn !== pathname) {
+    setShownOn(pathname);
+    if (open) setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
       if (e.key !== 'Escape') return;
-      setOpenOn(null);
+      setOpen(false);
       buttonRef.current?.focus();
     };
     const onPointer = (e) => {
-      if (!wrapRef.current?.contains(e.target)) setOpenOn(null);
+      if (!wrapRef.current?.contains(e.target)) setOpen(false);
     };
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
@@ -51,7 +55,7 @@ const AccountMenu = ({ student, onLogout }) => {
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpenOn(open ? null : pathname)}
+        onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label="Your account"
@@ -85,19 +89,19 @@ const AccountMenu = ({ student, onLogout }) => {
                   <p className="font-body-sm text-body-sm text-on-surface-variant truncate">{student?.email}</p>
                 </div>
               </div>
-              <Link to="/profile" className={itemClass}>
+              <Link to="/profile" onClick={() => setOpen(false)} className={itemClass}>
                 <span className="material-symbols-outlined text-[20px]" aria-hidden="true">person</span>
                 Profile
               </Link>
-              <Link to="/applications" className={itemClass}>
-                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">work_history</span>
-                My applications
+              <Link to="/change-password" onClick={() => setOpen(false)} className={itemClass}>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">key</span>
+                Change password
               </Link>
               <div className="my-1 h-px bg-outline-variant/70" aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => {
-                  setOpenOn(null);
+                  setOpen(false);
                   onLogout();
                 }}
                 className={`${itemClass} text-error! hover:bg-error-container/50!`}

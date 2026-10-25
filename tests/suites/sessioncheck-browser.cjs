@@ -46,7 +46,7 @@ const PROBES = /\/api\/(students\/)?auth\/check$/;
   seen = await browse(['/', '/applications', '/profile']);
   ok(seen.some((p) => p.path === '/api/students/auth/check' && p.status === 200), 'student session recognised');
   ok(seen.every((p) => p.status === 200), 'student: the admin probe does not answer 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
-  ok(await page.getByRole('link', { name: 'My applications' }).first().isVisible(), 'student navigation shown');
+  ok(await page.getByRole('link', { name: 'My Applications' }).first().isVisible(), 'student navigation shown');
   await logout(page);
 
   console.log('# admin');
