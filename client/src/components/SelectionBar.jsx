@@ -46,7 +46,7 @@ const SelectionBar = ({ count, onClear, label = 'Bulk actions', children }) => {
           className="fixed z-40 bottom-3 inset-x-2 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:bottom-5 sm:max-w-[calc(100vw-2rem)]"
         >
           <PresenceGuard>
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-1 pl-4 pr-1.5 py-1.5 rounded-2xl sm:rounded-full bg-brand-navy text-white shadow-pop ring-1 ring-white/10">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-2.5 gap-y-1.5 pl-5 pr-2 py-2 rounded-2xl sm:rounded-full bg-brand-navy text-white shadow-pop ring-1 ring-white/10">
               <p className="flex-1 sm:flex-none font-label-md text-label-md whitespace-nowrap pr-1" aria-live="polite">
                 {/* The number rolls in on every change */}
                 <m.span
@@ -60,8 +60,8 @@ const SelectionBar = ({ count, onClear, label = 'Bulk actions', children }) => {
                 </m.span>{' '}
                 selected
               </p>
-              <span className="hidden sm:block w-px h-6 bg-white/15 mx-1" aria-hidden="true" />
-              <div className="order-last sm:order-none w-full sm:w-auto flex flex-wrap items-center gap-1.5">{children}</div>
+              <span className="hidden sm:block w-px h-6 bg-white/15 mx-1.5" aria-hidden="true" />
+              <div className="order-last sm:order-none w-full sm:w-auto flex flex-wrap items-center gap-2">{children}</div>
               <button
                 type="button"
                 onClick={onClear}

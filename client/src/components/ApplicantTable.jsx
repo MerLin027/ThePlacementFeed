@@ -4,8 +4,8 @@ import { TableRowsSkeleton } from './Skeleton';
 import PillSelect from './PillSelect';
 
 // Headings and cells are centred; the applicant column (name, roll number, email) stays left-aligned
-const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
-const tdClass = 'px-sm py-xs text-center font-body-sm text-body-sm';
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm font-semibold text-on-surface/80 uppercase tracking-wider whitespace-nowrap';
+const tdClass = 'px-sm py-xs text-center font-body-md text-body-md';
 const statusOptions = APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) }));
 
 const formatDate = (d) =>
@@ -47,7 +47,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
               <th className={thClass}><span className="sr-only sm:not-sr-only">Details</span></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-variant">
+          <tbody className="divide-y divide-outline-variant/60">
             {loading ? (
               <TableRowsSkeleton columns={8} label="Loading applicants" />
             ) : applicants.length === 0 ? (
@@ -61,7 +61,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                 const name = `${a.snapshot.firstName} ${a.snapshot.lastName}`.trim();
                 const isSelected = selected.has(a.id);
                 return (
-                  <tr key={a.id} className={`transition-colors duration-200 ${isSelected ? 'bg-primary/5' : 'hover:bg-surface-container-low/50'}`}>
+                  <tr key={a.id} className={`transition-colors duration-200 ${isSelected ? 'bg-primary/5' : `even:bg-surface-container-low/60 hover:bg-primary/4`}`}>
                     {/* A blue edge marks selected rows */}
                     <td className={`px-sm py-xs transition-shadow duration-200 ${isSelected ? 'shadow-[inset_3px_0_0_var(--color-primary-container)]' : ''}`}>
                       <label className="inline-flex w-[44px] h-[44px] -m-2 items-center justify-center cursor-pointer">
@@ -99,7 +99,7 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                     </td>
                     <td className={`${tdClass} hidden sm:table-cell text-on-surface tabular-nums`}>{a.snapshot.cgpa ?? '—'}</td>
                     <td className={`${tdClass} hidden lg:table-cell text-on-surface tabular-nums`}>{a.snapshot.activeBacklogs ?? '—'}</td>
-                    <td className={`${tdClass} hidden lg:table-cell text-on-surface-variant whitespace-nowrap tabular-nums`}>{formatDate(a.submittedAt)}</td>
+                    <td className={`${tdClass} hidden lg:table-cell text-on-surface whitespace-nowrap tabular-nums`}>{formatDate(a.submittedAt)}</td>
                     <td className={tdClass}>
                       {/* A compact pill in the status colour; still a native select underneath */}
                       <PillSelect

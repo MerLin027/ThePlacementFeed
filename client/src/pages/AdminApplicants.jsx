@@ -370,7 +370,7 @@ const AdminApplicants = () => {
 
       {/* Bulk actions: a floating bar while rows are selected */}
       <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
-        <span className="hidden sm:inline pl-1 font-body-sm text-body-sm text-white/70" aria-hidden="true">Set status</span>
+        <span className="hidden sm:inline font-body-sm text-body-sm text-white/70" aria-hidden="true">Set status</span>
         <PillSelect
           id="bulk-status"
           label="Set status to"
@@ -385,7 +385,7 @@ const AdminApplicants = () => {
           onClick={handleBulkUpdate}
           disabled={isBulkSaving}
           aria-busy={isBulkSaving}
-          className="inline-flex items-center justify-center h-[44px] px-4 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60 disabled:active:scale-100"
+          className="inline-flex items-center justify-center h-[44px] px-5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60 disabled:active:scale-100"
         >
           {isBulkSaving ? 'Updating…' : 'Apply'}
         </button>
@@ -394,7 +394,7 @@ const AdminApplicants = () => {
           onClick={() => setConfirmDelete(true)}
           disabled={isDeleting}
           aria-busy={isDeleting}
-          className="inline-flex items-center justify-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md text-red-300 hover:text-red-200 hover:bg-red-400/15 active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-300/70 disabled:opacity-60 disabled:active:scale-100"
+          className="sm:ml-2 inline-flex items-center justify-center gap-1.5 h-[44px] px-4 rounded-full font-label-md text-label-md text-red-300 hover:text-red-200 hover:bg-red-400/15 active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-300/70 disabled:opacity-60 disabled:active:scale-100"
         >
           <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
           {isDeleting ? 'Deleting…' : 'Delete'}

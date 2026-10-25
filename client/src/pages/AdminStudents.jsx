@@ -48,7 +48,7 @@ const formatDate = (dateStr) =>
 const displayName = (s) => `${s.firstName} ${s.lastName}`.trim() || s.rollNumber;
 
 // Headings and cells are centred; the student column (name, roll number, badges) stays left-aligned
-const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm font-semibold text-on-surface/80 uppercase tracking-wider whitespace-nowrap';
 
 
 const AdminStudents = () => {
@@ -275,7 +275,7 @@ const AdminStudents = () => {
                 <th className={thClass}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-variant">
+            <tbody className="divide-y divide-outline-variant/60">
               {loading ? (
                 <TableRowsSkeleton columns={8} label="Loading students" />
               ) : students.length === 0 ? (
@@ -286,7 +286,7 @@ const AdminStudents = () => {
                 </tr>
               ) : (
                 students.map((s) => (
-                  <tr key={s.id} className="hover:bg-surface-container-low/50 transition-colors">
+                  <tr key={s.id} className="even:bg-surface-container-low/60 hover:bg-primary/4 transition-colors">
                     <td className="px-sm py-xs">
                       <p className="font-label-md text-label-md text-on-surface whitespace-nowrap">
                         {`${s.firstName} ${s.lastName}`.trim() || <span className="text-on-surface-variant italic font-normal">Name not added yet</span>}
@@ -308,19 +308,22 @@ const AdminStudents = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-sm text-body-sm text-on-surface">
+                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-md text-body-md text-on-surface">
                       {/* Long emails end in "…"; the full address shows on hover */}
                       <span className="block max-w-[15rem] mx-auto truncate" title={s.email}>{s.email}</span>
                     </td>
-                    <td className="px-sm py-xs hidden sm:table-cell text-center font-body-sm text-body-sm text-on-surface">
-                      {s.branch ? branchLabel(s.branch) : '—'}
+                    <td className="px-sm py-xs hidden sm:table-cell text-center font-body-md text-body-md text-on-surface">
+                      {/* Long branch names stay on one line; the full name shows on hover */}
+                      <span className="block max-w-[14rem] mx-auto truncate" title={s.branch ? branchLabel(s.branch) : undefined}>
+                        {s.branch ? branchLabel(s.branch) : '—'}
+                      </span>
                     </td>
-                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-sm text-body-sm text-on-surface">
+                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-md text-body-md text-on-surface whitespace-nowrap">
                       {s.institute ? s.institute.name : <span className="text-on-surface-variant italic">Not chosen yet</span>}
                     </td>
-                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface tabular-nums">{s.graduationYear ?? '—'}</td>
-                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface tabular-nums">{s.applications ?? 0}</td>
-                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap tabular-nums">{formatDate(s.createdAt)}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-md text-body-md text-on-surface tabular-nums">{s.graduationYear ?? '—'}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-md text-body-md text-on-surface tabular-nums">{s.applications ?? 0}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-md text-body-md text-on-surface whitespace-nowrap tabular-nums">{formatDate(s.createdAt)}</td>
                     <td className="px-sm py-xs">
                       <div className="flex items-center justify-center gap-1">
                         <IconAction

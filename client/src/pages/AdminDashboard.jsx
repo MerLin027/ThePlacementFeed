@@ -18,7 +18,7 @@ import { useCatalog } from '../stores/catalog';
 const DashboardInsights = lazy(() => import('../components/charts/DashboardInsights'));
 
 // Headings and cells are centred; the company / role column stays left-aligned
-const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm font-semibold text-on-surface/80 uppercase tracking-wider whitespace-nowrap';
 // The status and action renderers are shared with the phone cards: centre them only in table cells
 const centredCell = 'px-sm py-sm text-center [&>div]:items-center [&>div]:justify-center';
 
@@ -303,7 +303,7 @@ const AdminDashboard = () => {
                 <th scope="col" className={thClass}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-variant">
+            <tbody className="divide-y divide-outline-variant/60">
               {loading ? (
                 <TableRowsSkeleton columns={7} label="Loading drives" />
               ) : placements.length === 0 ? (
@@ -314,16 +314,16 @@ const AdminDashboard = () => {
                 </tr>
               ) : (
                 placements.map((p) => (
-                  <tr key={p._id} className="hover:bg-surface-container-low/60 transition-colors">
+                  <tr key={p._id} className="even:bg-surface-container-low/60 hover:bg-primary/4 transition-colors">
                     <td className="px-sm py-sm">
                       <p className="font-label-md text-label-md text-on-surface">{p.company}</p>
                       <p className="font-label-sm text-label-sm text-on-surface-variant">{p.role}</p>
                     </td>
-                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant">{p.type}</td>
+                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-md text-body-md text-on-surface">{p.type}</td>
                     <td className="px-sm py-sm text-center font-label-md text-label-md text-on-surface whitespace-nowrap tabular-nums">₹{p.ctc} LPA</td>
                     <td className={centredCell}>{renderStatusCell(p)}</td>
                     <td className={centredCell}>{renderStatusControls(p)}</td>
-                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap tabular-nums">
+                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-md text-body-md text-on-surface whitespace-nowrap tabular-nums">
                       {formatDate(p.driveDate)}
                     </td>
                     <td className={centredCell}>{renderRowActions(p)}</td>
