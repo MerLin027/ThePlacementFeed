@@ -164,6 +164,21 @@ const TAG = `P5B${Date.now() % 100000}`;
   ok(await hasText(page, '1 application deleted'), 'delete toast');
   ok(await until(async () => (await rowCount()) === 2) && !(await page.locator('tbody').getByText('Chirag Modi').count()), 'row removed from the list');
   ok((await Application.countDocuments({ driveId: drive._id, 'snapshot.firstName': 'Chirag' })) === 0, 'DB: record deleted');
+  ok(await until(async () => !(await bulk.count())), 'selection bar leaves once the selection is gone');
+
+  console.log('# Delete from the details dialog');
+  await page.getByLabel('View application from Bharat Shah').click();
+  const details = page.getByRole('dialog');
+  await details.getByRole('button', { name: 'Delete application' }).click();
+  const confirmBox = details.getByRole('group', { name: 'Confirm delete' });
+  ok(await until(() => confirmBox.isVisible()) && await hasText(confirmBox, 'apply again'), 'asks again inside the dialog');
+  await confirmBox.getByRole('button', { name: 'Keep it' }).click();
+  ok(await until(async () => !(await confirmBox.count())) && (await Application.countDocuments({ driveId: drive._id, 'snapshot.firstName': 'Bharat' })) === 1, '"Keep it" keeps the record');
+  await details.getByRole('button', { name: 'Delete application' }).click();
+  await confirmBox.getByRole('button', { name: 'Delete application' }).click();
+  ok(await hasText(page, 'Application deleted'), 'delete toast');
+  ok(await until(async () => !(await details.count()) && (await rowCount()) === 1), 'dialog closes and the row is gone');
+  ok((await Application.countDocuments({ driveId: drive._id, 'snapshot.firstName': 'Bharat' })) === 0, 'DB: record deleted');
 
   console.log('# Mobile + access');
   await page.setViewportSize({ width: 375, height: 800 });

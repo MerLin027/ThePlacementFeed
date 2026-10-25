@@ -1,8 +1,12 @@
 import { useCatalog } from '../stores/catalog';
-import { APPLICATION_STATUSES, statusLabel } from '../constants/applications';
+import { APPLICATION_STATUSES, STATUS_META, statusLabel } from '../constants/applications';
 import { TableRowsSkeleton } from './Skeleton';
+import PillSelect from './PillSelect';
 
-const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+// Headings and cells are centred; the applicant column (name, roll number, email) stays left-aligned
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+const tdClass = 'px-sm py-xs text-center font-body-sm text-body-sm';
+const statusOptions = APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) }));
 
 const formatDate = (d) =>
   new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -34,13 +38,13 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                   />
                 </label>
               </th>
-              <th className={thClass}>Applicant</th>
+              <th className={`${thClass} text-left!`}>Applicant</th>
               <th className={`${thClass} hidden md:table-cell`}>Branch</th>
-              <th className={thClass}>CGPA</th>
+              <th className={`${thClass} hidden sm:table-cell`}>CGPA</th>
               <th className={`${thClass} hidden lg:table-cell`}>Backlogs</th>
               <th className={`${thClass} hidden lg:table-cell`}>Applied</th>
               <th className={thClass}>Status</th>
-              <th className={`${thClass} text-right`}>Details</th>
+              <th className={thClass}><span className="sr-only sm:not-sr-only">Details</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-variant">
@@ -55,9 +59,11 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
             ) : (
               applicants.map((a) => {
                 const name = `${a.snapshot.firstName} ${a.snapshot.lastName}`.trim();
+                const isSelected = selected.has(a.id);
                 return (
-                  <tr key={a.id} className={selected.has(a.id) ? 'bg-primary/5' : 'hover:bg-surface-container-low/50'}>
-                    <td className="px-sm py-xs">
+                  <tr key={a.id} className={`transition-colors duration-200 ${isSelected ? 'bg-primary/5' : 'hover:bg-surface-container-low/50'}`}>
+                    {/* A blue edge marks selected rows */}
+                    <td className={`px-sm py-xs transition-shadow duration-200 ${isSelected ? 'shadow-[inset_3px_0_0_var(--color-primary-container)]' : ''}`}>
                       <label className="inline-flex w-[44px] h-[44px] -m-2 items-center justify-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -80,34 +86,33 @@ const ApplicantTable = ({ applicants, loading, selected, onToggle, onToggleAll, 
                       {a.snapshot.rollNumber && (
                         <p className="font-body-sm text-body-sm text-on-surface-variant">{a.snapshot.rollNumber}</p>
                       )}
+                      {/* On phones the email (and CGPA) are in the details dialog */}
                       {a.snapshot.email && (
-                        <p className="font-body-sm text-body-sm text-on-surface-variant break-all">{a.snapshot.email}</p>
+                        <p className="hidden sm:block font-body-sm text-body-sm text-on-surface-variant break-all">{a.snapshot.email}</p>
                       )}
                     </td>
-                    <td className="px-sm py-xs hidden md:table-cell font-body-sm text-body-sm text-on-surface">
-                      {a.snapshot.branch ? branchLabel(a.snapshot.branch) : '—'}
+                    <td className={`${tdClass} hidden md:table-cell text-on-surface`}>
+                      {/* Long branch names stay on one line; the full name shows on hover */}
+                      <span className="block max-w-[16rem] mx-auto truncate" title={a.snapshot.branch ? branchLabel(a.snapshot.branch) : undefined}>
+                        {a.snapshot.branch ? branchLabel(a.snapshot.branch) : '—'}
+                      </span>
                     </td>
-                    <td className="px-sm py-xs font-body-sm text-body-sm text-on-surface">{a.snapshot.cgpa ?? '—'}</td>
-                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface">
-                      {a.snapshot.activeBacklogs ?? '—'}
-                    </td>
-                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
-                      {formatDate(a.submittedAt)}
-                    </td>
-                    <td className="px-sm py-xs">
-                      <select
+                    <td className={`${tdClass} hidden sm:table-cell text-on-surface tabular-nums`}>{a.snapshot.cgpa ?? '—'}</td>
+                    <td className={`${tdClass} hidden lg:table-cell text-on-surface tabular-nums`}>{a.snapshot.activeBacklogs ?? '—'}</td>
+                    <td className={`${tdClass} hidden lg:table-cell text-on-surface-variant whitespace-nowrap tabular-nums`}>{formatDate(a.submittedAt)}</td>
+                    <td className={tdClass}>
+                      {/* A compact pill in the status colour; still a native select underneath */}
+                      <PillSelect
+                        label={`Status for ${name}`}
                         value={a.status}
                         onChange={(e) => onStatusChange(a, e.target.value)}
                         disabled={busyIds.has(a.id)}
-                        aria-label={`Status for ${name}`}
-                        className="select-field min-w-[140px]"
-                      >
-                        {APPLICATION_STATUSES.map((s) => (
-                          <option key={s} value={s}>{statusLabel(s)}</option>
-                        ))}
-                      </select>
+                        options={statusOptions}
+                        tone={`${STATUS_META[a.status]?.pill || 'bg-surface-container-high text-on-surface'} group-hover/ps:brightness-95`}
+                        className={`min-w-[116px] sm:min-w-[132px] ${STATUS_META[a.status] ? STATUS_META[a.status].pill.split(' ').find((c) => c.startsWith('text-')) : ''}`}
+                      />
                     </td>
-                    <td className="px-sm py-xs text-right">
+                    <td className={tdClass}>
                       <button
                         type="button"
                         onClick={() => onView(a)}

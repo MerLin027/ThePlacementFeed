@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Modal from './Modal';
 import { FormAlert } from './AuthCard';
 import { ApplicationStatusPill } from './ApplyButton';
@@ -18,12 +18,20 @@ const Row = ({ label, children }) => (
  * note, answers, plus the admin's status and private note.
  * All student text is rendered as plain text (React escapes it).
  */
-const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
+const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave, onDelete, driveName }) => {
   const { branchLabel } = useCatalog();
   const [status, setStatus] = useState(applicant?.status ?? 'Applied');
   const [adminNote, setAdminNote] = useState(applicant?.adminNote || '');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  // Deleting asks again in place (no second dialog on top of this one)
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const confirmRef = useRef(null);
+  // The confirmation opens at the bottom of a long dialog: bring it into view
+  useEffect(() => {
+    if (confirmingDelete) confirmRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [confirmingDelete]);
 
   // Showing another applicant resets the fields (adjusted during render, not in an effect)
   const [shownFor, setShownFor] = useState(applicant);
@@ -33,6 +41,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
       setStatus(applicant.status);
       setAdminNote(applicant.adminNote || '');
       setError('');
+      setConfirmingDelete(false);
     }
   }
 
@@ -50,6 +59,19 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
       setError(parseApiError(err, 'Could not save changes.').message || 'Could not save changes.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError('');
+    try {
+      await onDelete(applicant);
+    } catch (err) {
+      setError(parseApiError(err, 'Could not delete the application.').message || 'Could not delete the application.');
+      setConfirmingDelete(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -143,18 +165,46 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave }) => {
             />
             <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{adminNote.length} / 1,000</p>
           </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-xs">
-            <button type="button" onClick={onClose} className="btn-secondary min-h-[44px]">Cancel</button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              aria-busy={isSaving}
-              className="btn-primary min-h-[44px] sm:min-w-[140px]"
-            >
-              {isSaving ? 'Saving…' : 'Save changes'}
-            </button>
-          </div>
+          {confirmingDelete ? (
+            <div ref={confirmRef} className="p-sm rounded-2xl bg-error-container/50 border border-error/20 animate-pop-in" role="group" aria-label="Confirm delete">
+              <p className="font-body-sm text-body-sm text-on-error-container">
+                Delete {name ? `${name}'s` : 'this'} application{driveName ? ` to ${driveName}` : ''} for good? Its status, your note and
+                the answers go with it. The student can apply again while the drive is open.
+              </p>
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-xs mt-sm">
+                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={isDeleting} className="btn-secondary min-h-[44px]">
+                  Keep it
+                </button>
+                <button type="button" onClick={handleDelete} disabled={isDeleting} aria-busy={isDeleting} className="btn-danger min-h-[44px] gap-1.5">
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+                  {isDeleting ? 'Deleting…' : 'Delete application'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-xs">
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="sm:mr-auto inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-xl font-label-md text-label-md text-error hover:bg-error-container/50 active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-error"
+                >
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+                  Delete application
+                </button>
+              )}
+              <button type="button" onClick={onClose} className="btn-secondary min-h-[44px]">Cancel</button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                aria-busy={isSaving}
+                className="btn-primary min-h-[44px] sm:min-w-[140px]"
+              >
+                {isSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </Modal>

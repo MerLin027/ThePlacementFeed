@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { Link, useParams } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
-import AdminFilterPanel from '../components/AdminFilterPanel';
+import AdminFilterPanel, { toolbarButtonClass } from '../components/AdminFilterPanel';
+import SelectionBar from '../components/SelectionBar';
+import PillSelect from '../components/PillSelect';
+import { dropDown } from '../utils/motion';
 import StatusStrip from '../components/charts/StatusStrip';
 
 // The CGPA and branch charts (and the chart library) load only when "Insights" is opened
@@ -184,6 +188,15 @@ const AdminApplicants = () => {
     }
   };
 
+  // From the details dialog: one application
+  const handleDeleteOne = async (applicant) => {
+    await api.post(`/api/placements/${driveId}/applicants/bulk-delete`, { applicationIds: [applicant.id] });
+    toast.success('Application deleted');
+    setViewing(null);
+    if (page > 1 && applicants.length === 1) setPage(page - 1);
+    else reload();
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -233,73 +246,78 @@ const AdminApplicants = () => {
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-sm mb-md">
-        <div>
-          <h1 className="font-display-lg text-display-lg text-on-surface">Applicants</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            {drive ? `${drive.company} · ${drive.role}` : '…'} · {totalApplicants} total
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={isExporting || pagination.total === 0}
-          aria-busy={isExporting}
-          className="btn-secondary gap-xs min-h-[44px]"
-        >
-          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">download</span>
-          {isExporting ? 'Exporting…' : 'Export to Excel'}
-        </button>
+      <div className="mb-md">
+        <h1 className="font-display-lg text-display-lg text-on-surface">Applicants</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+          {drive ? `${drive.company} · ${drive.role}` : '…'} · {totalApplicants} total
+        </p>
       </div>
 
-      <StatusStrip stats={stats} />
+      {/* Pipeline: the status split, the status chips (click to filter) and the insights */}
+      <section className="mb-md p-sm md:p-md bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-soft" aria-labelledby="pipeline-heading">
+        <div className="flex items-center justify-between gap-sm mb-xs">
+          <h2 id="pipeline-heading" className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Pipeline</h2>
+          <button
+            type="button"
+            onClick={() => setShowInsights((v) => !v)}
+            aria-expanded={showInsights}
+            aria-controls="drive-insights"
+            className="-my-2 -mr-2 inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">bar_chart</span>
+            {showInsights ? 'Hide insights' : 'Show insights'}
+            <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${showInsights ? 'rotate-180' : ''}`} aria-hidden="true">expand_more</span>
+          </button>
+        </div>
+
+        <StatusStrip stats={stats} />
+
+        {/* One swipeable row on phones, wrapping from sm up */}
+        <div className="flex flex-nowrap sm:flex-wrap gap-x-1.5 gap-y-0 overflow-x-auto sm:overflow-visible -mx-sm px-sm sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter by status">
+          {[
+            { key: 'all', label: 'All', count: totalApplicants, active: filters.status.length === 0, onClick: () => setFilter('status', []) },
+            ...APPLICATION_STATUSES.map((s) => {
+              const active = filters.status.includes(s);
+              return {
+                key: s, status: s, label: statusLabel(s), count: stats[s] ?? 0, active,
+                onClick: () => setFilter('status', active ? filters.status.filter((x) => x !== s) : [...filters.status, s]),
+              };
+            }),
+          ].map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              aria-pressed={chip.active}
+              onClick={chip.onClick}
+              className="group/st shrink-0 inline-flex items-center min-h-[44px] rounded-full focus-visible:outline-hidden"
+            >
+              <span
+                className={`inline-flex items-center gap-1.5 h-9 pl-3 pr-1.5 rounded-full font-label-md text-label-md transition-control group-active/st:scale-[0.96] group-focus-visible/st:ring-2 group-focus-visible/st:ring-primary ${
+                  chip.active
+                    ? chip.status ? `${STATUS_META[chip.status].pill} shadow-soft` : 'bg-inverse-surface text-inverse-on-surface shadow-soft'
+                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                }`}
+              >
+                {chip.status && <span className={`w-2 h-2 rounded-full ${STATUS_META[chip.status].dot}`} aria-hidden="true" />}
+                {chip.label}
+                <span className={`min-w-6 px-1.5 rounded-full text-center tabular-nums ${chip.active ? 'bg-white/25' : 'bg-surface-container-highest/70'}`}>{chip.count}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <AnimatePresence initial={false}>
+          {showInsights && (
+            <m.div key="insights" id="drive-insights" {...dropDown} className="mt-sm">
+              <Suspense fallback={<span className="skeleton h-64 rounded-2xl" role="status" aria-label="Loading the insights" />}>
+                <DriveInsights driveId={driveId} reloadKey={reloadKey} />
+              </Suspense>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </section>
 
       <div className="mb-sm">
-        <button
-          type="button"
-          onClick={() => setShowInsights((v) => !v)}
-          aria-expanded={showInsights}
-          aria-controls="drive-insights"
-          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">bar_chart</span>
-          {showInsights ? 'Hide insights' : 'Show insights'}
-          <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${showInsights ? 'rotate-180' : ''}`} aria-hidden="true">expand_more</span>
-        </button>
-        {showInsights && (
-          <div id="drive-insights" className="mt-xs">
-            <Suspense fallback={<span className="skeleton h-64 rounded-2xl" role="status" aria-label="Loading the insights" />}>
-              <DriveInsights driveId={driveId} reloadKey={reloadKey} />
-            </Suspense>
-          </div>
-        )}
-      </div>
-
-      {/* Status counts — click to filter */}
-      <div className="flex flex-wrap gap-xs mb-md" role="group" aria-label="Filter by status">
-        {APPLICATION_STATUSES.map((s) => {
-          const active = filters.status.includes(s);
-          return (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter('status', active ? filters.status.filter((x) => x !== s) : [...filters.status, s])}
-              className={`inline-flex items-center gap-xs min-h-[44px] px-3 rounded-full border font-label-md text-label-md transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-                active
-                  ? `${STATUS_META[s].pill} border-transparent shadow-soft`
-                  : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${STATUS_META[s].dot}`} aria-hidden="true" />
-              {statusLabel(s)}
-              <span className={`px-2 rounded-full tabular-nums ${active ? 'bg-white/60' : 'bg-surface-container-high'}`}>{stats[s] ?? 0}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-md">
         <AdminFilterPanel
           searchLabel="Search applicants"
           searchPlaceholder="Name, email or roll number"
@@ -309,80 +327,82 @@ const AdminApplicants = () => {
           onReset={resetFilters}
           sortOptions={APPLICANT_SORTS}
           resultText={loading ? '' : `Showing ${applicants.length} of ${pagination.total} applicant${pagination.total === 1 ? '' : 's'}`}
+          actions={
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={isExporting || pagination.total === 0}
+              aria-busy={isExporting}
+              className={toolbarButtonClass}
+            >
+              <span className={`material-symbols-outlined text-[18px] ${isExporting ? 'motion-safe:animate-bounce' : ''}`} aria-hidden="true">download</span>
+              {/* Icon only on phones, so the toolbar stays on one row */}
+              <span className="sr-only sm:not-sr-only">{isExporting ? 'Exporting…' : 'Export to Excel'}</span>
+            </button>
+          }
+          // Status is filtered with the pipeline chips above
           fields={[
-            { key: 'status', label: 'Status', type: 'multi', options: APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })) },
-            { key: 'branch', label: 'Branch', type: 'select', options: [{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.code, label: b.name }))] },
+            { key: 'branch', group: 'Academic', label: 'Branch', type: 'select', options: [{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.code, label: b.name }))] },
             {
-              key: 'institute', label: 'Institute', type: 'select',
+              key: 'institute', group: 'Academic', label: 'Institute', type: 'select',
               options: [{ value: '', label: 'All institutes' }, ...facets.institutes.map((i) => ({ value: i, label: i }))],
             },
-            { key: 'account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'active', label: 'Active accounts' }, { value: 'deleted', label: 'Deleted accounts' }] },
-            { key: 'cgpaMin', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
-            { key: 'cgpaMax', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
-            { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
-            { key: 'appliedFrom', label: 'Applied from', type: 'date', chip: (v) => `Applied from ${v}` },
-            { key: 'appliedTo', label: 'Applied until', type: 'date', chip: (v) => `Applied until ${v}` },
+            { key: 'account', group: 'Application', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'active', label: 'Active accounts' }, { value: 'deleted', label: 'Deleted accounts' }] },
+            { key: 'cgpaMin', group: 'Academic', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
+            { key: 'cgpaMax', group: 'Academic', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
+            { key: 'backlogsMax', group: 'Academic', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
+            { key: 'appliedFrom', group: 'Application', label: 'Applied from', type: 'date', chip: (v) => `Applied from ${v}` },
+            { key: 'appliedTo', group: 'Application', label: 'Applied until', type: 'date', chip: (v) => `Applied until ${v}` },
             {
-              key: 'answers', label: 'Answers', type: 'select',
+              key: 'answers', group: 'Application', label: 'Answers', type: 'select',
               options: [
                 { value: '', label: 'Any' },
                 { value: 'note', label: 'Wrote a note' },
                 ...(drive?.promptCount > 0 ? [{ value: 'all_questions', label: 'Answered every question' }] : []),
               ],
             },
-            { key: 'gradYear', label: 'Graduation year', type: 'multi', options: facets.gradYears.map((y) => ({ value: String(y), label: String(y) })) },
+            { key: 'gradYear', group: 'Academic', label: 'Graduation year', type: 'multi', options: facets.gradYears.map((y) => ({ value: String(y), label: String(y) })) },
           ]}
         />
       </div>
 
       {error && <div className="mb-md"><FormAlert>{error}</FormAlert></div>}
 
-      {/* Bulk actions */}
-      {selected.size > 0 && (
-        <div
-          className="flex flex-col sm:flex-row sm:items-center gap-xs mb-sm p-sm bg-primary/5 border border-primary/20 rounded-xl"
-          role="region"
-          aria-label="Bulk actions"
+      {/* Bulk actions: a floating bar while rows are selected */}
+      <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
+        <span className="hidden sm:inline pl-1 font-body-sm text-body-sm text-white/70" aria-hidden="true">Set status</span>
+        <PillSelect
+          id="bulk-status"
+          label="Set status to"
+          tone="dark"
+          size="md"
+          value={bulkStatus}
+          onChange={(e) => setBulkStatus(e.target.value)}
+          options={APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) }))}
+        />
+        <button
+          type="button"
+          onClick={handleBulkUpdate}
+          disabled={isBulkSaving}
+          aria-busy={isBulkSaving}
+          className="inline-flex items-center justify-center h-[44px] px-4 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60 disabled:opacity-60 disabled:active:scale-100"
         >
-          <span className="font-label-md text-label-md text-on-surface flex-1">
-            {selected.size} selected
-          </span>
-          <label htmlFor="bulk-status" className="font-body-sm text-body-sm text-on-surface-variant">Set status to</label>
-          <select
-            id="bulk-status"
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value)}
-            className="select-field sm:w-auto"
-          >
-            {APPLICATION_STATUSES.map((s) => (
-              <option key={s} value={s}>{statusLabel(s)}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={handleBulkUpdate}
-            disabled={isBulkSaving}
-            aria-busy={isBulkSaving}
-            className="btn-primary min-h-[44px]"
-          >
-            {isBulkSaving ? 'Updating…' : 'Apply'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            disabled={isDeleting}
-            aria-busy={isDeleting}
-            className="btn-secondary min-h-[44px] gap-1.5 text-error! hover:text-error! hover:bg-error-container/40! hover:border-error/40!"
-          >
-            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
-            {isDeleting ? 'Deleting…' : 'Delete'}
-          </button>
-          <button type="button" onClick={() => setSelected(new Set())} className="btn-secondary min-h-[44px]">
-            Clear
-          </button>
-        </div>
-      )}
+          {isBulkSaving ? 'Updating…' : 'Apply'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          disabled={isDeleting}
+          aria-busy={isDeleting}
+          className="inline-flex items-center justify-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md text-red-300 hover:text-red-200 hover:bg-red-400/15 active:scale-[0.97] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-300/70 disabled:opacity-60 disabled:active:scale-100"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+          {isDeleting ? 'Deleting…' : 'Delete'}
+        </button>
+      </SelectionBar>
 
+      {/* Room under the last rows for the floating bar while it is open */}
+      <div className={`transition-[padding] duration-300 ease-out-soft ${selected.size > 0 ? 'pb-24' : ''}`}>
       <ApplicantTable
         applicants={applicants}
         loading={loading}
@@ -395,6 +415,7 @@ const AdminApplicants = () => {
       />
 
       <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+      </div>
 
       <ConfirmDialog
         isOpen={confirmDelete}
@@ -412,6 +433,8 @@ const AdminApplicants = () => {
           await saveApplicant(applicant, changes);
           toast.success('Changes saved');
         }}
+        onDelete={handleDeleteOne}
+        driveName={drive?.company}
       />
     </div>
   );

@@ -61,7 +61,7 @@ const TAG = `PAB${Date.now() % 100000}`;
   let made = await until(() => Placement.findOne({ company: `${TAG} FormMade` }).lean());
   ok(made && made.status === 'Ongoing' && made.statusManuallySet === false, 'saved as automatic Ongoing');
   const row = page.locator('tr', { hasText: `${TAG} FormMade` });
-  await row.locator('button[title="Edit"]').click();
+  await row.getByRole('button', { name: /^Edit / }).click();
   await page.selectOption('#placement-status', 'Upcoming');
   ok(await hasText(page, "Fixed — dates won't change it"), 'manual choice explains itself');
   await page.click('button[type=submit]:has-text("Update placement")');
@@ -73,7 +73,7 @@ const TAG = `PAB${Date.now() % 100000}`;
   ok(made.status === 'Ongoing' && made.statusManuallySet === false, '"Use automatic status" restores and recomputes');
   // The row re-renders with the new status before the edit button is used again
   await row.getByRole('button', { name: /Use automatic status/ }).waitFor({ state: 'detached' }).catch(() => {});
-  await row.locator('button[title="Edit"]').click();
+  await row.getByRole('button', { name: /^Edit / }).click();
   ok((await page.locator('#placement-status').inputValue()) === 'auto', 'edit form reopens on Automatic');
   await page.click('button:has-text("Cancel")');
 

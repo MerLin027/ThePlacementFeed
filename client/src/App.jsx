@@ -54,7 +54,8 @@ function App() {
             {/* Bottom-centre: never covers the header, the bell or its open panel (desktop or phone) */}
             <Toaster
               position="bottom-center"
-              containerStyle={{ bottom: 16 }}
+              // Lifted above the floating selection bar while it is open (set by SelectionBar)
+              containerStyle={{ bottom: 'calc(16px + var(--selection-bar-lift, 0px))' }}
               toastOptions={{
                 className: 'font-body-sm text-body-sm',
                 style: {

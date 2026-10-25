@@ -195,13 +195,13 @@ const login = async (page, email, password = 'goodpass123') => {
 
   // Edit keeps settings
   const row = page.locator('tr', { hasText: `${TAG} AdminMade` });
-  await row.locator('button[title="Edit"]').click();
+  await row.getByRole('button', { name: /^Edit / }).click();
   ok(await page.locator('input[name=applicationMode][value=in_app]').isChecked(), 'edit form restores application mode');
   ok((await page.getByLabel('Question 1', { exact: true }).inputValue()) === 'Preferred location?', 'edit form restores questions');
   await page.click('button:has-text("Cancel")');
 
   const inAppRow = page.locator('tr', { hasText: `${TAG} InApp` });
-  await inAppRow.locator('button[title="Delete"]').click();
+  await inAppRow.getByRole('button', { name: /^Delete / }).click();
   ok(await hasText(page, 'Its 1 student application will be deleted too.'), 'delete dialog warns about 1 application');
   await page.click('button:has-text("Cancel")');
 

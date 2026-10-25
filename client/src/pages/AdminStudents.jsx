@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { useCatalog } from '../stores/catalog';
 import AdminFilterPanel from '../components/AdminFilterPanel';
+import IconAction from '../components/IconAction';
 import { STUDENT_SORTS } from '../constants/applications';
 import { useUrlFilters } from '../hooks/useUrlFilters';
 import { addNumber, addList, addOne, addDay, gradYearOptions } from '../utils/filterParams';
@@ -46,25 +47,9 @@ const formatDate = (dateStr) =>
 
 const displayName = (s) => `${s.firstName} ${s.lastName}`.trim() || s.rollNumber;
 
-const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+// Headings and cells are centred; the student column (name, roll number, badges) stays left-aligned
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
 
-const ActionButton = ({ icon, label, onClick, disabled, danger }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={label}
-    title={label}
-    className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full font-label-sm text-label-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed ${
-      danger
-        ? 'text-on-surface-variant hover:text-error hover:bg-error-container'
-        : 'text-on-surface-variant hover:text-primary hover:bg-primary/5'
-    }`}
-  >
-    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
-    <span className="hidden lg:inline">{label}</span>
-  </button>
-);
 
 const AdminStudents = () => {
   const { branches, branchLabel, institutes } = useCatalog();
@@ -247,28 +232,28 @@ const AdminStudents = () => {
         resultText={loading ? '' : `Showing ${students.length} of ${pagination.total} student${pagination.total === 1 ? '' : 's'}`}
         fields={[
           {
-            key: 'branch', label: 'Branch', type: 'select',
+            key: 'branch', group: 'Academic', label: 'Branch', type: 'select',
             options: [{ value: '', label: 'All branches' }, { value: NONE, label: 'Not set' }, ...branches.map((b) => ({ value: b.code, label: `${b.name}${b.active ? '' : ' (archived)'}` }))],
           },
           {
-            key: 'institute', label: 'Institute', type: 'select',
+            key: 'institute', group: 'Academic', label: 'Institute', type: 'select',
             options: [{ value: '', label: 'All institutes' }, { value: NONE, label: 'Not chosen yet' }, ...institutes.map((i) => ({ value: i.id, label: i.name }))],
           },
           {
-            key: 'profile', label: 'Profile', type: 'select',
+            key: 'profile', group: 'Account', label: 'Profile', type: 'select',
             options: [{ value: '', label: 'Any' }, { value: 'complete', label: 'Complete' }, { value: 'incomplete', label: 'Incomplete' }, { value: 'no_institute', label: 'No institute chosen' }],
           },
           {
-            key: 'applications', label: 'Applications', type: 'select',
+            key: 'applications', group: 'Account', label: 'Applications', type: 'select',
             options: [{ value: '', label: 'Any' }, { value: 'applied', label: 'Has applied' }, { value: 'never', label: 'Never applied' }, { value: 'selected', label: 'Selected somewhere' }],
           },
-          { key: 'cgpaMin', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
-          { key: 'cgpaMax', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
-          { key: 'backlogsMax', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
-          { key: 'account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'reset_pending', label: 'Password reset pending' }] },
-          { key: 'joinedFrom', label: 'Joined from', type: 'date', chip: (v) => `Joined from ${v}` },
-          { key: 'joinedTo', label: 'Joined until', type: 'date', chip: (v) => `Joined until ${v}` },
-          { key: 'gradYear', label: 'Graduation year', type: 'multi', options: gradYearOptions().map((y) => ({ value: y, label: y })) },
+          { key: 'cgpaMin', group: 'Academic', label: 'Min CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≥ ${v}` },
+          { key: 'cgpaMax', group: 'Academic', label: 'Max CGPA', type: 'number', min: 0, max: 10, step: 0.1, chip: (v) => `CGPA ≤ ${v}` },
+          { key: 'backlogsMax', group: 'Academic', label: 'Max active backlogs', type: 'number', min: 0, max: 50, step: 1, chip: (v) => `Backlogs ≤ ${v}` },
+          { key: 'account', group: 'Account', label: 'Account', type: 'select', options: [{ value: '', label: 'All' }, { value: 'reset_pending', label: 'Password reset pending' }] },
+          { key: 'joinedFrom', group: 'Account', label: 'Joined from', type: 'date', chip: (v) => `Joined from ${v}` },
+          { key: 'joinedTo', group: 'Account', label: 'Joined until', type: 'date', chip: (v) => `Joined until ${v}` },
+          { key: 'gradYear', group: 'Academic', label: 'Graduation year', type: 'multi', options: gradYearOptions().map((y) => ({ value: y, label: y })) },
         ]}
       />
 
@@ -280,14 +265,14 @@ const AdminStudents = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant">
-                <th className={thClass}>Student</th>
+                <th className={`${thClass} text-left!`}>Student</th>
                 <th className={`${thClass} hidden md:table-cell`}>Email</th>
                 <th className={`${thClass} hidden sm:table-cell`}>Branch</th>
                 <th className={`${thClass} hidden md:table-cell`}>Institute</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Grad year</th>
-                <th className={`${thClass} hidden lg:table-cell text-right`}>Applications</th>
+                <th className={`${thClass} hidden lg:table-cell`}>Applications</th>
                 <th className={`${thClass} hidden lg:table-cell`}>Joined</th>
-                <th className={`${thClass} text-right`}>Actions</th>
+                <th className={thClass}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-variant">
@@ -303,7 +288,7 @@ const AdminStudents = () => {
                 students.map((s) => (
                   <tr key={s.id} className="hover:bg-surface-container-low/50 transition-colors">
                     <td className="px-sm py-xs">
-                      <p className="font-label-md text-label-md text-on-surface">
+                      <p className="font-label-md text-label-md text-on-surface whitespace-nowrap">
                         {`${s.firstName} ${s.lastName}`.trim() || <span className="text-on-surface-variant italic font-normal">Name not added yet</span>}
                       </p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">{s.rollNumber}</p>
@@ -323,33 +308,36 @@ const AdminStudents = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-sm py-xs hidden md:table-cell font-body-sm text-body-sm text-on-surface break-all">{s.email}</td>
-                    <td className="px-sm py-xs hidden sm:table-cell font-body-sm text-body-sm text-on-surface">
+                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-sm text-body-sm text-on-surface">
+                      {/* Long emails end in "…"; the full address shows on hover */}
+                      <span className="block max-w-[15rem] mx-auto truncate" title={s.email}>{s.email}</span>
+                    </td>
+                    <td className="px-sm py-xs hidden sm:table-cell text-center font-body-sm text-body-sm text-on-surface">
                       {s.branch ? branchLabel(s.branch) : '—'}
                     </td>
-                    <td className="px-sm py-xs hidden md:table-cell font-body-sm text-body-sm text-on-surface">
+                    <td className="px-sm py-xs hidden md:table-cell text-center font-body-sm text-body-sm text-on-surface">
                       {s.institute ? s.institute.name : <span className="text-on-surface-variant italic">Not chosen yet</span>}
                     </td>
-                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface">{s.graduationYear ?? '—'}</td>
-                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface text-right tabular-nums">{s.applications ?? 0}</td>
-                    <td className="px-sm py-xs hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{formatDate(s.createdAt)}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface tabular-nums">{s.graduationYear ?? '—'}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface tabular-nums">{s.applications ?? 0}</td>
+                    <td className="px-sm py-xs hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap tabular-nums">{formatDate(s.createdAt)}</td>
                     <td className="px-sm py-xs">
-                      <div className="flex items-center justify-end gap-1">
-                        <ActionButton
+                      <div className="flex items-center justify-center gap-1">
+                        <IconAction
                           icon="key"
                           label="Reset password"
                           disabled={busyId === s.id}
                           onClick={() => setConfirm({ type: 'reset', student: s })}
                         />
                         {s.institute && (
-                          <ActionButton
+                          <IconAction
                             icon="restart_alt"
                             label="Reset institute"
                             disabled={busyId === s.id}
                             onClick={() => setConfirm({ type: 'resetInstitute', student: s })}
                           />
                         )}
-                        <ActionButton
+                        <IconAction
                           icon="delete"
                           label="Delete account"
                           danger

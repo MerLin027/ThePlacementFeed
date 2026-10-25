@@ -5,6 +5,7 @@ import PlacementForm from '../components/PlacementForm';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import StatusBadge from '../components/StatusBadge';
+import IconAction from '../components/IconAction';
 import Pagination from '../components/Pagination';
 import { usePlacementsFetch } from '../hooks/usePlacementsFetch';
 import Spinner from '../components/Spinner';
@@ -16,9 +17,10 @@ import { useCatalog } from '../stores/catalog';
 // The charts (and their library) load as a separate chunk after the page itself
 const DashboardInsights = lazy(() => import('../components/charts/DashboardInsights'));
 
-const thClass = 'text-left px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
-const iconButton =
-  'inline-flex items-center justify-center w-[44px] h-[44px] rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary';
+// Headings and cells are centred; the company / role column stays left-aligned
+const thClass = 'text-center px-sm py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider';
+// The status and action renderers are shared with the phone cards: centre them only in table cells
+const centredCell = 'px-sm py-sm text-center [&>div]:items-center [&>div]:justify-center';
 
 const AdminDashboard = () => {
   const catalog = useCatalog();
@@ -160,26 +162,9 @@ const AdminDashboard = () => {
   // components, so rows keep their DOM — and keyboard focus — across re-renders)
   const renderRowActions = (p) => (
     <div className="flex items-center justify-end gap-1">
-      <Link
-        to={`/admin/drives/${p._id}/applicants`}
-        className={iconButton}
-        title="Applicants"
-        aria-label={`Applicants for ${p.company}`}
-      >
-        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">group</span>
-      </Link>
-      <button type="button" onClick={() => openEdit(p)} className={iconButton} title="Edit" aria-label={`Edit ${p.company}`}>
-        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">edit</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setDeleteTarget(p)}
-        className={`${iconButton} hover:text-error! hover:bg-error-container!`}
-        title="Delete"
-        aria-label={`Delete ${p.company}`}
-      >
-        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">delete</span>
-      </button>
+      <IconAction to={`/admin/drives/${p._id}/applicants`} icon="group" label={`Applicants for ${p.company}`} tooltip="Applicants" />
+      <IconAction onClick={() => openEdit(p)} icon="edit" label={`Edit ${p.company}`} tooltip="Edit" />
+      <IconAction onClick={() => setDeleteTarget(p)} icon="delete" label={`Delete ${p.company}`} tooltip="Delete" danger />
     </div>
   );
 
@@ -309,13 +294,13 @@ const AdminDashboard = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant">
-                <th scope="col" className={thClass}>Company / role</th>
+                <th scope="col" className={`${thClass} text-left!`}>Company / role</th>
                 <th scope="col" className={`${thClass} hidden lg:table-cell`}>Type</th>
                 <th scope="col" className={thClass}>CTC</th>
                 <th scope="col" className={thClass}>Status</th>
                 <th scope="col" className={thClass}>Controls</th>
                 <th scope="col" className={`${thClass} hidden lg:table-cell`}>Drive date</th>
-                <th scope="col" className={`${thClass} text-right`}>Actions</th>
+                <th scope="col" className={thClass}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-variant">
@@ -334,14 +319,14 @@ const AdminDashboard = () => {
                       <p className="font-label-md text-label-md text-on-surface">{p.company}</p>
                       <p className="font-label-sm text-label-sm text-on-surface-variant">{p.role}</p>
                     </td>
-                    <td className="px-sm py-sm hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant">{p.type}</td>
-                    <td className="px-sm py-sm font-label-md text-label-md text-on-surface whitespace-nowrap">₹{p.ctc} LPA</td>
-                    <td className="px-sm py-sm">{renderStatusCell(p)}</td>
-                    <td className="px-sm py-sm">{renderStatusControls(p)}</td>
-                    <td className="px-sm py-sm hidden lg:table-cell font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant">{p.type}</td>
+                    <td className="px-sm py-sm text-center font-label-md text-label-md text-on-surface whitespace-nowrap tabular-nums">₹{p.ctc} LPA</td>
+                    <td className={centredCell}>{renderStatusCell(p)}</td>
+                    <td className={centredCell}>{renderStatusControls(p)}</td>
+                    <td className="px-sm py-sm hidden lg:table-cell text-center font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap tabular-nums">
                       {formatDate(p.driveDate)}
                     </td>
-                    <td className="px-sm py-sm">{renderRowActions(p)}</td>
+                    <td className={centredCell}>{renderRowActions(p)}</td>
                   </tr>
                 ))
               )}
