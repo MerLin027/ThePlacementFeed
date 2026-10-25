@@ -298,7 +298,15 @@
 }
 
 @utility btn-primary {
-  @apply inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-xl shadow-soft hover:bg-primary hover:shadow-lift active:scale-[0.98] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-control disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100;
+  @apply inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-xl shadow-soft hover:bg-primary hover:shadow-lift active:scale-[0.98] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-control disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100;
+  /* Unavailable (nothing to save yet): a quiet grey, not washed-out blue. While working (aria-busy)
+     the button keeps its colour and only dims a little. */
+  &:disabled:not([aria-busy='true']) {
+    @apply bg-surface-container-high text-outline;
+  }
+  &[aria-busy='true'] {
+    @apply opacity-85 cursor-progress;
+  }
 }
 
 @utility btn-secondary {

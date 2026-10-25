@@ -334,7 +334,6 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
             selected={form.eligibility.branches}
             onChange={(branches) => handleEligibilityChange('branches', branches)}
           />
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">None selected means every branch can apply.</p>
         </div>
       </Section>
 

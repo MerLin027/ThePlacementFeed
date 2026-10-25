@@ -176,10 +176,10 @@ const AdminDashboard = () => {
         aria-disabled={!!toggling[p._id]}
         aria-busy={!!toggling[p._id]}
         title={p.isPostponed ? 'Un-postpone' : 'Mark as postponed'}
-        className={`inline-flex items-center gap-1 min-h-[44px] px-3.5 rounded-full font-label-md text-label-md transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`relative isolate inline-flex items-center gap-1 min-h-[44px] px-3 rounded-full font-label-md text-label-md transition-colors duration-200 before:absolute before:inset-x-0 before:inset-y-1.5 before:-z-10 before:rounded-full before:transition-colors before:duration-200 active:before:scale-95 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:before:ring-2 focus-visible:before:ring-primary ${
           p.isPostponed
-            ? 'bg-red-100 text-red-800 hover:bg-red-200'
-            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-surface-variant'
+            ? 'text-red-800 before:bg-red-50 before:border before:border-red-200 hover:before:bg-red-100'
+            : 'text-on-surface-variant hover:text-on-surface before:border before:border-outline-variant hover:before:bg-surface-container-low'
         }`}
       >
         {toggling[p._id] ? (
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
           aria-disabled={!!toggling[p._id]}
           aria-busy={!!toggling[p._id]}
           title="Status is fixed by hand. Click to let it follow the dates again."
-          className="inline-flex items-center gap-1 min-h-[44px] px-3.5 rounded-full font-label-md text-label-md bg-primary-fixed text-on-primary-fixed hover:bg-primary/15 transition-colors duration-200 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          className="relative isolate inline-flex items-center gap-1 min-h-[44px] px-3 rounded-full font-label-md text-label-md transition-colors duration-200 before:absolute before:inset-x-0 before:inset-y-1.5 before:-z-10 before:rounded-full before:transition-colors before:duration-200 active:before:scale-95 aria-disabled:opacity-60 aria-disabled:cursor-wait focus-visible:outline-hidden focus-visible:before:ring-2 focus-visible:before:ring-primary text-on-primary-fixed-variant before:bg-primary-fixed/60 hover:before:bg-primary-fixed"
         >
           {toggling[p._id] ? (
             <Spinner size="xs" tone="current" />
@@ -280,10 +280,10 @@ const AdminDashboard = () => {
           <input
             type="search"
             aria-label="Search drives"
-            placeholder="Search placements..."
+            placeholder="Search by company or role"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input-field rounded-full! pl-11! hover:shadow-soft"
+            className="input-field rounded-full! pl-11! shadow-soft focus:shadow-glow"
           />
         </div>
       </div>

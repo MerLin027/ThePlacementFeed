@@ -4,6 +4,20 @@ import { useApplyState } from '../hooks/useApplyState';
 
 const BASE = 'w-full min-h-[44px] py-3 justify-center';
 
+// Card footer actions: lighter than form buttons. One filled action (Apply now), a soft tint for
+// "log in / complete profile first", and plain rows for states that are not actions.
+const CARD_ACTION =
+  'group/cta relative z-10 inline-flex w-full items-center justify-center gap-1.5 min-h-[44px] px-4 rounded-xl font-label-md text-label-md active:scale-[0.98] transition-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
+const CARD_PRIMARY = `${CARD_ACTION} bg-primary-container text-on-primary shadow-soft hover:bg-primary hover:shadow-lift`;
+const CARD_SOFT = `${CARD_ACTION} bg-primary-fixed/60 text-on-primary-fixed-variant hover:bg-primary-fixed`;
+const CARD_ROW = 'flex items-center w-full min-h-[44px] font-label-md text-label-md';
+
+const Arrow = () => (
+  <span className="material-symbols-outlined text-[18px] -mr-1 transition-transform duration-200 ease-out-soft group-hover/cta:translate-x-0.5" aria-hidden="true">
+    arrow_forward
+  </span>
+);
+
 
 // Status pill: one colour and icon per pipeline status (constants/applications.js)
 export const ApplicationStatusPill = ({ status }) => {
@@ -42,15 +56,17 @@ export const CardApplyButton = ({ drive }) => {
             e.stopPropagation();
             window.open(drive.formUrl, '_blank', 'noopener,noreferrer');
           }}
-          className={`btn-primary ${BASE} relative z-10`}
+          className={CARD_PRIMARY}
         >
           Apply now
+          <span className="material-symbols-outlined text-[16px] -mr-1" aria-hidden="true">open_in_new</span>
         </button>
       );
     case 'apply':
       return (
-        <button type="button" onClick={go(`${detailPath}?apply=1`)} className={`btn-primary ${BASE} relative z-10`}>
+        <button type="button" onClick={go(`${detailPath}?apply=1`)} className={CARD_PRIMARY}>
           Apply now
+          <Arrow />
         </button>
       );
     case 'login':
@@ -58,9 +74,10 @@ export const CardApplyButton = ({ drive }) => {
         <button
           type="button"
           onClick={go(`/login?returnTo=${encodeURIComponent(`${detailPath}?apply=1`)}`)}
-          className={`btn-secondary ${BASE} text-primary relative z-10`}
+          className={CARD_SOFT}
         >
           Log in to apply
+          <Arrow />
         </button>
       );
     case 'completeProfile':
@@ -68,39 +85,42 @@ export const CardApplyButton = ({ drive }) => {
         <button
           type="button"
           onClick={go(`/profile?returnTo=${encodeURIComponent(`${detailPath}?apply=1`)}`)}
-          className={`btn-secondary ${BASE} text-primary relative z-10`}
+          className={CARD_SOFT}
         >
           Complete profile to apply
+          <Arrow />
         </button>
       );
     case 'applied':
       return (
-        <div className={`btn-secondary ${BASE} gap-xs`}>
+        <div className={`${CARD_ROW} justify-between gap-xs text-on-surface-variant`}>
+          You&apos;ve applied
           <ApplicationStatusPill status={state.status} />
         </div>
       );
     case 'blocked':
       return (
         <div
-          className={`btn-secondary ${BASE} ${
-            drive.isPostponed ? 'text-red-700 border-red-200 hover:bg-red-50' : 'text-on-surface-variant'
+          className={`${CARD_ROW} justify-center gap-1.5 rounded-xl ${
+            drive.isPostponed ? 'bg-red-50 text-red-700' : 'bg-surface-container-low text-on-surface-variant'
           }`}
         >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{drive.isPostponed ? 'pause_circle' : 'block'}</span>
           {state.label}
         </div>
       );
     default:
       return (
+        // The whole card is the link; this row just says so
         <div
-          className={`btn-secondary ${BASE} ${
-            drive.isPostponed
-              ? 'text-red-700 border-red-200 hover:bg-red-50 focus:ring-red-700'
-              : drive.status === 'Completed'
-                ? 'text-secondary'
-                : 'text-primary'
+          className={`${CARD_ROW} justify-between px-1 ${
+            drive.isPostponed ? 'text-red-700' : drive.status === 'Completed' ? 'text-on-surface-variant' : 'text-primary'
           }`}
         >
           View details
+          <span className="material-symbols-outlined text-[18px] transition-transform duration-200 ease-out-soft group-hover/card:translate-x-1" aria-hidden="true">
+            arrow_forward
+          </span>
         </div>
       );
   }

@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import ConfirmDialog from '../components/ConfirmDialog';
+import IconAction from '../components/IconAction';
 import TwoStepConfirmDialog from '../components/TwoStepConfirmDialog';
 import FormField from '../components/FormField';
 import { FormAlert } from '../components/AuthCard';
@@ -13,21 +14,8 @@ import { usePageTitle } from '../hooks/usePageTitle';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-const iconButton =
-  'inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-2 rounded-full font-label-sm text-label-sm text-on-surface-variant transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed';
-
-const RowButton = ({ icon, label, onClick, danger, disabled }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={label}
-    title={label}
-    className={`${iconButton} ${danger ? 'hover:text-error hover:bg-error-container' : 'hover:text-primary hover:bg-primary/5'}`}
-  >
-    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
-  </button>
-);
+// Row actions: round icon buttons with a tooltip (the label is the accessible name)
+const RowButton = IconAction;
 
 const StatusChip = ({ active }) => (
   <span
