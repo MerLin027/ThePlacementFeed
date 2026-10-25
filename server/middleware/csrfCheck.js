@@ -1,7 +1,6 @@
 /**
- * CSRF protection via Origin/Referer header check.
- * Required because SameSite=None (cross-domain Vercel↔Render) removes
- * the browser's built-in CSRF protection.
+ * CSRF protection via Origin/Referer header check, on top of the SameSite=Lax
+ * session cookies (see utils/cookies.js).
  *
  * Applied to all mutating routes (POST/PUT/PATCH/DELETE).
  *

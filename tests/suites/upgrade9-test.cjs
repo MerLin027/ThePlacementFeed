@@ -89,7 +89,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ok(up, 'production server answers /api/health', log.slice(-300));
   const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
   const ck = pl.headers.getSetCookie().find((c) => c.startsWith('admin_token=')) || '';
-  ok(pl.status === 200 && /HttpOnly/i.test(ck) && /Secure/i.test(ck) && /SameSite=None/i.test(ck), 'prod cookie is HttpOnly; Secure; SameSite=None', ck.replace(/=[^;]+/, '=…'));
+  ok(pl.status === 200 && /HttpOnly/i.test(ck) && /Secure/i.test(ck) && /SameSite=Lax/i.test(ck), 'prod cookie is HttpOnly; Secure; SameSite=Lax', ck.replace(/=[^;]+/, '=…'));
   const bad = await fetch('http://localhost:5098/api/placements/not-an-id');
   const badText = await bad.text();
   ok(bad.status === 400 && !/stack|\bat /.test(badText), 'prod error response has no stack trace');
