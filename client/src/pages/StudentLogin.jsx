@@ -52,7 +52,7 @@ const StudentLogin = () => {
     <AuthCard
       drives
       title="Log in"
-      subtitle="Welcome back. Use the email you signed up with."
+      subtitle="Use the email you signed up with."
       // A failed attempt opens the help (forgot / reset password)
       helpOpen={Boolean(error)}
       help={

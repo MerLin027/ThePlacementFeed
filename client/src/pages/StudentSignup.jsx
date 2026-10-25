@@ -67,7 +67,6 @@ const StudentSignup = () => {
       steps={['Account', 'Profile', 'Apply']}
       currentStep={0}
       title="Create your account"
-      subtitle="It takes a minute. Next you fill in your profile, then you can apply."
       footer={
         <p>
           Already have an account?{' '}

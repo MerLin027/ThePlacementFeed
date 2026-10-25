@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../context/auth';
 import Spinner from '../components/Spinner';
 import FormField from '../components/FormField';
@@ -52,7 +52,15 @@ const AdminLogin = () => {
     <AuthCard
       title="Admin login"
       subtitle="Sign in to manage placement drives."
-      footer={<p>This is a restricted area. Only authorized administrators can access the dashboard.</p>}
+      footer={
+        <p>
+          For the CDPC admin. Students{' '}
+          <Link to="/login" className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs">
+            log in here
+          </Link>
+          .
+        </p>
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-sm">
         {expired && !error && (
@@ -68,7 +76,6 @@ const AdminLogin = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="input-field"
-            placeholder="Enter username"
             autoComplete="username"
             autoFocus
           />
@@ -80,7 +87,6 @@ const AdminLogin = () => {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter password"
           autoComplete="current-password"
         />
 

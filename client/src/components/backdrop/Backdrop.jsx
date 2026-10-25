@@ -12,10 +12,11 @@ const subscribePointer = (onChange) => {
 };
 const finePointerSnapshot = () => window.matchMedia(FINE_POINTER).matches;
 
-// Home and the sign-in pages get the full effect, admin pages stay still, the rest is subtle
+// Home gets the full effect; the sign-in pages (a flat notice sheet) and admin pages stay still;
+// the rest is subtle
 const intensityFor = (pathname) => {
-  if (['/', '/login', '/signup', '/admin/login'].includes(pathname)) return 'hero';
-  if (pathname.startsWith('/admin')) return 'static';
+  if (pathname === '/') return 'hero';
+  if (['/login', '/signup'].includes(pathname) || pathname.startsWith('/admin')) return 'static';
   return 'content';
 };
 
