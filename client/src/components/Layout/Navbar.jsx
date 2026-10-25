@@ -16,7 +16,7 @@ const PILL_BEFORE =
 // Desktop: plain text links; the current page gets a soft tinted pill that slides between links
 // (Motion layoutId), drawn behind the link's own content. Hover tints the same shape (::before).
 const desktopLinkClass = (active) =>
-  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3.5 rounded-full font-label-md text-label-md whitespace-nowrap transition-control ${PILL_BEFORE} ${
+  `relative isolate inline-flex items-center gap-1.5 h-[44px] px-3 xl:px-4 rounded-full font-label-md text-label-md whitespace-nowrap transition-control ${PILL_BEFORE} ${
     active ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:before:bg-surface-container-low'
   }`;
 
@@ -140,7 +140,7 @@ const Navbar = () => {
           </div>
 
           {/* Centre — desktop links */}
-          <nav className="hidden md:flex items-center gap-0.5" aria-label="Main">
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5" aria-label="Main">
             {navLinks.filter((link) => !link.cta && !link.phoneOnly).map((link) => (
               <Link
                 key={link.to}
@@ -162,12 +162,16 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 aria-current={isActive(link.to) ? 'page' : undefined}
-                className={`group/cta relative isolate ml-1.5 inline-flex items-center h-[44px] px-4 rounded-full font-label-md text-label-md whitespace-nowrap text-on-primary ${PILL_BEFORE} before:bg-primary-container before:shadow-soft hover:before:bg-primary focus-visible:before:ring-offset-2`}
+                className={`group/cta relative isolate ml-2 lg:ml-3 inline-flex items-center h-[44px] px-4 rounded-full font-label-md text-label-md whitespace-nowrap text-on-primary ${PILL_BEFORE} before:bg-primary-container before:shadow-soft hover:before:bg-primary focus-visible:before:ring-offset-2`}
               >
                 {link.label}
                 <span className="material-symbols-outlined text-[18px] -mr-1 ml-0.5 transition-transform duration-200 ease-out-soft group-hover/cta:translate-x-0.5" aria-hidden="true">arrow_forward</span>
               </Link>
             ))}
+            {role === 'admin' && (
+              // An action, not a page: set apart from the links by a thin divider
+              <span className="w-px h-5 mx-1 lg:mx-1.5 bg-outline-variant" aria-hidden="true" />
+            )}
             {role === 'admin' && (
               <button type="button" onClick={logout} className={`${desktopLinkClass(false)} hover:text-error! hover:before:bg-error-container/50!`}>
                 <span className={labelClass}>Log out</span>
@@ -177,9 +181,9 @@ const Navbar = () => {
           </nav>
 
           {/* Right — flex-1 balances the logo; the menu button lives here on phones */}
-          <div className="flex-1 flex items-center justify-end gap-1">
+          <div className="flex-1 flex items-center justify-end gap-2">
             {role === 'admin' && (
-              <span className="hidden xl:inline-flex items-center gap-1 h-7 px-2.5 mr-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+              <span className="hidden xl:inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
                 <span className="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
                 Admin
               </span>
