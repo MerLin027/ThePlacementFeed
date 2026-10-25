@@ -103,6 +103,14 @@ function App() {
               />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route
+                path="/admin/change-password"
+                element={
+                  <RequireRole role="admin">
+                    <ChangePassword forAdmin />
+                  </RequireRole>
+                }
+              />
+              <Route
                 path="/admin/dashboard"
                 element={
                   <RequireRole role="admin">

@@ -7,7 +7,7 @@ import AuthCard, { FormAlert } from '../components/AuthCard';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const AdminLogin = () => {
-  usePageTitle('Admin login');
+  usePageTitle('Admin Login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -50,8 +50,7 @@ const AdminLogin = () => {
 
   return (
     <AuthCard
-      kicker="CDPC"
-      title="Admin login"
+      title="Admin Login"
       subtitle="Sign in to manage placement drives."
       footer={
         <p>

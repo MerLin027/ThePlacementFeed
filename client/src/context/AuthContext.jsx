@@ -10,6 +10,8 @@ import { AuthContext } from './auth';
  */
 export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
+  // The admin's username, for the account menu (from /api/auth/check)
+  const [adminName, setAdminName] = useState('');
   const [adminSessionExpired, setAdminSessionExpired] = useState(false);
   const [student, setStudent] = useState(null);
   // Set when a session ended because the server rejected it (not a logout), so route guards can
@@ -59,7 +61,9 @@ export const AuthProvider = ({ children }) => {
         api.get('/api/auth/check'),
         refreshStudent(),
       ]);
-      setIsAdmin(adminRes.status === 'fulfilled' && adminRes.value.data.authenticated === true);
+      const admin = adminRes.status === 'fulfilled' && adminRes.value.data.authenticated === true;
+      setIsAdmin(admin);
+      setAdminName(admin ? adminRes.value.data.username || '' : '');
       setLoading(false);
     };
     checkAuth();
@@ -70,6 +74,7 @@ export const AuthProvider = ({ children }) => {
     if (res.data.success) {
       setAdminSessionExpired(false);
       setIsAdmin(true);
+      setAdminName(username.trim().toLowerCase());
     }
     return res.data;
   };
@@ -116,6 +121,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         role,
         isAdmin,
+        adminName,
         adminSessionExpired,
         student,
         studentSessionExpired,

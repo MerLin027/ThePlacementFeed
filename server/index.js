@@ -42,12 +42,15 @@ const adminStudentRoutes = require('./routes/adminStudents');
 const catalogRoutes = require('./routes/catalog');
 const adminCatalogRoutes = require('./routes/adminCatalog');
 const adminInsightsRoutes = require('./routes/adminInsights');
+const trustedProxy = require('./middleware/trustedProxy');
 const catalog = require('./services/catalog');
 
 const app = express();
 
 // Trust first proxy (Render sits behind a reverse proxy)
 app.set('trust proxy', 1);
+// Requests proxied by Vercel: the visitor's address, when the shared secret proves where it came from
+app.use(trustedProxy);
 
 // --- Security middleware ---
 app.use(helmet());
@@ -70,6 +73,13 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   app.use(morgan('combined'));
 }
+
+// API responses are per-user or live: never stored by the Vercel proxy or the browser, unless a
+// route says otherwise
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 
 // --- Routes ---
 app.use('/api/auth', authRoutes);

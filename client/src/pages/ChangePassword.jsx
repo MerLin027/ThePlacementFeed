@@ -10,7 +10,9 @@ import { parseApiError } from '../utils/formErrors';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-const ChangePassword = () => {
+// One page for both accounts: `forAdmin` (the /admin/change-password route) changes the admin's
+// password; otherwise the student's, including the forced change after an admin reset
+const ChangePassword = ({ forAdmin = false }) => {
   usePageTitle('Change password');
   const { student, refreshStudent, logoutStudent } = useAuth();
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const ChangePassword = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const isReset = Boolean(student?.mustChangePassword);
+  const isReset = !forAdmin && Boolean(student?.mustChangePassword);
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
@@ -37,6 +39,12 @@ const ChangePassword = () => {
 
     setIsLoading(true);
     try {
+      if (forAdmin) {
+        await api.post('/api/auth/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
+        toast.success('Password updated');
+        navigate('/admin/dashboard', { replace: true });
+        return;
+      }
       // A reset session was opened with the temporary password, so it isn't asked for again
       await api.post(
         '/api/students/me/password',

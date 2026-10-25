@@ -12,6 +12,11 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // Bumped on a password change; sessions signed with an older value stop working
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

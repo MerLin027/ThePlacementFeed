@@ -1,11 +1,11 @@
-// Logs out through the header the way a person would: students open their avatar menu, admins use
-// "Log out" in the nav, and on phones both go through the menu button first. Waits for the header to
+// Logs out through the header the way a person would: students open their avatar menu, admins their
+// "Admin" account menu, and on phones both go through the menu button first. Waits for the header to
 // show the signed-in user first (the session check may still be running after a page load), and
 // resolves once it no longer does.
 const { until } = require('./wait.cjs');
 
 const logout = async (page) => {
-  const account = page.getByRole('button', { name: 'Your account' });
+  const account = page.getByRole('button', { name: /^(Your|Admin) account$/ });
   const phoneMenu = page.getByRole('button', { name: 'Open menu' });
   const logOut = page.locator('header').getByRole('button', { name: 'Log out' });
   await until(async () => (await account.isVisible()) || (await phoneMenu.isVisible()) || (await logOut.filter({ visible: true }).count()) > 0);

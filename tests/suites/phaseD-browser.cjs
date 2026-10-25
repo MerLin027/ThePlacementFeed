@@ -83,7 +83,7 @@ const smallTargets = (page) => page.evaluate(() => {
   await page.goto(APP + '/login');
   await settled(page);
   ok(await until(() => page.evaluate(() => document.activeElement?.id === 'email')), 'autofocused field keeps focus (not stolen by main)');
-  for (const [route, title] of [['/', 'Drives'], ['/timeline', 'Timeline'], ['/signup', 'Sign up'], ['/admin/login', 'Admin login'], ['/nope', 'Page not found']]) {
+  for (const [route, title] of [['/', 'Drives'], ['/timeline', 'Timeline'], ['/signup', 'Sign up'], ['/admin/login', 'Admin Login'], ['/nope', 'Page not found']]) {
     await page.goto(APP + route);
     ok(await until(async () => (await page.title()) === `${title} · The Placement Feed`), `title for ${route}`);
   }

@@ -30,15 +30,22 @@ const mobileLinkClass = (active) =>
 // The frosted look shared by the bar and the bell's circle (blur on ::before, see below)
 const FROSTED = 'before:absolute before:inset-0 before:-z-10 before:bg-surface-container-lowest/80 before:backdrop-blur-md before:ring-1 before:ring-[rgb(3_21_54/0.06)] transition-shadow duration-300 shadow-[0_1px_2px_rgb(3_21_54/0.04),0_8px_24px_-12px_rgb(3_21_54/0.12)] data-scrolled:shadow-[0_2px_4px_rgb(3_21_54/0.05),0_14px_32px_-12px_rgb(3_21_54/0.2)]';
 
+// The student's avatar letter: first name, else the email
+const initialOf = (student) => {
+  const name = `${student?.firstName || ''}`.trim();
+  return (name || student?.email || '?').slice(0, 1).toUpperCase();
+};
+
 /**
  * The site header: a floating, rounded bar a few pixels below the top of the window, with the
  * dotted background showing around it, and the notification bell in its own round button beside it
  * (so it never crowds the student's avatar). No full-width border line; both are set apart by a
  * near-invisible hairline and a soft shadow that grows a little once the page scrolls.
- * Students log out from their avatar menu; the admin keeps "Log out" in the nav.
+ * Both roles log out (and change their password) from the account menu on the right; on phones,
+ * from the menu.
  */
 const Navbar = () => {
-  const { role, student, logoutAdmin, logoutStudent } = useAuth();
+  const { role, student, adminName, logoutAdmin, logoutStudent } = useAuth();
   const location = useLocation();
   const menuButtonRef = useRef(null);
 
@@ -85,13 +92,16 @@ const Navbar = () => {
     navLinks.push(
       { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
       { to: '/admin/students', label: 'Students', icon: 'group' },
-      { to: '/admin/settings', label: 'Setup', icon: 'tune' }
+      { to: '/admin/settings', label: 'Setup', icon: 'tune' },
+      // The account menu holds this on wider screens; phones (no account button) get it in their menu
+      { to: '/admin/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
     );
   } else if (role === 'student') {
-    // Profile lives in the avatar menu; phones (no avatar) get it in their menu
+    // Profile and the password live in the avatar menu; phones (no avatar) get them in their menu
     navLinks.push(
       { to: '/applications', label: 'My Applications', icon: 'work_history' },
-      { to: '/profile', label: 'Profile', icon: 'person', phoneOnly: true }
+      { to: '/profile', label: 'Profile', icon: 'person', phoneOnly: true },
+      { to: '/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
     );
   } else {
     navLinks.push({ to: '/login', label: 'Login', icon: 'login' }, { to: '/signup', label: 'Sign up', icon: 'person_add', cta: true });
@@ -106,7 +116,8 @@ const Navbar = () => {
   };
   // Desktop links are text from lg (xl for the longer admin nav); narrower, they become icons and the
   // label stays as the accessible name
-  const wide = navLinks.length > 4;
+  const desktopLinks = navLinks.filter((link) => !link.cta && !link.phoneOnly);
+  const wide = desktopLinks.length > 4;
   const labelClass = wide ? 'sr-only xl:not-sr-only' : 'sr-only lg:not-sr-only';
   const iconClass = wide ? 'xl:hidden' : 'lg:hidden';
 
@@ -146,7 +157,7 @@ const Navbar = () => {
 
           {/* Centre — desktop links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-1.5" aria-label="Main">
-            {navLinks.filter((link) => !link.cta && !link.phoneOnly).map((link) => (
+            {desktopLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -174,29 +185,35 @@ const Navbar = () => {
                 <span className="material-symbols-outlined text-[18px] -mr-1 ml-0.5 transition-transform duration-200 ease-out-soft group-hover/cta:translate-x-0.5" aria-hidden="true">arrow_forward</span>
               </Link>
             ))}
-            {role === 'admin' && (
-              // An action, not a page: set apart from the links by a thin divider
-              <span className="w-px h-5 mx-1 lg:mx-1.5 bg-outline-variant" aria-hidden="true" />
-            )}
-            {role === 'admin' && (
-              <button type="button" onClick={logout} className={`${desktopLinkClass(false)} hover:text-error! hover:before:bg-error-container/50!`}>
-                <span className={labelClass}>Log out</span>
-                <span className={`material-symbols-outlined text-[20px] order-first ${iconClass}`} aria-hidden="true">logout</span>
-              </button>
-            )}
           </nav>
 
           {/* Right — flex-1 balances the logo; the menu button lives here on phones */}
           <div className="flex-1 flex items-center justify-end gap-2">
             {role === 'admin' && (
-              <span className="hidden xl:inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
-                Admin
-              </span>
+              <div className="hidden md:block">
+                <AccountMenu
+                  label="Admin account"
+                  avatar={<span className="material-symbols-outlined text-[18px]">verified_user</span>}
+                  tag="Admin"
+                  name="CDPC admin"
+                  detail={adminName ? `Signed in as ${adminName}` : null}
+                  links={[{ to: '/admin/change-password', label: 'Change password', icon: 'key' }]}
+                  onLogout={logoutAdmin}
+                />
+              </div>
             )}
             {role === 'student' && (
               <div className="hidden md:block">
-                <AccountMenu student={student} onLogout={logoutStudent} />
+                <AccountMenu
+                  avatar={initialOf(student)}
+                  name={`${student?.firstName || ''} ${student?.lastName || ''}`.trim()}
+                  detail={student?.email}
+                  links={[
+                    { to: '/profile', label: 'Profile', icon: 'person' },
+                    { to: '/change-password', label: 'Change password', icon: 'key' },
+                  ]}
+                  onLogout={logoutStudent}
+                />
               </div>
             )}
             <button

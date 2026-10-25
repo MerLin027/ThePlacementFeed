@@ -90,8 +90,10 @@ credentials later, run `node server/scripts/resetAdmin.js`.
 | `PORT` | no | Defaults to 5000 (Render sets it) |
 | `CRON_SECRET` | no | Enables `GET /api/cron/trigger` for an external scheduler |
 | `DEFAULT_STUDENT_PASSWORD` | no | Temporary password after an admin reset (default `college123`) |
+| `PROXY_SECRET` | no | Same value as in Vercel; lets rate limits see each visitor's address (see Deployment) |
 
-`client/.env`: `VITE_API_URL`, the address of the API.
+`client/.env`: `VITE_API_URL`, the address of the API in development. Production builds call `/api`
+on the site's own domain instead.
 
 ## Tests
 
@@ -114,7 +116,12 @@ node run.mjs phaseE-test      # or run selected suites by file name
 
 ## Deployment
 
-- **Website:** Vercel, building `client/`. `vercel.json` sends every path to the single-page app and
+- **Website:** Vercel, building `client/`. `vercel.json` proxies `/api/*` to the API on Render, so
+  the browser only ever talks to the site's own domain and the session cookies are first-party
+  (phone browsers block cookies from another site, which used to break logging in on phones). Each
+  proxied request carries `PROXY_SECRET` (a Vercel environment variable) in a header; the API
+  believes the visitor address Vercel forwards only when that matches its own `PROXY_SECRET`.
+  Every other path goes to the single-page app. `vercel.json` also
   sets the security headers (Content-Security-Policy, no framing, no MIME sniffing). The policy only
   lets the site call its own origin and the API at `https://theplacementfeed-api.onrender.com`. If the
   API moves, or you add another outside service, update `connect-src` (or the matching directive) too.

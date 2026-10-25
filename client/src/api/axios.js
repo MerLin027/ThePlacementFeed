@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// In production the API is reached through the site's own domain: Vercel proxies /api to Render
+// (client/vercel.json), so the session cookies are first-party. Phone browsers (all of iOS, many
+// Android ones) drop cookies set by another site, which made logging in on a phone fail.
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.PROD ? '' : import.meta.env.VITE_API_URL || 'http://localhost:5000',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

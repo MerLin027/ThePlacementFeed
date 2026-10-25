@@ -339,6 +339,23 @@ const changePasswordRules = [
     .withMessage('Your new password must be different from the current one'),
 ];
 
+// The admin always confirms the current password (there is no reset session for the admin)
+const adminChangePasswordRules = [
+  body('currentPassword')
+    .isString()
+    .withMessage('Current password is required')
+    .isLength({ min: 1, max: PASSWORD_MAX_LENGTH })
+    .withMessage('Current password is required'),
+
+  body('newPassword')
+    .isString()
+    .withMessage('Password is required')
+    .isLength({ min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH })
+    .withMessage(`Password must be ${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} characters`)
+    .custom((value, { req }) => value !== req.body.currentPassword)
+    .withMessage('Your new password must be different from the current one'),
+];
+
 const chooseInstituteRules = [
   body('instituteId').isMongoId().withMessage('Please choose an institute from the list'),
 ];
@@ -561,6 +578,7 @@ module.exports = {
   studentLoginRules,
   studentProfileRules,
   changePasswordRules,
+  adminChangePasswordRules,
   chooseInstituteRules,
   applicationSubmitRules,
   adminStudentListRules,

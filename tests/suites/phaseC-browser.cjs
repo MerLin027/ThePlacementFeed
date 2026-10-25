@@ -117,10 +117,13 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);
   for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`]) ok((await landing(r, r)) === r, `admin ${r} reachable`);
-  const headerButtons = await page.locator('main h1').first().locator('xpath=../..').getByRole('button', { name: 'Log out' }).count();
   await landing('/admin/dashboard');
   ok((await page.locator('main').getByRole('button', { name: 'Log out' }).count()) === 0, 'no duplicate Log out inside the dashboard');
-  ok((await page.locator('header').getByRole('button', { name: 'Log out' }).count()) >= 1, 'Log out still in the navbar');
+  ok((await page.locator('header nav').getByRole('button', { name: 'Log out' }).count()) === 0, 'no Log out in the admin nav links');
+  await page.getByRole('button', { name: 'Admin account' }).click();
+  ok(await page.locator('header').getByRole('button', { name: 'Log out' }).isVisible(), 'Log out is in the admin account menu');
+  ok(await page.locator('header').getByRole('link', { name: 'Change password' }).isVisible(), 'Change password is in the admin account menu');
+  await page.keyboard.press('Escape');
 
   console.log('# Every nav link resolves (no 404)');
   for (const role of ['admin']) {
