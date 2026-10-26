@@ -39,6 +39,7 @@ const mkStudent = async (n, profile) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
+  const suiteStart = new Date();
   let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
   const admin = cookieOf(r, 'admin_token');
 
@@ -148,10 +149,15 @@ const mkStudent = async (n, profile) => {
   r = await call('POST', '/api/students/auth/signup', { body: { email: a.email, rollNumber: a.rollNumber, password: 'again12345' } });
   ok(r.status === 201, 'same email + roll number can sign up again (D6)');
 
-  console.log('# Audit log');
-  const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[AdminAction]'));
-  ok(log.length === 3 && log.some((l) => l.includes('student.resetPassword')) && log.some((l) => l.includes('student.delete')), `admin actions logged (${log.length})`);
-  ok(!log.some((l) => /college123|@example\.com|9876/.test(l)), 'audit log has no password, email or phone');
+  console.log('# Audit trail');
+  const events = await mongoose.connection.collection('audit_events')
+    .find({ at: { $gte: suiteStart }, 'actor.type': 'admin', action: /^student\./ }).toArray();
+  ok(events.filter((e) => e.action === 'student.resetPassword').length === 2 && events.some((e) => e.action === 'student.delete'),
+    `account actions stored (${events.map((e) => e.action).join(', ')})`);
+  ok(events.every((e) => e.target?.type === 'student' && e.target.id && e.requestId), 'each names its target and request');
+  const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[Audit]'));
+  ok(log.length > 0 && !log.some((l) => /college123|@example\.com|9876/.test(l)), 'audit log has no password, email or phone');
+  ok(!/college123|@example\.com|9876/.test(JSON.stringify(events)), 'stored events have no password, email or phone');
 
   // cleanup
   await Application.deleteMany({ driveId: drive._id });

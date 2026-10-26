@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 const { config } = require('../../config/env');
-const { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } = require('./constants');
+const { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, ADMIN_PASSWORD_MIN_LENGTH } = require('./constants');
 
 // A password being set: length bounds (bcrypt ignores bytes past 72) and never the reset password
 const newPasswordRule = (field) =>
@@ -66,6 +66,18 @@ const studentChangePasswordRules = [
     .withMessage('Your new password must be different from the current one'),
 ];
 
+const adminLoginRules = [
+  body('username')
+    .isString()
+    .withMessage('Username is required')
+    .bail()
+    .trim()
+    .toLowerCase()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Username is required'),
+  givenPasswordRule('password', 'Password is required'),
+];
+
 // The admin always confirms the current password (there is no reset session for the admin)
 const adminChangePasswordRules = [
   givenPasswordRule('currentPassword', 'Current password is required'),
@@ -73,10 +85,16 @@ const adminChangePasswordRules = [
   body('newPassword')
     .isString()
     .withMessage('Password is required')
-    .isLength({ min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH })
-    .withMessage(`Password must be ${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} characters`)
+    .isLength({ min: ADMIN_PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH })
+    .withMessage(`Password must be ${ADMIN_PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} characters`)
     .custom((value, { req }) => value !== req.body.currentPassword)
     .withMessage('Your new password must be different from the current one'),
 ];
 
-module.exports = { studentSignupRules, studentLoginRules, studentChangePasswordRules, adminChangePasswordRules };
+module.exports = {
+  studentSignupRules,
+  studentLoginRules,
+  studentChangePasswordRules,
+  adminLoginRules,
+  adminChangePasswordRules,
+};

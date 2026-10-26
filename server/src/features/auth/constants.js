@@ -10,6 +10,8 @@ const JWT_ALGORITHM = 'HS256';
 
 // bcrypt silently truncates input beyond 72 bytes, so cap it explicitly
 const PASSWORD_MIN_LENGTH = 8;
+// The admin account can see every student's details: a longer minimum
+const ADMIN_PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_MAX_LENGTH = 72;
 const BCRYPT_COST = 12;
 
@@ -24,6 +26,7 @@ module.exports = {
   STUDENT_SESSION_MS,
   JWT_ALGORITHM,
   PASSWORD_MIN_LENGTH,
+  ADMIN_PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
   BCRYPT_COST,
   TEMP_PASSWORD_TTL_MS,

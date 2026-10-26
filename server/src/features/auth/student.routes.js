@@ -1,44 +1,42 @@
 const express = require('express');
 const Student = require('../../models/Student');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
+const { fail, fieldError } = require('../../lib/http');
+const { record } = require('../audit/service');
 const { studentSignupRules, studentLoginRules, studentChangePasswordRules } = require('./validators');
 const { requireStudentAllowPending, sessionProbe } = require('./guards');
 const { issueSession, endSession } = require('./sessions');
 const { hashPassword, verifyPassword } = require('./passwords');
+const { passwordProblem } = require('./passwordPolicy');
 
 const DUPLICATE_ACCOUNT_MESSAGE =
   'An account with these details already exists. If this is you, try logging in — or ask the CDPC admin for help.';
 
-const invalidSession = (res) => res.status(401).json({ success: false, message: 'Invalid or expired session' });
+const invalidSession = (res) => fail(res, 401, 'Invalid or expired session');
 
 // The student's session: sign up, log in, log out, "who am I"
 const authRouter = express.Router();
 
 // POST …/signup
-authRouter.post('/signup', limit('studentSignup'), csrfCheck, studentSignupRules, validate, async (req, res, next) => {
+authRouter.post('/signup', limit('studentSignup'), studentSignupRules, validate, async (req, res, next) => {
   try {
     const { email, rollNumber, password } = req.body;
-    const passwordHash = await hashPassword(password);
+    const problem = passwordProblem(password, { email, rollNumber });
+    if (problem) return fieldError(res, 'password', problem);
 
     let student;
     try {
-      student = await Student.create({ email, rollNumber, passwordHash });
+      student = await Student.create({ email, rollNumber, passwordHash: await hashPassword(password) });
     } catch (error) {
       // Same message for a taken email or roll number
-      if (error.code === 11000) {
-        return res.status(409).json({ success: false, message: DUPLICATE_ACCOUNT_MESSAGE });
-      }
+      if (error.code === 11000) return fail(res, 409, DUPLICATE_ACCOUNT_MESSAGE, { code: 'ACCOUNT_EXISTS' });
       throw error;
     }
 
     issueSession(res, 'student', student);
-    res.status(201).json({
-      success: true,
-      message: 'Account created',
-      mustChangePassword: false,
-    });
+    await record(req, 'student.signup', { actor: { type: 'student', id: student._id } });
+    res.status(201).json({ success: true, message: 'Account created', mustChangePassword: false });
   } catch (error) {
     next(error);
   }
@@ -49,7 +47,6 @@ authRouter.post(
   '/login',
   limit('studentLoginAddress'),
   limit('studentLoginAccount'),
-  csrfCheck,
   studentLoginRules,
   validate,
   async (req, res, next) => {
@@ -66,18 +63,13 @@ authRouter.post(
         student.tempPasswordExpiresAt < new Date();
 
       if (!student || !isMatch || tempPasswordExpired) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid credentials',
-        });
+        // Failures against a real account are recorded with its id; the attempted email never is
+        if (student) await record(req, 'student.login', { outcome: 'failure', actor: { type: 'student', id: student._id } });
+        return fail(res, 401, 'Invalid credentials', { code: 'INVALID_CREDENTIALS' });
       }
 
       issueSession(res, 'student', student);
-      res.json({
-        success: true,
-        message: 'Login successful',
-        mustChangePassword: student.mustChangePassword,
-      });
+      res.json({ success: true, message: 'Login successful', mustChangePassword: student.mustChangePassword });
     } catch (error) {
       next(error);
     }
@@ -85,12 +77,9 @@ authRouter.post(
 );
 
 // POST …/logout — clearing a cookie needs no session
-authRouter.post('/logout', limit('studentSession'), csrfCheck, (req, res) => {
+authRouter.post('/logout', limit('studentSession'), (req, res) => {
   endSession(res, 'student');
-  res.json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 // GET …/check — allowed while a password change is pending.
@@ -126,7 +115,6 @@ const passwordRouter = express.Router();
 
 passwordRouter.post(
   '/password',
-  csrfCheck,
   requireStudentAllowPending,
   limit('studentPassword'),
   studentChangePasswordRules,
@@ -137,25 +125,28 @@ passwordRouter.post(
 
       const student = await Student.findById(req.student.id).select('+passwordHash');
       if (!student) return invalidSession(res);
+      const target = { type: 'student', id: student._id };
 
       if (student.mustChangePassword) {
         // Logging in checks the 72 h window, but a restricted session can outlive it
         if (student.tempPasswordExpiresAt && student.tempPasswordExpiresAt < new Date()) {
           endSession(res, 'student');
-          return res.status(401).json({
-            success: false,
-            code: 'TEMP_PASSWORD_EXPIRED',
-            message: 'Your temporary password has expired. Ask the CDPC admin to reset it again.',
-          });
+          return fail(res, 401, 'Your temporary password has expired. Ask the CDPC admin to reset it again.', { code: 'TEMP_PASSWORD_EXPIRED' });
+        }
+        // Someone else (the admin) knows the temporary password, so it can't become the real one
+        if (await verifyPassword(newPassword, student.passwordHash)) {
+          return fieldError(res, 'newPassword', 'Your new password must be different from the temporary one');
         }
       } else if (!(await verifyPassword(currentPassword, student.passwordHash))) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors: [{ field: 'currentPassword', message: 'Current password is incorrect' }],
-        });
+        res.locals.wrongPassword = true;
+        await record(req, 'student.password.change', { outcome: 'failure', target });
+        return fieldError(res, 'currentPassword', 'Current password is incorrect');
       }
 
+      const problem = passwordProblem(newPassword, { email: student.email, rollNumber: student.rollNumber });
+      if (problem) return fieldError(res, 'newPassword', problem);
+
+      const wasReset = student.mustChangePassword;
       student.passwordHash = await hashPassword(newPassword);
       student.mustChangePassword = false;
       student.tempPasswordExpiresAt = undefined;
@@ -164,6 +155,7 @@ passwordRouter.post(
       await student.save();
 
       issueSession(res, 'student', student);
+      await record(req, 'student.password.change', { target, details: { afterReset: wasReset } });
       res.json({ success: true, message: 'Password updated' });
     } catch (error) {
       next(error);

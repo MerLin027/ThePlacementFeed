@@ -8,9 +8,11 @@ const adminSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   },
+  // Never loaded unless a query asks for it (.select('+passwordHash'))
   passwordHash: {
     type: String,
     required: true,
+    select: false,
   },
   // Bumped on a password change; sessions signed with an older value stop working
   tokenVersion: {

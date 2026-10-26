@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { config } = require('../../config/env');
 const { limit } = require('../../middleware/rateLimit');
+const { fail } = require('../../lib/http');
 const { runStatusTransitionJob } = require('../drives/freshness');
 
 const router = express.Router();
@@ -15,12 +16,12 @@ const digest = (value) => crypto.createHash('sha256').update(String(value)).dige
 router.get('/trigger', limit('cronTrigger'), async (req, res) => {
   const { cronSecret } = config();
   if (!cronSecret) {
-    return res.status(503).json({ success: false, message: 'Cron endpoint is not configured.' });
+    return fail(res, 503, 'Cron endpoint is not configured.', { code: 'NOT_CONFIGURED' });
   }
 
   const authHeader = req.headers.authorization || '';
   if (!crypto.timingSafeEqual(digest(authHeader), digest(`Bearer ${cronSecret}`))) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+    return fail(res, 401, 'Unauthorized');
   }
 
   try {
@@ -28,7 +29,7 @@ router.get('/trigger', limit('cronTrigger'), async (req, res) => {
     res.json({ success: true, message: 'Status transition job executed successfully.' });
   } catch (err) {
     console.error('[CronTrigger] Error executing status transition job:', err);
-    res.status(500).json({ success: false, message: 'Status transition job failed.' });
+    fail(res, 500, 'Status transition job failed.');
   }
 });
 

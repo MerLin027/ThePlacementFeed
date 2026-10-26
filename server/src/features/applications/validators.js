@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, query } = require('express-validator');
 const { optionalHttpsLink } = require('../../middleware/validate');
 const { MAX_CUSTOM_PROMPTS } = require('../../models/Placement');
 
@@ -40,4 +40,17 @@ const applicationSubmitRules = [
     .withMessage('Answers cannot exceed 2000 characters'),
 ];
 
-module.exports = { applicationSubmitRules };
+// Tabs on the My Applications page
+const STATUS_GROUPS = {
+  active: ['Applied', 'Shortlisted', 'Interviewing'],
+  selected: ['Offered'],
+  closed: ['Rejected'],
+};
+
+const myApplicationsRules = [
+  query('page').optional().isInt({ min: 1, max: 10000 }).withMessage('page must be a positive integer').toInt(),
+  query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('limit must be between 1 and 50').toInt(),
+  query('group').optional().isIn(Object.keys(STATUS_GROUPS)).withMessage('group must be active, selected or closed'),
+];
+
+module.exports = { applicationSubmitRules, myApplicationsRules, STATUS_GROUPS };

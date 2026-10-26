@@ -5,13 +5,13 @@ const { config } = require('../../config/env');
 const { requireAdmin } = require('../auth/guards');
 const { hashPassword } = require('../auth/passwords');
 const { TEMP_PASSWORD_TTL_MS } = require('../auth/constants');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
+const { fail } = require('../../lib/http');
 const { adminStudentListRules, adminStudentDeleteRules } = require('./validators');
 const { buildStudentFilter, STUDENT_SORTS } = require('./filters');
 const { toAdminStudentDTO, ADMIN_LIST_SELECT } = require('./dto');
-const { logAdminAction } = require('../audit/service');
+const { record } = require('../audit/service');
 
 // Admin management of student accounts
 const router = express.Router();
@@ -22,7 +22,7 @@ router.use(requireAdmin);
 const listLimiter = limit('studentsRead');
 const actionLimiter = limit('studentsWrite');
 
-const studentNotFound = (res) => res.status(404).json({ success: false, message: 'Student not found' });
+const studentNotFound = (res) => fail(res, 404, 'Student not found');
 
 // GET / — one page of accounts with their application counts
 router.get('/', listLimiter, adminStudentListRules, validate, async (req, res, next) => {
@@ -62,7 +62,7 @@ router.get('/', listLimiter, adminStudentListRules, validate, async (req, res, n
 });
 
 // POST /:id/reset-password — sets the temporary default password and ends every session
-router.post('/:id/reset-password', actionLimiter, csrfCheck, mongoIdParam('id'), validate, async (req, res, next) => {
+router.post('/:id/reset-password', actionLimiter, mongoIdParam('id'), validate, async (req, res, next) => {
   try {
     const student = await Student.findByIdAndUpdate(
       req.params.id,
@@ -79,7 +79,7 @@ router.post('/:id/reset-password', actionLimiter, csrfCheck, mongoIdParam('id'),
     );
     if (!student) return studentNotFound(res);
 
-    logAdminAction(req, 'student.resetPassword', { studentId: student._id.toString() });
+    await record(req, 'student.resetPassword', { target: { type: 'student', id: student._id } });
     // The password itself is never returned
     res.json({
       success: true,
@@ -93,7 +93,7 @@ router.post('/:id/reset-password', actionLimiter, csrfCheck, mongoIdParam('id'),
 
 // POST /:id/reset-institute — clears the one-time institute choice so the student can pick again
 // (they can't apply until they do)
-router.post('/:id/reset-institute', actionLimiter, csrfCheck, mongoIdParam('id'), validate, async (req, res, next) => {
+router.post('/:id/reset-institute', actionLimiter, mongoIdParam('id'), validate, async (req, res, next) => {
   try {
     const student = await Student.findByIdAndUpdate(
       req.params.id,
@@ -101,7 +101,7 @@ router.post('/:id/reset-institute', actionLimiter, csrfCheck, mongoIdParam('id')
       { returnDocument: 'after' }
     );
     if (!student) return studentNotFound(res);
-    logAdminAction(req, 'student.resetInstitute', { studentId: student._id.toString() });
+    await record(req, 'student.resetInstitute', { target: { type: 'student', id: student._id } });
     res.json({ success: true, message: 'Institute reset', data: toAdminStudentDTO(student) });
   } catch (error) {
     next(error);
@@ -123,7 +123,7 @@ router.get('/:id/application-count', listLimiter, mongoIdParam('id'), validate, 
 // stripped of personal details and flagged studentDeleted. delete: they are removed too.
 // Applications go first, then the account (freeing its email and roll number); every step is
 // idempotent, so retrying after a failure finishes the job.
-router.delete('/:id', actionLimiter, csrfCheck, mongoIdParam('id'), adminStudentDeleteRules, validate, async (req, res, next) => {
+router.delete('/:id', actionLimiter, mongoIdParam('id'), adminStudentDeleteRules, validate, async (req, res, next) => {
   try {
     const student = await Student.findById(req.params.id).select('_id').lean();
     if (!student) return studentNotFound(res);
@@ -155,7 +155,7 @@ router.delete('/:id', actionLimiter, csrfCheck, mongoIdParam('id'), adminStudent
 
     await Student.deleteOne({ _id: student._id });
 
-    logAdminAction(req, 'student.delete', { studentId: student._id.toString(), applications: mode, ...result });
+    await record(req, 'student.delete', { target: { type: 'student', id: student._id }, details: { applications: mode, ...result } });
     res.json({ success: true, message: 'Account deleted', ...result });
   } catch (error) {
     next(error);

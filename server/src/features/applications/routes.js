@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const Application = require('../../models/Application');
 const Placement = require('../../models/Placement');
 const Student = require('../../models/Student');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
+const { fail } = require('../../lib/http');
 const { requireStudent } = require('../auth/guards');
 const { freshStatuses } = require('../drives/freshness');
-const { applicationSubmitRules } = require('./validators');
+const { applicationSubmitRules, myApplicationsRules, STATUS_GROUPS } = require('./validators');
 const { checkApplicationRules, buildCustomAnswers, buildSnapshot } = require('./rules');
 const { toStudentApplicationDTO } = require('./dto');
 
@@ -17,15 +17,8 @@ const router = express.Router();
 
 const readLimiter = limit('applicationsRead');
 
-// Tabs on the My Applications page
-const STATUS_GROUPS = {
-  active: ['Applied', 'Shortlisted', 'Interviewing'],
-  selected: ['Offered'],
-  closed: ['Rejected'],
-};
-
 // POST / — submit an in-app application
-router.post('/', csrfCheck, requireStudent, limit('apply'), freshStatuses, applicationSubmitRules, validate, async (req, res, next) => {
+router.post('/', requireStudent, limit('apply'), freshStatuses, applicationSubmitRules, validate, async (req, res, next) => {
   try {
     const { driveId, resumeUrl, coverNote, customAnswers } = req.body;
 
@@ -34,26 +27,21 @@ router.post('/', csrfCheck, requireStudent, limit('apply'), freshStatuses, appli
       Student.findById(req.student.id),
     ]);
     if (!drive) {
-      return res.status(404).json({ success: false, code: 'DRIVE_NOT_FOUND', message: 'Drive not found' });
+      return fail(res, 404, 'Drive not found', { code: 'DRIVE_NOT_FOUND' });
     }
     if (!student) {
-      return res.status(401).json({ success: false, message: 'Invalid or expired session' });
+      return fail(res, 401, 'Invalid or expired session');
     }
 
     const rejection = checkApplicationRules({ drive, student });
     if (rejection) {
-      const { status, ...body } = rejection;
-      return res.status(status).json({ success: false, ...body });
+      const { status, message, ...extra } = rejection;
+      return fail(res, status, message, extra);
     }
 
     const { answers, missingPromptIds } = buildCustomAnswers(drive.customPrompts, customAnswers);
     if (missingPromptIds.length > 0) {
-      return res.status(400).json({
-        success: false,
-        code: 'MISSING_ANSWERS',
-        message: 'Please answer all required questions.',
-        missingPromptIds,
-      });
+      return fail(res, 400, 'Please answer all required questions.', { code: 'MISSING_ANSWERS', missingPromptIds });
     }
 
     let application;
@@ -70,11 +58,7 @@ router.post('/', csrfCheck, requireStudent, limit('apply'), freshStatuses, appli
       });
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(409).json({
-          success: false,
-          code: 'ALREADY_APPLIED',
-          message: 'You have already applied to this drive.',
-        });
+        return fail(res, 409, 'You have already applied to this drive.', { code: 'ALREADY_APPLIED' });
       }
       throw error;
     }
@@ -114,14 +98,11 @@ router.get('/my/summary', readLimiter, requireStudent, async (req, res, next) =>
 
 // GET /my[?group=active|selected|closed] — paginated list of own applications, with counts per
 // group for the tabs
-router.get('/my', readLimiter, requireStudent, async (req, res, next) => {
+router.get('/my', readLimiter, requireStudent, myApplicationsRules, validate, async (req, res, next) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const pageSize = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+    const page = req.query.page || 1;
+    const pageSize = req.query.limit || 20;
     const { group } = req.query;
-    if (group !== undefined && !(typeof group === 'string' && Object.hasOwn(STATUS_GROUPS, group))) {
-      return res.status(400).json({ success: false, message: 'group must be active, selected or closed' });
-    }
     const studentId = new mongoose.Types.ObjectId(req.student.id);
     const filter = group ? { studentId, status: { $in: STATUS_GROUPS[group] } } : { studentId };
 

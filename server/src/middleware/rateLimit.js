@@ -15,6 +15,10 @@ const TRY_LATER = 'Too many requests. Please try again later.';
 const LOGIN = 'Too many login attempts. Please try again after 15 minutes.';
 const ATTEMPTS = 'Too many attempts. Please try again after 15 minutes.';
 
+// For limits on guessing a password: only a wrong password counts (handlers set this flag), not a
+// new password the policy turned down or a successful change
+const wrongPasswordOnly = (req, res) => !res.locals.wrongPassword;
+
 const byAdmin = (req) => req.admin.id;
 const byStudent = (req) => req.student.id;
 // ipKeyGenerator groups IPv6 clients by /56 so one user cannot rotate addresses to dodge the limit
@@ -31,13 +35,13 @@ const POLICIES = {
 
   // --- Sign-in ---
   adminLogin: { limit: 5, message: LOGIN },
-  adminPassword: { limit: 5, key: byAdmin, skipSuccessfulRequests: true, message: ATTEMPTS },
+  adminPassword: { limit: 5, key: byAdmin, countOnly: wrongPasswordOnly, message: ATTEMPTS },
   studentSignup: { limit: 30, message: 'Too many sign-up attempts. Please try again in a few minutes.' },
   studentLoginAddress: { limit: 100, message: LOGIN },
   // Brute force is throttled per (address, email): wrong passwords only
   studentLoginAccount: { limit: 5, key: byAddressAndEmail, skipSuccessfulRequests: true, message: LOGIN },
   studentSession: { limit: 300, message: TRY_LATER },
-  studentPassword: { limit: 5, key: byStudent, skipSuccessfulRequests: true, message: ATTEMPTS },
+  studentPassword: { limit: 5, key: byStudent, countOnly: wrongPasswordOnly, message: ATTEMPTS },
 
   // --- Students ---
   profileRead: { limit: 300, message: TRY_LATER },
@@ -66,7 +70,8 @@ const limit = (name) => {
     limit: policy.limit,
     ...(policy.key && { keyGenerator: policy.key }),
     ...(policy.skipSuccessfulRequests && { skipSuccessfulRequests: true }),
-    message: { success: false, message: policy.message },
+    ...(policy.countOnly && { skipSuccessfulRequests: true, requestWasSuccessful: policy.countOnly }),
+    message: { success: false, code: 'RATE_LIMITED', message: policy.message },
     standardHeaders: true,
     legacyHeaders: false,
   });

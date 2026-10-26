@@ -5,9 +5,9 @@ const Setting = require('../../models/Setting');
 const Student = require('../../models/Student');
 const Placement = require('../../models/Placement');
 const { requireAdmin } = require('../auth/guards');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
+const { fail } = require('../../lib/http');
 const {
   branchCreateRules,
   catalogUpdateRules,
@@ -16,7 +16,7 @@ const {
   catalogDeleteRules,
 } = require('./validators');
 const catalog = require('./cache');
-const { logAdminAction } = require('../audit/service');
+const { record } = require('../audit/service');
 
 // Mounted at /api/admin/catalog — the lists students and drives choose from
 const router = express.Router();
@@ -27,8 +27,8 @@ router.use(requireAdmin);
 const readLimiter = limit('catalogAdminRead');
 const writeLimiter = limit('catalogAdminWrite');
 
-const notFound = (res, what) => res.status(404).json({ success: false, message: `${what} not found` });
-const duplicate = (res, message) => res.status(409).json({ success: false, code: 'DUPLICATE', message });
+const notFound = (res, what) => fail(res, 404, `${what} not found`);
+const duplicate = (res, message) => fail(res, 409, message, { code: 'DUPLICATE' });
 
 // How many students and drives use each branch code, and how many students each institute has
 const usageCounts = async () => {
@@ -96,7 +96,7 @@ router.get('/', readLimiter, async (req, res, next) => {
 });
 
 // PUT /api/admin/catalog/university — the College/University name shown on every profile
-router.put('/university', writeLimiter, csrfCheck, universityRules, validate, async (req, res, next) => {
+router.put('/university', writeLimiter, universityRules, validate, async (req, res, next) => {
   try {
     await Setting.findOneAndUpdate(
       { key: 'university' },
@@ -104,7 +104,7 @@ router.put('/university', writeLimiter, csrfCheck, universityRules, validate, as
       { upsert: true }
     );
     await catalog.reload();
-    logAdminAction(req, 'catalog.university.update');
+    await record(req, 'catalog.university.update');
     res.json({ success: true, data: { university: catalog.getUniversity() } });
   } catch (error) {
     next(error);
@@ -113,12 +113,12 @@ router.put('/university', writeLimiter, csrfCheck, universityRules, validate, as
 
 // --- Branches ---
 
-router.post('/branches', writeLimiter, csrfCheck, branchCreateRules, validate, async (req, res, next) => {
+router.post('/branches', writeLimiter, branchCreateRules, validate, async (req, res, next) => {
   try {
     const last = await Branch.findOne().sort({ sortOrder: -1 }).select('sortOrder').lean();
     const branch = await Branch.create({ code: req.body.code, name: req.body.name, sortOrder: (last?.sortOrder ?? -1) + 1 });
     await catalog.reload();
-    logAdminAction(req, 'catalog.branch.create', { branchId: branch._id.toString(), code: branch.code });
+    await record(req, 'catalog.branch.create', { target: { type: 'branch', id: branch._id }, details: { code: branch.code } });
     res.status(201).json({ success: true, data: catalog.findBranch(branch.code) });
   } catch (error) {
     if (error.code === 11000) return duplicate(res, 'A branch with this code already exists.');
@@ -130,7 +130,6 @@ router.post('/branches', writeLimiter, csrfCheck, branchCreateRules, validate, a
 router.patch(
   '/branches/:id',
   writeLimiter,
-  csrfCheck,
   mongoIdParam('id'),
   catalogUpdateRules('Branch name'),
   validate,
@@ -142,7 +141,7 @@ router.patch(
       if (req.body.active !== undefined) branch.active = req.body.active;
       await branch.save();
       await catalog.reload();
-      logAdminAction(req, 'catalog.branch.update', { branchId: branch._id.toString(), active: branch.active });
+      await record(req, 'catalog.branch.update', { target: { type: 'branch', id: branch._id }, details: { active: branch.active } });
       res.json({ success: true, data: catalog.findBranch(branch.code) });
     } catch (error) {
       next(error);
@@ -168,7 +167,6 @@ router.get('/branches/:id/usage', readLimiter, mongoIdParam('id'), validate, asy
 router.delete(
   '/branches/:id',
   writeLimiter,
-  csrfCheck,
   mongoIdParam('id'),
   catalogDeleteRules,
   validate,
@@ -180,15 +178,10 @@ router.delete(
       const usage = await branchUsage(branch.code);
       const inUse = usage.students > 0 || usage.openDrives > 0 || usage.completedDrives > 0;
       if (inUse && req.query.force !== 'true') {
-        return res.status(409).json({ success: false, code: 'IN_USE', message: 'This branch is in use.', usage });
+        return fail(res, 409, 'This branch is in use.', { code: 'IN_USE', usage });
       }
       if (usage.onlyBranchDrives.length > 0) {
-        return res.status(409).json({
-          success: false,
-          code: 'ONLY_BRANCH',
-          message: 'Some open drives are only for this branch. Change their eligible branches first.',
-          usage,
-        });
+        return fail(res, 409, 'Some open drives are only for this branch. Change their eligible branches first.', { code: 'ONLY_BRANCH', usage });
       }
 
       // References first, the branch last: a retry after a failure finishes the job
@@ -202,11 +195,9 @@ router.delete(
       await Branch.deleteOne({ _id: branch._id });
       await catalog.reload();
 
-      logAdminAction(req, 'catalog.branch.delete', {
-        branchId: branch._id.toString(),
-        code: branch.code,
-        clearedStudents: students.modifiedCount,
-        updatedDrives: drives.modifiedCount,
+      await record(req, 'catalog.branch.delete', {
+        target: { type: 'branch', id: branch._id },
+        details: { code: branch.code, clearedStudents: students.modifiedCount, updatedDrives: drives.modifiedCount },
       });
       res.json({
         success: true,
@@ -222,11 +213,11 @@ router.delete(
 
 // --- Institutes ---
 
-router.post('/institutes', writeLimiter, csrfCheck, instituteCreateRules, validate, async (req, res, next) => {
+router.post('/institutes', writeLimiter, instituteCreateRules, validate, async (req, res, next) => {
   try {
     const institute = await Institute.create({ name: req.body.name });
     await catalog.reload();
-    logAdminAction(req, 'catalog.institute.create', { instituteId: institute._id.toString() });
+    await record(req, 'catalog.institute.create', { target: { type: 'institute', id: institute._id } });
     res.status(201).json({ success: true, data: catalog.getInstitute(institute._id) });
   } catch (error) {
     if (error.code === 11000) return duplicate(res, 'An institute with this name already exists.');
@@ -237,7 +228,6 @@ router.post('/institutes', writeLimiter, csrfCheck, instituteCreateRules, valida
 router.patch(
   '/institutes/:id',
   writeLimiter,
-  csrfCheck,
   mongoIdParam('id'),
   catalogUpdateRules('Institute name'),
   validate,
@@ -249,7 +239,7 @@ router.patch(
       if (req.body.active !== undefined) institute.active = req.body.active;
       await institute.save();
       await catalog.reload();
-      logAdminAction(req, 'catalog.institute.update', { instituteId: institute._id.toString(), active: institute.active });
+      await record(req, 'catalog.institute.update', { target: { type: 'institute', id: institute._id }, details: { active: institute.active } });
       res.json({ success: true, data: catalog.getInstitute(institute._id) });
     } catch (error) {
       if (error.code === 11000) return duplicate(res, 'An institute with this name already exists.');
@@ -264,7 +254,6 @@ router.patch(
 router.delete(
   '/institutes/:id',
   writeLimiter,
-  csrfCheck,
   mongoIdParam('id'),
   catalogDeleteRules,
   validate,
@@ -275,7 +264,7 @@ router.delete(
 
       const students = await Student.countDocuments({ instituteId: institute._id });
       if (students > 0 && req.query.force !== 'true') {
-        return res.status(409).json({ success: false, code: 'IN_USE', message: 'This institute is in use.', usage: { students } });
+        return fail(res, 409, 'This institute is in use.', { code: 'IN_USE', usage: { students } });
       }
 
       const cleared = await Student.updateMany(
@@ -285,9 +274,9 @@ router.delete(
       await Institute.deleteOne({ _id: institute._id });
       await catalog.reload();
 
-      logAdminAction(req, 'catalog.institute.delete', {
-        instituteId: institute._id.toString(),
-        clearedStudents: cleared.modifiedCount,
+      await record(req, 'catalog.institute.delete', {
+        target: { type: 'institute', id: institute._id },
+        details: { clearedStudents: cleared.modifiedCount },
       });
       res.json({ success: true, message: 'Institute deleted', clearedStudents: cleared.modifiedCount });
     } catch (error) {

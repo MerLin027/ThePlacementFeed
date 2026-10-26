@@ -1,3 +1,5 @@
+const { fail } = require('../lib/http');
+
 /**
  * NoSQL-injection guard: removes keys that start with "$" (query operators),
  * contain "." (nested-path injection) or are "__proto__" from req.body and
@@ -14,8 +16,9 @@
  *
  * Rejected with 400: bodies nested deeper than MAX_DEPTH (the app's deepest
  * real payload is 3 levels; without a limit a ~5k-level body overflows the
- * stack), and query strings containing control characters (a NUL byte makes
- * MongoDB reject the search regex).
+ * stack), query strings containing control characters (a NUL byte makes
+ * MongoDB reject the search regex), and repeated query keys (?page=1&page=2
+ * would arrive as an array; the client joins lists with commas instead).
  */
 const MAX_DEPTH = 32;
 const TOO_DEEP = Symbol('too deep');
@@ -34,13 +37,14 @@ const clean = (value, depth = 0) => {
   return result;
 };
 
-const invalidQuery = (res) => res.status(400).json({ success: false, message: 'Invalid query parameter' });
+const invalidQuery = (res) => fail(res, 400, 'Invalid query parameter', { code: 'INVALID_QUERY' });
 
 const sanitizeRequest = (req, res, next) => {
   // Express 5's query parser does not expand "a[b]=c", so a bracketed key can only be a
   // malformed or hostile request (e.g. "status[$ne]=x"). The client sends flat params only.
   const entries = Object.entries(req.query);
   if (entries.some(([key]) => /[[\]]/.test(key))) return invalidQuery(res);
+  if (entries.some(([, value]) => Array.isArray(value))) return invalidQuery(res);
   if (entries.some(([key, value]) => CONTROL_CHARS.test(key) || [].concat(value).some((v) => CONTROL_CHARS.test(String(v))))) {
     return invalidQuery(res);
   }
@@ -48,7 +52,7 @@ const sanitizeRequest = (req, res, next) => {
     req.body = req.body === undefined ? {} : clean(req.body);
   } catch (error) {
     if (error !== TOO_DEEP) throw error;
-    return res.status(400).json({ success: false, message: 'Request body is too deeply nested' });
+    return fail(res, 400, 'Request body is too deeply nested', { code: 'INVALID_BODY' });
   }
   Object.defineProperty(req, 'query', {
     value: clean(req.query),

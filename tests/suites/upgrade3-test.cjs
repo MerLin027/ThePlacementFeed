@@ -65,9 +65,16 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
     ok(r.status >= 200 && r.status < 500 && r.json && r.json.success !== undefined, `${m} ${label} with no body → ${r.status}`, r.text.slice(0, 120));
   }
   const plain = await req('POST', '/api/placements', { cookie: admin, raw: 'company=x', type: 'text/plain' });
-  ok(plain.status === 400, 'text/plain body → 400', `${plain.status} ${plain.text.slice(0, 100)}`);
+  ok(plain.status === 415 && plain.json?.code === 'UNSUPPORTED_MEDIA_TYPE', 'text/plain body → 415 (JSON only)', `${plain.status} ${plain.text.slice(0, 100)}`);
+  const formPost = await req('POST', '/api/placements', { cookie: admin, raw: 'company=x', type: 'application/x-www-form-urlencoded' });
+  ok(formPost.status === 415, 'form-encoded body → 415 (no HTML form can post to the API)', `${formPost.status} ${formPost.text.slice(0, 100)}`);
   const bad = await req('POST', '/api/placements', { cookie: admin, raw: '{"company": ' });
   ok(bad.status === 400 && !/\bat |node_modules/.test(bad.text), 'malformed JSON → 400, no stack', `${bad.status} ${bad.text.slice(0, 100)}`);
+  ok(bad.json?.code === 'INVALID_JSON' && !/Unexpected|position/.test(bad.text), 'malformed JSON → no parser message echoed', bad.text.slice(0, 100));
+  const unknown = await req('GET', '/api/nope-at-all');
+  ok(unknown.status === 404 && unknown.json?.code === 'NOT_FOUND', 'unknown API route → JSON 404', unknown.text.slice(0, 80));
+  const repeated = await req('GET', '/api/placements?page=1&page=2');
+  ok(repeated.status === 400 && repeated.json?.code === 'INVALID_QUERY', 'repeated query key → 400', repeated.text.slice(0, 80));
 
   console.log('# NoSQL injection is still blocked');
   const a1 = await req('POST', '/api/auth/login', { body: { username: { $ne: null }, password: { $ne: null } } });

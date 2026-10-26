@@ -109,7 +109,11 @@ const driveRules = [
   body('tags.*')
     .optional()
     .isString()
-    .withMessage('Each tag must be a string'),
+    .withMessage('Each tag must be a string')
+    .bail()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Each tag can be at most 50 characters'),
 
   body('formUrl')
     .optional({ values: 'falsy' })

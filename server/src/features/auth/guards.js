@@ -3,8 +3,9 @@ const Admin = require('../../models/Admin');
 const Student = require('../../models/Student');
 const { readSession } = require('./sessions');
 const { ADMIN_COOKIE, STUDENT_COOKIE } = require('./constants');
+const { fail } = require('../../lib/http');
 
-const deny = (res, message) => res.status(401).json({ success: false, message });
+const deny = (res, message) => fail(res, 401, message);
 
 /**
  * Admin session guard. The account is read on every request, so a replaced admin
@@ -43,11 +44,7 @@ const buildRequireStudent = ({ allowPendingPasswordChange }) => async (req, res,
     if (!student || student.tokenVersion !== claims.tv) return deny(res, 'Invalid or expired session');
 
     if (student.mustChangePassword && !allowPendingPasswordChange) {
-      return res.status(403).json({
-        success: false,
-        code: 'PASSWORD_CHANGE_REQUIRED',
-        message: 'Please set a new password to continue.',
-      });
+      return fail(res, 403, 'Please set a new password to continue.', { code: 'PASSWORD_CHANGE_REQUIRED' });
     }
 
     req.student = { id: claims.sub, mustChangePassword: student.mustChangePassword };

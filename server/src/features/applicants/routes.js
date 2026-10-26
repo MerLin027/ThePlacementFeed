@@ -3,9 +3,9 @@ const Application = require('../../models/Application');
 const Placement = require('../../models/Placement');
 const { APPLICATION_STATUSES } = require('../../models/Application');
 const { requireAdmin } = require('../auth/guards');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
+const { fail } = require('../../lib/http');
 const {
   applicantFilterRules,
   applicantListRules,
@@ -16,7 +16,7 @@ const {
 const { buildApplicantFilter, applicantQuery } = require('./filters');
 const { toApplicantDTO } = require('./dto');
 const { buildApplicantExport } = require('./export');
-const { logAdminAction } = require('../audit/service');
+const { record } = require('../audit/service');
 
 // Mounted at …/:driveId/applicants — admin-only
 const router = express.Router({ mergeParams: true });
@@ -32,7 +32,7 @@ const buildFilter = (drive, q) => buildApplicantFilter(drive._id.toString(), q, 
 const loadDrive = (driveId) =>
   Placement.findById(driveId).select('company role customPrompts applicationMode').lean();
 
-const driveNotFound = (res) => res.status(404).json({ success: false, message: 'Placement not found' });
+const driveNotFound = (res) => fail(res, 404, 'Placement not found');
 
 // GET / — one page of applicants, plus whole-drive counts and the filter options
 router.get('/', readLimiter, applicantListRules, validate, async (req, res, next) => {
@@ -134,10 +134,10 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
     const drive = await loadDrive(req.params.driveId);
     if (!drive) return driveNotFound(res);
 
-    logAdminAction(req, 'applicants.export', {
-      driveId: drive._id.toString(),
+    await record(req, 'applicants.export', {
+      target: { type: 'drive', id: drive._id },
       // Which filters were used; free text (institute, search) only as "was used"
-      filters: {
+      details: {
         status: req.query.status,
         branch: req.query.branch,
         cgpaMin: req.query.cgpaMin,
@@ -171,17 +171,16 @@ router.get('/export', exportLimiter, applicantFilterRules, validate, async (req,
 
 // PATCH /bulk-status — registered before /:appId. Scoped to this drive: ids from another drive are
 // simply not matched.
-router.patch('/bulk-status', updateLimiter, csrfCheck, applicantBulkStatusRules, validate, async (req, res, next) => {
+router.patch('/bulk-status', updateLimiter, applicantBulkStatusRules, validate, async (req, res, next) => {
   try {
     const ids = [...new Set(req.body.applicationIds)];
     const result = await Application.updateMany(
       { _id: { $in: ids }, driveId: req.params.driveId },
       { $set: { status: req.body.status } }
     );
-    logAdminAction(req, 'applicants.bulkStatus', {
-      driveId: req.params.driveId,
-      status: req.body.status,
-      count: result.modifiedCount,
+    await record(req, 'applicants.bulkStatus', {
+      target: { type: 'drive', id: req.params.driveId },
+      details: { status: req.body.status, count: result.modifiedCount },
     });
     res.json({ success: true, matched: result.matchedCount, updated: result.modifiedCount });
   } catch (error) {
@@ -191,11 +190,11 @@ router.patch('/bulk-status', updateLimiter, csrfCheck, applicantBulkStatusRules,
 
 // POST /bulk-delete — removes applications for good (status, note, answers). Scoped to this drive
 // like bulk-status; the student may apply again while the drive is open.
-router.post('/bulk-delete', updateLimiter, csrfCheck, applicantBulkDeleteRules, validate, async (req, res, next) => {
+router.post('/bulk-delete', updateLimiter, applicantBulkDeleteRules, validate, async (req, res, next) => {
   try {
     const ids = [...new Set(req.body.applicationIds)];
     const { deletedCount } = await Application.deleteMany({ _id: { $in: ids }, driveId: req.params.driveId });
-    logAdminAction(req, 'applicants.delete', { driveId: req.params.driveId, count: deletedCount });
+    await record(req, 'applicants.delete', { target: { type: 'drive', id: req.params.driveId }, details: { count: deletedCount } });
     res.json({ success: true, deleted: deletedCount });
   } catch (error) {
     next(error);
@@ -203,7 +202,7 @@ router.post('/bulk-delete', updateLimiter, csrfCheck, applicantBulkDeleteRules, 
 });
 
 // PATCH /:appId — status and/or admin note
-router.patch('/:appId', updateLimiter, csrfCheck, mongoIdParam('appId'), applicantUpdateRules, validate, async (req, res, next) => {
+router.patch('/:appId', updateLimiter, mongoIdParam('appId'), applicantUpdateRules, validate, async (req, res, next) => {
   try {
     const update = {};
     if (req.body.status !== undefined) update.status = req.body.status;
@@ -216,8 +215,12 @@ router.patch('/:appId', updateLimiter, csrfCheck, mongoIdParam('appId'), applica
     ).lean();
 
     if (!app) {
-      return res.status(404).json({ success: false, message: 'Applicant not found for this drive' });
+      return fail(res, 404, 'Applicant not found for this drive');
     }
+    await record(req, 'applicant.update', {
+      target: { type: 'application', id: app._id },
+      details: { ...(update.status && { status: update.status }), noteChanged: update.adminNote !== undefined },
+    });
     res.json({ success: true, data: toApplicantDTO(app) });
   } catch (error) {
     next(error);

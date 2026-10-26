@@ -1,8 +1,8 @@
 const express = require('express');
 const Student = require('../../models/Student');
-const csrfCheck = require('../../middleware/csrf');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
+const { fail, fieldError } = require('../../lib/http');
 const { requireStudent, requireStudentAllowPending } = require('../auth/guards');
 const catalog = require('../catalog/cache');
 const { profileRules, chooseInstituteRules } = require('./validators');
@@ -25,10 +25,7 @@ const EDITABLE_PROFILE_FIELDS = [
 
 const profileUpdate = limit('profileUpdate');
 
-const invalidSession = (res) => res.status(401).json({ success: false, message: 'Invalid or expired session' });
-
-const fieldError = (res, field, message) =>
-  res.status(400).json({ success: false, message: 'Validation failed', errors: [{ field, message }] });
+const invalidSession = (res) => fail(res, 401, 'Invalid or expired session');
 
 // GET /me — allowed while a password change is pending
 router.get('/me', limit('profileRead'), requireStudentAllowPending, async (req, res, next) => {
@@ -42,7 +39,7 @@ router.get('/me', limit('profileRead'), requireStudentAllowPending, async (req, 
 });
 
 // PATCH /me
-router.patch('/me', csrfCheck, requireStudent, profileUpdate, profileRules, validate, async (req, res, next) => {
+router.patch('/me', requireStudent, profileUpdate, profileRules, validate, async (req, res, next) => {
   try {
     const student = await Student.findById(req.student.id);
     if (!student) return invalidSession(res);
@@ -69,7 +66,7 @@ router.patch('/me', csrfCheck, requireStudent, profileUpdate, profileRules, vali
 
 // PUT /me/institute — a one-time choice. The update only matches while no institute is set, so a
 // second (or concurrent) request can't change it; only the admin can clear it.
-router.put('/me/institute', csrfCheck, requireStudent, profileUpdate, chooseInstituteRules, validate, async (req, res, next) => {
+router.put('/me/institute', requireStudent, profileUpdate, chooseInstituteRules, validate, async (req, res, next) => {
   try {
     const institute = catalog.getInstitute(req.body.instituteId);
     if (!institute || !institute.active) {
@@ -84,11 +81,7 @@ router.put('/me/institute', csrfCheck, requireStudent, profileUpdate, chooseInst
 
     if (!student) {
       if (!(await Student.exists({ _id: req.student.id }))) return invalidSession(res);
-      return res.status(409).json({
-        success: false,
-        code: 'INSTITUTE_LOCKED',
-        message: 'Your institute is already set. Ask the CDPC admin if it needs to change.',
-      });
+      return fail(res, 409, 'Your institute is already set. Ask the CDPC admin if it needs to change.', { code: 'INSTITUTE_LOCKED' });
     }
     res.json({ success: true, data: toProfileDTO(student) });
   } catch (error) {

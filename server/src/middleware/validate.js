@@ -1,5 +1,6 @@
 const { body, query, param, validationResult } = require('express-validator');
 const { isHttpsUrl } = require('../lib/urls');
+const { fail } = require('../lib/http');
 
 /**
  * The validation runner and the rule helpers every feature's validators.js builds on. Each
@@ -10,13 +11,9 @@ const { isHttpsUrl } = require('../lib/urls');
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array().map((err) => ({
-        field: err.path,
-        message: err.msg,
-      })),
+    return fail(res, 400, 'Validation failed', {
+      code: 'VALIDATION_FAILED',
+      errors: errors.array().map((err) => ({ field: err.path, message: err.msg })),
     });
   }
   next();

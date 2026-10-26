@@ -31,6 +31,7 @@ const TAG = `p5${Date.now() % 1000000}`;
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
+  const suiteStart = new Date();
   let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
   const admin = cookieOf(r, 'admin_token');
   const mkDrive = async (name, extra = {}) => (await call('POST', '/api/placements', { cookie: admin, body: { company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', driveDate: istDate(10), deadline: istDate(5), ...extra } })).json.data;
@@ -183,10 +184,12 @@ const TAG = `p5${Date.now() % 1000000}`;
   r = await call('POST', '/api/applications', { cookie: students.c.cookie, body: { driveId: d1._id, consentGiven: true, customAnswers: [{ promptId, answer: 'Anand' }] } });
   ok(r.status === 201, 'the student can apply again after their record is deleted', r.text.slice(0, 160));
 
-  console.log('# Audit log');
-  const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[AdminAction]'));
-  ok(log.some((l) => l.includes('applicants.export')) && log.some((l) => l.includes('applicants.bulkStatus')) && log.some((l) => l.includes('applicants.delete')), 'export + bulk actions + deletes logged');
-  ok(!log.some((l) => /@example\.com|9000000001|Hometown/.test(l)), 'audit log free of PII');
+  console.log('# Audit trail');
+  const events = await mongoose.connection.collection('audit_events').find({ at: { $gte: suiteStart }, 'actor.type': 'admin' }).toArray();
+  const actions = new Set(events.map((e) => e.action));
+  ok(['applicants.export', 'applicants.bulkStatus', 'applicants.delete', 'applicant.update'].every((a) => actions.has(a)), `export, bulk actions, deletes and single updates stored (${[...actions].join(', ')})`);
+  const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[Audit]'));
+  ok(!log.some((l) => /@example\.com|9000000001|Hometown/.test(l)) && !/@example\.com|9000000001|Hometown/.test(JSON.stringify(events)), 'audit trail free of PII');
 
   // cleanup
   await Application.deleteMany({ driveId: { $in: [d1._id, d2._id] } });

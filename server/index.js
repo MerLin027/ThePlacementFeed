@@ -14,6 +14,7 @@ try {
   console.error('Please check your .env file or environment configuration.');
   process.exit(1);
 }
+settings.warnings.forEach((warning) => console.warn(`Warning: ${warning}`));
 
 const { connectDB, disconnectDB } = require('./src/config/db');
 const seedAdmin = require('./src/features/auth/seed');

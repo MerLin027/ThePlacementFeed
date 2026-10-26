@@ -13,6 +13,7 @@ const API = TEST.API;
 const ORIGIN = TEST.APP;
 const PASSWORD = 'testadminpass';
 const NEW_PASSWORD = 'a-new-admin-pass-1';
+const SECOND_PASSWORD = 'another-admin-pass-3';
 let pass = 0, fail = 0;
 const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS' : '  FAIL', l, c ? '' : extra); };
 const call = async (method, url, { body, cookie, origin = ORIGIN } = {}) => {
@@ -45,7 +46,11 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     r = await call('POST', '/api/auth/password', { cookie: first, origin: 'https://evil.example', body: { currentPassword: PASSWORD, newPassword: NEW_PASSWORD } });
     ok(r.status === 403, 'foreign Origin -> 403 (CSRF)', r.status);
     r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: PASSWORD, newPassword: 'short' } });
-    ok(r.status === 400 && /8/.test(fieldError(r, 'newPassword')), 'too short -> 400 on newPassword', JSON.stringify(r.json));
+    ok(r.status === 400 && /12/.test(fieldError(r, 'newPassword')), 'shorter than 12 -> 400 on newPassword', JSON.stringify(r.json));
+    r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: PASSWORD, newPassword: 'password1234' } });
+    ok(r.status === 400 && /common/.test(fieldError(r, 'newPassword')), 'a common password -> 400', JSON.stringify(r.json));
+    r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: PASSWORD, newPassword: 'my-testadmin-2026' } });
+    ok(r.status === 400 && /username/.test(fieldError(r, 'newPassword')), 'a password containing the username -> 400', JSON.stringify(r.json));
     r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: PASSWORD, newPassword: PASSWORD } });
     ok(r.status === 400 && /different/.test(fieldError(r, 'newPassword')), 'same as current -> 400', JSON.stringify(r.json));
     r = await call('POST', '/api/auth/password', { cookie: first, body: { newPassword: NEW_PASSWORD } });
@@ -54,7 +59,7 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(r.status === 400, 'operator object as current -> 400', r.status);
     r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: 'wrong-password', newPassword: NEW_PASSWORD } });
     ok(r.status === 400 && /incorrect/.test(fieldError(r, 'currentPassword')), 'wrong current -> 400 on currentPassword', JSON.stringify(r.json));
-    ok(await bcrypt.compare(PASSWORD, (await Admin.findOne({ username: 'testadmin' })).passwordHash), 'failed attempts leave the password alone');
+    ok(await bcrypt.compare(PASSWORD, (await Admin.findOne({ username: 'testadmin' }).select('+passwordHash')).passwordHash), 'failed attempts leave the password alone');
 
     console.log('# A change signs out every other session and keeps this one');
     const other = cookieOf(await login(PASSWORD), 'admin_token');
@@ -71,9 +76,9 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     const admin = await Admin.findOne({ username: 'testadmin' }).lean();
     ok(admin.tokenVersion === versionBefore + 1 && !JSON.stringify(r.json).includes('passwordHash'), 'tokenVersion bumped; no hash in the response');
 
-    console.log('# Changing it back (also restores the shared test credentials)');
-    r = await call('POST', '/api/auth/password', { cookie: cookieOf(r, 'admin_token'), body: { currentPassword: NEW_PASSWORD, newPassword: PASSWORD } });
-    ok(r.status === 200, 'changed back', JSON.stringify(r.json));
+    console.log('# Changing it again (the shared test password is restored at the end)');
+    r = await call('POST', '/api/auth/password', { cookie: cookieOf(r, 'admin_token'), body: { currentPassword: NEW_PASSWORD, newPassword: SECOND_PASSWORD } });
+    ok(r.status === 200, 'changed again', JSON.stringify(r.json));
     const back = cookieOf(r, 'admin_token');
 
     console.log('# Wrong current passwords are rate limited per admin');
@@ -83,6 +88,27 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
       if (r.status === 429) limited = i + 1;
     }
     ok(limited > 0 && limited <= 6, 'too many attempts -> 429', `limited at ${limited}`);
+    ok(r.json.code === 'RATE_LIMITED', '429 carries code RATE_LIMITED', JSON.stringify(r.json));
+
+    console.log('# Hardening: global CSRF, password policy, audit events');
+    const suiteStart = new Date(Date.now() - 60 * 1000);
+    r = await call('POST', '/api/auth/logout', { origin: null });
+    ok(r.status === 403 && r.json.code === 'CSRF_REJECTED', 'a write without Origin -> 403 CSRF_REJECTED', JSON.stringify(r.json));
+    r = await call('POST', '/api/students/auth/logout', { origin: 'https://evil.example' });
+    ok(r.status === 403, 'student logout from another site -> 403', r.status);
+    const TAG = `se${Date.now() % 1000000}`;
+    r = await call('POST', '/api/students/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: 'password123' } });
+    ok(r.status === 400 && /common/.test(fieldError(r, 'password')), 'signup with a common password -> 400', JSON.stringify(r.json));
+    r = await call('POST', '/api/students/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: `x-${TAG}r1-pass` } });
+    ok(r.status === 400 && /roll number/.test(fieldError(r, 'password')), 'signup with the roll number in the password -> 400', JSON.stringify(r.json));
+    r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'definitely-wrong' } });
+    ok(r.status === 401 && r.json.code === 'INVALID_CREDENTIALS', 'wrong admin password -> 401 INVALID_CREDENTIALS');
+    const events = await mongoose.connection.collection('audit_events').find({ at: { $gte: suiteStart } }).toArray();
+    const loginFail = events.find((e) => e.action === 'admin.login' && e.outcome === 'failure');
+    ok(loginFail && loginFail.actor.type === 'admin' && loginFail.ip && loginFail.requestId, 'failed admin login stored (actor, address, request id)', JSON.stringify(loginFail));
+    ok(events.some((e) => e.action === 'admin.login' && e.outcome === 'success'), 'successful admin login stored');
+    ok(events.filter((e) => e.action === 'admin.password.change' && e.outcome === 'success').length >= 2, 'password changes stored');
+    ok(!/definitely-wrong|a-new-admin-pass|testadmin"/.test(JSON.stringify(events)), 'no passwords or usernames in stored events');
 
     console.log('# Proxy secret: the forwarded visitor address is believed only with the secret');
     let secret = null;
