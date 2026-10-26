@@ -70,17 +70,15 @@ const studentSchema = new mongoose.Schema(
       validate: { validator: optionalHttpsUrl, message: 'Resume URL must be a valid HTTPS URL' },
     },
 
-    // --- Auth lifecycle (server-managed only) ---
+    // --- Auth lifecycle (server-managed only; sessions live in the sessions collection) ---
     mustChangePassword: { type: Boolean, default: false },
     tempPasswordExpiresAt: { type: Date },
-    tokenVersion: { type: Number, default: 0 },
   },
   {
     timestamps: true,
     toJSON: {
       transform: function (doc, ret) {
         delete ret.passwordHash;
-        delete ret.tokenVersion;
         delete ret.__v;
         return ret;
       },

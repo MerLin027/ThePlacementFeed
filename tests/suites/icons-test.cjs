@@ -29,10 +29,10 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
   ok(requested.join(',') === [...requested].sort().join(','), 'icon_names are in alphabetical order (Google Fonts requires it)');
 
   await mongoose.connect(TEST.MONGODB_URI);
-  const admin = (await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) })).headers.getSetCookie()[0].split(';')[0];
-  const drive = (await (await fetch(API + '/api/placements', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 6, applicationMode: 'both', formUrl: 'https://forms.gle/x', deadline: istDate(2), driveDate: istDate(6), eligibility: { branches: ['CE'], cgpa: 6 }, customPrompts: [{ question: 'Q?', required: false }], selectionRounds: [{ roundName: 'Test' }], tags: ['Pune'] }) })).json()).data;
+  const admin = (await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) })).headers.getSetCookie()[0].split(';')[0];
+  const drive = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 6, applicationMode: 'both', formUrl: 'https://forms.gle/x', deadline: istDate(2), driveDate: istDate(6), eligibility: { branches: ['CE'], cgpa: 6 }, customPrompts: [{ question: 'Q?', required: false }], selectionRounds: [{ roundName: 'Test' }], tags: ['Pune'] }) })).json()).data;
   const email = `${TAG.toLowerCase()}@example.com`;
-  await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email, rollNumber: `${TAG}R`, password: 'goodpass123' }) });
+  await fetch(API + '/api/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email, rollNumber: `${TAG}R`, password: 'goodpass123' }) });
 
   const browser = await chromium.launch();
   const seen = new Map(); // name -> { glyph: boolean, where }

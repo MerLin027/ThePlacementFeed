@@ -47,10 +47,10 @@ const login = async (page, email, password = 'goodpass123') => {
   await mongoose.connect(TEST.MONGODB_URI);
 
   // --- Seed drives and students via the API ---
-  let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
+  let r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
   const admin = r.setCookie[0].split(';')[0];
   const mk = async (name, overrides) => {
-    const res = await call('POST', '/api/placements', {
+    const res = await call('POST', '/api/admin/drives', {
       cookie: admin,
       body: { company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 10, driveDate: istDate(10), deadline: istDate(5), ...overrides },
     });
@@ -68,9 +68,9 @@ const login = async (page, email, password = 'goodpass123') => {
 
   const signup = async (n, profile) => {
     const email = `${TAG.toLowerCase()}_${n}@example.com`;
-    const s = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'goodpass123' } });
-    const cookie = s.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
-    if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+    const s = await call('POST', '/api/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'goodpass123' } });
+    const cookie = s.setCookie.find((c) => c.startsWith('tpf_session=')).split(';')[0];
+    if (profile) await call('PATCH', '/api/student/profile', { cookie, body: profile });
     if (profile) await chooseInstitute(cookie);
     return email;
   };

@@ -14,8 +14,10 @@ const auditEventSchema = new mongoose.Schema(
     action: { type: String, required: true, maxlength: 64 },
     outcome: { type: String, enum: ['success', 'failure'], default: 'success' },
     actor: {
-      type: { type: String, enum: ['admin', 'student', 'anonymous', 'system'], required: true },
+      // 'admin' is from before staff roles existed (events kept from then)
+      type: { type: String, enum: ['staff', 'student', 'anonymous', 'system', 'admin'], required: true },
       id: { type: mongoose.Schema.Types.ObjectId },
+      role: { type: String, maxlength: 32 },
     },
     // The record acted on, e.g. { type: 'drive', id }
     target: {

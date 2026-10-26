@@ -16,10 +16,10 @@ const testInstituteId = () => {
   return idPromise;
 };
 
-// Picks the shared test institute for a student session cookie ("student_token=…")
+// Picks the shared test institute for a student session cookie ("tpf_session=…")
 const chooseInstitute = async (cookie) => {
   const instituteId = await testInstituteId();
-  const res = await fetch(`${env.API}/api/students/me/institute`, {
+  const res = await fetch(`${env.API}/api/student/profile/institute`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Origin: env.APP, Cookie: cookie },
     body: JSON.stringify({ instituteId }),

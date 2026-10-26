@@ -1,5 +1,5 @@
 const Placement = require('../../models/Placement');
-const { MAX_RECENT_CHANGES } = require('../../models/Placement');
+const { MAX_RECENT_CHANGES, DRIVE_STATUSES } = require('../../models/Placement');
 const { containsRegex } = require('../../lib/regex');
 const { applyAutoStatus } = require('./status');
 
@@ -67,6 +67,52 @@ const buildDriveFilter = ({ statuses, branches, ctcMin, ctcMax, search }) => {
   const text = search?.trim();
   if (text) filter.$or = [{ company: containsRegex(text) }, { role: containsRegex(text) }];
   return filter;
+};
+
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 50;
+const MAX_PAGE = 10000;
+const MAX_SEARCH_LENGTH = 100;
+const MAX_BRANCH_FILTERS = 20;
+
+/**
+ * The drive list's query string, checked and parsed (public and staff lists share it):
+ * { filter, sort, page, limit } or { error } for a 400. Every value must be a plain string.
+ */
+const parseListQuery = (q) => {
+  const { branch, status, ctcMin, ctcMax, search, sort, page, limit } = q;
+  if ([branch, status, ctcMin, ctcMax, search, sort, page, limit].some((v) => v !== undefined && typeof v !== 'string')) {
+    return { error: 'Invalid query parameter' };
+  }
+
+  // status may be a single value or a comma-separated list ("Upcoming,Ongoing")
+  const statuses = status ? [...new Set(status.split(',').map((s) => s.trim()))] : [];
+  if (status !== undefined && statuses.some((s) => !DRIVE_STATUSES.includes(s))) {
+    return { error: `Invalid status. Must be one or more of: ${DRIVE_STATUSES.join(', ')}` };
+  }
+  if (sort !== undefined && !PUBLIC_SORTS.includes(sort)) {
+    return { error: `Invalid sort. Must be one of: ${PUBLIC_SORTS.join(', ')}` };
+  }
+
+  const parsedCtcMin = ctcMin !== undefined ? Number(ctcMin) : undefined;
+  const parsedCtcMax = ctcMax !== undefined ? Number(ctcMax) : undefined;
+  if (ctcMin !== undefined && Number.isNaN(parsedCtcMin)) return { error: 'ctcMin must be a valid number' };
+  if (ctcMax !== undefined && Number.isNaN(parsedCtcMax)) return { error: 'ctcMax must be a valid number' };
+
+  const parsedPage = page ? parseInt(page, 10) : 1;
+  const parsedLimit = limit ? parseInt(limit, 10) : DEFAULT_PAGE_SIZE;
+  if (Number.isNaN(parsedPage) || parsedPage < 1 || parsedPage > MAX_PAGE) return { error: 'page must be a positive integer' };
+  if (Number.isNaN(parsedLimit) || parsedLimit < 1) return { error: 'limit must be a positive integer' };
+  if (search && search.length > MAX_SEARCH_LENGTH) return { error: `search cannot exceed ${MAX_SEARCH_LENGTH} characters` };
+  const branches = branch ? branch.split(',').map((b) => b.trim()) : [];
+  if (branches.length > MAX_BRANCH_FILTERS) return { error: 'Too many branches' };
+
+  return {
+    filter: buildDriveFilter({ statuses, branches, ctcMin: parsedCtcMin, ctcMax: parsedCtcMax, search }),
+    sort,
+    page: parsedPage,
+    limit: Math.min(parsedLimit, MAX_PAGE_SIZE),
+  };
 };
 
 // One page of drives and the total that match
@@ -166,8 +212,7 @@ const logChange = (doc, type) => {
 };
 
 module.exports = {
-  PUBLIC_SORTS,
-  buildDriveFilter,
+  parseListQuery,
   listDrives,
   changesSince,
   pickEditable,

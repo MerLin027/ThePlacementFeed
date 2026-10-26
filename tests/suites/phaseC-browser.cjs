@@ -22,18 +22,18 @@ const TAG = `PC${Date.now() % 100000}`;
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
-  const mk = async (name) => (await (await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 5, applicationMode: 'in_app', deadline: istDate(4), driveDate: istDate(8) }) })).json()).data;
+  const mk = async (name) => (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 5, applicationMode: 'in_app', deadline: istDate(4), driveDate: istDate(8) }) })).json()).data;
   const d1 = await mk('Alpha');
   const d2 = await mk('Beta');
 
   const email = `${TAG.toLowerCase()}_s@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
-  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
+  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
   const SH = { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie };
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: SH, body: JSON.stringify({ firstName: 'Neel', lastName: 'Joshi', branch: 'IT', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/n.pdf' }) });
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: SH, body: JSON.stringify({ firstName: 'Neel', lastName: 'Joshi', branch: 'IT', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/n.pdf' }) });
   await chooseInstitute(sCookie);
 
   const browser = await chromium.launch();
@@ -53,9 +53,9 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.click('header nav >> text=My Applications');
   await page.waitForURL(/\/applications$/);
   ok(await hasText(page, 'No applications yet') && await hasText(page, 'Browse drives'), 'empty state with a way forward');
-  await fetch(API + '/api/applications', { method: 'POST', headers: SH, body: JSON.stringify({ driveId: d1._id, consentGiven: true }) });
-  const ap2 = await (await fetch(API + '/api/applications', { method: 'POST', headers: SH, body: JSON.stringify({ driveId: d2._id, consentGiven: true }) })).json();
-  await fetch(`${API}/api/placements/${d2._id}/applicants/${ap2.data.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ status: 'Shortlisted' }) });
+  await fetch(API + '/api/student/applications', { method: 'POST', headers: SH, body: JSON.stringify({ driveId: d1._id, consentGiven: true }) });
+  const ap2 = await (await fetch(API + '/api/student/applications', { method: 'POST', headers: SH, body: JSON.stringify({ driveId: d2._id, consentGiven: true }) })).json();
+  await fetch(`${API}/api/admin/drives/${d2._id}/applicants/${ap2.data.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ status: 'Shortlisted' }) });
   await page.reload();
   ok(await hasText(page, `${TAG} Alpha`) && await hasText(page, `${TAG} Beta`), 'lists both applications');
   ok(await hasText(page.locator('li', { hasText: `${TAG} Beta` }), 'Shortlisted'), 'shows current status');

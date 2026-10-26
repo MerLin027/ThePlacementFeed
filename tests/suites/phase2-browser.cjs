@@ -107,22 +107,22 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
 
   console.log('# Mass assignment via API with student cookie');
   const cookies = await ctx.cookies(API);
-  const stuCookie = cookies.find((c) => c.name === 'student_token');
-  const cookieHeader = `student_token=${stuCookie.value}`;
-  let r = await fetch(API + '/api/students/me', {
+  const stuCookie = cookies.find((c) => c.name === 'tpf_session');
+  const cookieHeader = `tpf_session=${stuCookie.value}`;
+  let r = await fetch(API + '/api/student/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: cookieHeader },
     body: JSON.stringify({ email: 'hacker@x.com', rollNumber: 'HACK1', mustChangePassword: true, tokenVersion: 5, passwordHash: 'x', firstName: 'Asha' }),
   });
   const after = await Student.findOne({ email }).select('+passwordHash').lean();
   ok(r.status === 200 && after.email === email && after.rollNumber === roll && !after.mustChangePassword && after.tokenVersion === 0 && after.passwordHash.startsWith('$2'), 'protected fields untouched by PATCH');
-  r = await fetch(API + '/api/students/me', {
+  r = await fetch(API + '/api/student/profile', {
     method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: cookieHeader },
     body: JSON.stringify({ cgpa: 11, branch: 'XYZ', firstName: '<script>' }),
   });
   const bad = await r.json();
   ok(r.status === 400 && bad.errors.length === 3, 'invalid cgpa/branch/name rejected');
-  r = await fetch(API + '/api/students/me', {
+  r = await fetch(API + '/api/student/profile', {
     method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: `${TEST.APP}.evil.com`, Cookie: cookieHeader },
     body: JSON.stringify({ firstName: 'X' }),
   });
@@ -137,7 +137,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.waitForURL(/\/admin\/dashboard/);
   nav = await navTexts(page);
   ok(nav.includes('Dashboard') && !nav.includes('Profile'), 'admin nav takes precedence', nav);
-  r = await fetch(API + '/api/students/auth/check', { headers: { Cookie: cookieHeader } });
+  r = await fetch(API + '/api/auth/session', { headers: { Cookie: cookieHeader } });
   ok(r.status === 200, 'student session still valid alongside admin');
   await logout(page);
   await page.waitForURL(/\/admin\/login/);
@@ -157,9 +157,9 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.fill('#currentPassword', 'goodpass123');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/profile$/);
-  r = await fetch(API + '/api/students/auth/check', { headers: { Cookie: cookieHeader } });
+  r = await fetch(API + '/api/auth/session', { headers: { Cookie: cookieHeader } });
   ok(r.status === 401, 'old student cookie revoked after password change');
-  r = await page.evaluate(async (api) => (await fetch(api + '/api/students/auth/check', { credentials: 'include' })).status, API);
+  r = await page.evaluate(async (api) => (await fetch(api + '/api/auth/session', { credentials: 'include' })).status, API);
   ok(r === 200, 'current browser session reissued and valid');
 
   console.log('# Logout + open-redirect guard');
@@ -195,7 +195,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   ok(await hasText(page, 'reset by the CDPC admin'), 'reset login -> /change-password with explanation');
   await page.goto(APP + '/profile');
   ok(await page.waitForURL(/\/change-password/).then(() => true, () => false), 'restricted student bounced from /profile');
-  r = await page.evaluate(async ({ api, origin }) => (await fetch(api + '/api/students/me', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName: 'X' }) })).status, { api: API, origin: APP });
+  r = await page.evaluate(async ({ api, origin }) => (await fetch(api + '/api/student/profile', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName: 'X' }) })).status, { api: API, origin: APP });
   ok(r === 403, 'restricted session PATCH /me -> 403 server-side');
   ok(await page.locator('#currentPassword').count() === 0, 'reset form does not ask for the temporary password again');
   await page.fill('#newPassword', 'college123');
@@ -221,9 +221,9 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
 
   console.log('# Admin 401 interceptor redirect');
   {
-    const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+    const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
     const adminCookie = login.headers.getSetCookie()[0].split(';')[0];
-    const created = await fetch(API + '/api/placements', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: adminCookie }, body: JSON.stringify({ company: 'ExpiryCo', role: 'SDE', type: 'Full-Time', ctc: 5 }) });
+    const created = await fetch(API + '/api/admin/drives', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: adminCookie }, body: JSON.stringify({ company: 'ExpiryCo', role: 'SDE', type: 'Full-Time', ctc: 5 }) });
     const placementId = (await created.json()).data._id;
     await page.goto(APP + '/admin/login');
     await page.fill('#username', 'testadmin');
@@ -232,13 +232,13 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
     await page.waitForURL(/\/admin\/dashboard/);
     await page.waitForSelector('button[title="Mark as postponed"]');
     // Replace the admin cookie with a forged one so the next mutation is rejected
-    await ctx.addCookies([{ name: 'admin_token', value: 'forged.token.value', url: API }]);
+    await ctx.addCookies([{ name: 'tpf_session', value: 'forged.token.value', url: API }]);
     await page.locator('button[title="Mark as postponed"]').first().click();
     await page.waitForURL(/\/admin\/login\?expired=true/);
     await page.waitForTimeout(500); // deliberate: proves no further redirect follows
     ok(/\/admin\/login\?expired=true$/.test(page.url()), 'admin URL stays on expired login', page.url());
     ok(await hasText(page, 'Session expired'), 'admin expired message shown');
-    await fetch(API + '/api/placements/' + placementId, { method: 'DELETE', headers: { Origin: APP, Cookie: adminCookie } });
+    await fetch(API + '/api/admin/drives/' + placementId, { method: 'DELETE', headers: { Origin: APP, Cookie: adminCookie } });
   }
 
   console.log('# Mobile signup page');

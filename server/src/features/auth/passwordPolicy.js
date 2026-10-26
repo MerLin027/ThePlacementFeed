@@ -1,8 +1,8 @@
-const { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, ADMIN_PASSWORD_MIN_LENGTH } = require('./constants');
+const { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, STAFF_PASSWORD_MIN_LENGTH } = require('./constants');
 
 /**
  * What makes a new password acceptable (NIST SP 800-63B: length and a blocklist, no composition
- * rules): 8–72 characters (12+ for the admin), not a well-known password, and not built from the
+ * rules): 8–72 characters (12+ for staff), not a well-known password, and not built from the
  * account's own email name or roll number. Applied when a password is set, never when one is used.
  */
 
@@ -28,11 +28,11 @@ const COMMON_PASSWORDS = new Set([
 
 /**
  * Why `password` can't be used, or null when it can.
- * account: { email, rollNumber, username } — whichever the account has; admin: true for the admin.
+ * account: { email, rollNumber, username } — whichever the account has; staff: true for staff accounts.
  */
-const passwordProblem = (password, { email, rollNumber, username, admin = false } = {}) => {
+const passwordProblem = (password, { email, rollNumber, username, staff = false } = {}) => {
   if (typeof password !== 'string') return 'Password is required';
-  const min = admin ? ADMIN_PASSWORD_MIN_LENGTH : PASSWORD_MIN_LENGTH;
+  const min = staff ? STAFF_PASSWORD_MIN_LENGTH : PASSWORD_MIN_LENGTH;
   if (password.length < min || password.length > PASSWORD_MAX_LENGTH) {
     return `Password must be ${min}–${PASSWORD_MAX_LENGTH} characters`;
   }

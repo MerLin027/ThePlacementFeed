@@ -10,11 +10,11 @@ const AuditEvent = require('../../models/AuditEvent');
 
 const asObjectId = (id) => (id && mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(String(id)) : undefined);
 
-// Who made the request: the signed-in admin or student, else anonymous
+// Who made the request: the signed-in account (with the staff role at the time), else anonymous
 const actorOf = (req) => {
-  if (req.admin) return { type: 'admin', id: asObjectId(req.admin.id) };
-  if (req.student) return { type: 'student', id: asObjectId(req.student.id) };
-  return { type: 'anonymous' };
+  if (!req.account) return { type: 'anonymous' };
+  const { type, id, role } = req.account;
+  return { type, id: asObjectId(id), ...(role && { role }) };
 };
 
 /**
@@ -29,7 +29,7 @@ const record = async (req, action, { outcome = 'success', actor, target, details
     at: new Date(),
     action,
     outcome,
-    actor: actor ? { type: actor.type, id: asObjectId(actor.id) } : actorOf(req),
+    actor: actor ? { type: actor.type, id: asObjectId(actor.id), ...(actor.role && { role: actor.role }) } : actorOf(req),
     ...(target && { target: { type: target.type, id: asObjectId(target.id) } }),
     ...(details && Object.keys(details).length > 0 && { details }),
     ip: req.ip,

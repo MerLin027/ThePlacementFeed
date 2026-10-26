@@ -36,9 +36,9 @@ const TAG = `P4B${Date.now() % 100000}`;
 
   const mk = async (n, profile) => {
     const email = `${TAG.toLowerCase()}_${n}@example.com`;
-    const r = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'origpass123' } });
-    const cookie = r.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
-    if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+    const r = await call('POST', '/api/auth/signup', { body: { email, rollNumber: `${TAG}${n}`, password: 'origpass123' } });
+    const cookie = r.setCookie.find((c) => c.startsWith('tpf_session=')).split(';')[0];
+    if (profile) await call('PATCH', '/api/student/profile', { cookie, body: profile });
     if (profile) await chooseInstitute(cookie);
     return { email, roll: `${TAG}${n}`.toUpperCase() };
   };

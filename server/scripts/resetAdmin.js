@@ -3,66 +3,72 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
 const readline = require('readline');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const Admin = require('../src/models/Admin');
+const Session = require('../src/models/Session');
+const { hashPassword } = require('../src/features/auth/passwords');
+const { passwordProblem } = require('../src/features/auth/passwordPolicy');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+/**
+ * Break-glass access: makes one staff account an active super admin with a password typed here, and
+ * ends its sessions. For when nobody can sign in as a super admin any more. Other staff accounts
+ * are left alone (manage them in the website afterwards).
+ *
+ *   node server/scripts/resetAdmin.js
+ *
+ * The username is created if it doesn't exist. The password is not shown while it is typed.
+ */
 
-const askQuestion = (query) => new Promise(resolve => rl.question(query, resolve));
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: Boolean(process.stdin.isTTY) });
+const ask = (question) => new Promise((resolve) => rl.question(question, resolve));
 
-const resetAdmin = async () => {
-  let exitCode = 0;
-  try {
-    if (!process.env.MONGODB_URI) {
-      console.error(`FATAL: MONGODB_URI is not defined in ${path.join(__dirname, '..', '.env')}`);
-      exitCode = 1;
-      return;
-    }
-
-    console.log('\n--- Admin Credential Rotation ---');
-    const newUsername = await askQuestion('Enter new admin username: ');
-    
-    // Note: Node's basic readline doesn't hide input natively without extra code,
-    // but the prompt specified to just use built-in readline keeping it minimal.
-    const newPassword = await askQuestion('Enter new admin password: ');
-
-    if (!newUsername || !newPassword) {
-      console.error('Error: Username and password cannot be empty.');
-      exitCode = 1;
-      return;
-    }
-
-    console.log('\nConnecting to database...');
-    await mongoose.connect(process.env.MONGODB_URI);
-    
-    console.log('Removing existing admin records...');
-    await Admin.deleteMany({});
-    
-    console.log('Hashing password and saving new admin...');
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(newPassword, salt);
-
-    await Admin.create({ 
-      username: newUsername.toLowerCase(), 
-      passwordHash 
+// Like ask(), but nothing typed is echoed
+const askHidden = (question) =>
+  new Promise((resolve) => {
+    const write = rl._writeToOutput;
+    rl._writeToOutput = (text) => {
+      if (text.includes(question)) write.call(rl, text);
+    };
+    rl.question(question, (answer) => {
+      rl._writeToOutput = write;
+      process.stdout.write('\n');
+      resolve(answer);
     });
+  });
 
-    console.log(`\nSUCCESS: Admin credentials updated successfully.`);
-    console.log('You can now log in with the new credentials.');
-    
-  } catch (error) {
-    console.error('\nError resetting admin:', error.message);
-    exitCode = 1;
-  } finally {
-    rl.close();
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-    process.exit(exitCode);
+const main = async () => {
+  if (!process.env.MONGODB_URI) {
+    throw new Error(`MONGODB_URI is not defined in ${path.join(__dirname, '..', '.env')}`);
   }
+
+  console.log('\n--- Restore super admin access ---');
+  const username = (await ask('Username: ')).trim().toLowerCase();
+  if (!username) throw new Error('A username is required.');
+  const password = await askHidden('New password (not shown): ');
+  const problem = passwordProblem(password, { username, staff: true });
+  if (problem) throw new Error(problem);
+  if ((await askHidden('Repeat it: ')) !== password) throw new Error("The passwords don't match.");
+
+  await mongoose.connect(process.env.MONGODB_URI);
+  const staff = await Admin.findOneAndUpdate(
+    { username },
+    {
+      $set: { role: 'super_admin', active: true, passwordHash: await hashPassword(password), mustChangePassword: false },
+      $unset: { tempPasswordExpiresAt: '' },
+      $setOnInsert: { username, name: 'Super admin', createdAt: new Date() },
+    },
+    { upsert: true, returnDocument: 'after' }
+  );
+  await Session.deleteMany({ accountType: 'staff', accountId: staff._id });
+  console.log(`\nDone: "${username}" is an active super admin with the new password. Its old sessions were ended.`);
 };
 
-resetAdmin();
+main()
+  .then(() => 0, (error) => {
+    console.error(`\nError: ${error.message}`);
+    return 1;
+  })
+  .then(async (exitCode) => {
+    rl.close();
+    if (mongoose.connection.readyState !== 0) await mongoose.connection.close();
+    process.exit(exitCode);
+  });

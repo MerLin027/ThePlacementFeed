@@ -31,8 +31,8 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
-  const admin = cookieOf(r, 'admin_token');
+  let r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
+  const admin = cookieOf(r, 'tpf_session');
   const instB = (await call('POST', '/api/admin/catalog/institutes', { cookie: admin, body: { name: `${TAG} Beta` } })).json.data;
 
   // Fixture: five students with known attributes
@@ -47,12 +47,12 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   const S = {};
   for (const [k, spec] of Object.entries(specs)) {
     const email = `${TAG}_${k}@example.com`;
-    const rr = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${k}`.toUpperCase(), password: 'origpass123' } });
-    const cookie = cookieOf(rr, 'student_token');
+    const rr = await call('POST', '/api/auth/signup', { body: { email, rollNumber: `${TAG}${k}`.toUpperCase(), password: 'origpass123' } });
+    const cookie = cookieOf(rr, 'tpf_session');
     const { institute, ...profile } = spec;
-    await call('PATCH', '/api/students/me', { cookie, body: profile });
+    await call('PATCH', '/api/student/profile', { cookie, body: profile });
     if (institute === 'test') await chooseInstitute(cookie);
-    if (institute === 'beta') await call('PUT', '/api/students/me/institute', { cookie, body: { instituteId: instB.id } });
+    if (institute === 'beta') await call('PUT', '/api/student/profile/institute', { cookie, body: { instituteId: instB.id } });
     S[k] = { cookie, id: (await Student.findOne({ email }).lean())._id.toString() };
   }
   await Student.updateOne({ _id: S.e.id }, { $set: { mustChangePassword: true } });
@@ -60,7 +60,7 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   // a, b and c (after picking an institute for the application) apply; statuses: a Offered, b Shortlisted
   await chooseInstitute(S.c.cookie);
   for (const k of ['a', 'b', 'c']) {
-    r = await call('POST', '/api/applications', { cookie: S[k].cookie, body: { driveId: drive._id, consentGiven: true } });
+    r = await call('POST', '/api/student/applications', { cookie: S[k].cookie, body: { driveId: drive._id, consentGiven: true } });
     ok(r.status === 201, `${k} applied`, JSON.stringify(r.json));
   }
   await Application.updateOne({ driveId: drive._id, studentId: S.a.id }, { $set: { status: 'Offered' } });
@@ -117,7 +117,7 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   ok(r.status === 400, 'repeated key -> 400');
 
   const applicants = async (qs) => {
-    const res = await call('GET', `/api/placements/${drive._id}/applicants?limit=100&${qs}`, { cookie: admin });
+    const res = await call('GET', `/api/admin/drives/${drive._id}/applicants?limit=100&${qs}`, { cookie: admin });
     return { status: res.status, names: (res.json.data || []).map((a) => a.snapshot.firstName), json: res.json };
   };
 
@@ -146,20 +146,20 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   x = await applicants('sort=status');
   ok(x.names.join() === 'Chirag,Bharat,Aditi', 'sort by pipeline order (Applied, Shortlisted, Offered)', x.names.join());
   x = await applicants('sort=status&limit=1&page=2');
-  r = await call('GET', `/api/placements/${drive._id}/applicants?sort=status&limit=1&page=2`, { cookie: admin });
+  r = await call('GET', `/api/admin/drives/${drive._id}/applicants?sort=status&limit=1&page=2`, { cookie: admin });
   ok(r.json.data.length === 1 && r.json.data[0].snapshot.firstName === 'Bharat' && r.json.pagination.total === 3, 'pipeline sort pages correctly');
   x = await applicants('sort=branch');
   ok(x.names[x.names.length - 1] === 'Bharat', 'sort by branch', x.names.join());
 
   console.log('# Applicants validation');
   for (const qs of ['status=Bogus', 'status=Applied,Bogus', 'appliedFrom=yesterday', 'appliedTo=2026-13-45', 'account=gone', 'gradYear=20x6', 'sort=random', `institute=${'x'.repeat(121)}`]) {
-    r = await call('GET', `/api/placements/${drive._id}/applicants?${qs}`, { cookie: admin });
+    r = await call('GET', `/api/admin/drives/${drive._id}/applicants?${qs}`, { cookie: admin });
     ok(r.status === 400, `applicants ${qs.slice(0, 40)} -> 400`);
   }
 
   console.log('# Export follows the filters');
   const exportRolls = async (qs) => {
-    const res = await fetch(`${API}/api/placements/${drive._id}/applicants/export?${qs}`, { headers: { Cookie: admin, Origin: ORIGIN } });
+    const res = await fetch(`${API}/api/admin/drives/${drive._id}/applicants/export?${qs}`, { headers: { Cookie: admin, Origin: ORIGIN } });
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(Buffer.from(await res.arrayBuffer()));
     const sheet = wb.getWorksheet('Applicants');
@@ -191,11 +191,11 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   x = await applicants('answers=all_questions');
   ok(x.names.join() === 'Aditi', 'applicants answers=all_questions', x.names.join());
   ok(x.json.drive.promptCount === 1, 'list reports the drive\'s question count');
-  r = await call('GET', `/api/placements/${drive._id}/applicants?answers=maybe`, { cookie: admin });
+  r = await call('GET', `/api/admin/drives/${drive._id}/applicants?answers=maybe`, { cookie: admin });
   ok(r.status === 400, 'bad answers -> 400');
-  r = await call('GET', `/api/placements/${drive._id}/applicants/insights`);
+  r = await call('GET', `/api/admin/drives/${drive._id}/applicants/insights`);
   ok(r.status === 401, 'drive insights without a session -> 401');
-  r = await call('GET', `/api/placements/${drive._id}/applicants/insights`, { cookie: admin });
+  r = await call('GET', `/api/admin/drives/${drive._id}/applicants/insights`, { cookie: admin });
   const di = r.json.data;
   const bucket = (label) => di.cgpa.find((b) => b.bucket === label)?.applicants;
   ok(r.status === 200 && di.cgpa.length === 9 && bucket('Below 6') === 0 && bucket('6.5–7') === 1 && bucket('7–7.5') === 1 && bucket('8.5–9') === 1, 'CGPA buckets (6.9, 7.4, 8.5)', JSON.stringify(di.cgpa));
@@ -206,7 +206,7 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
   r = await call('GET', '/api/admin/insights');
   ok(r.status === 401, 'insights without a session -> 401');
   r = await call('GET', '/api/admin/insights', { cookie: S.a.cookie });
-  ok(r.status === 401, 'insights with a student session -> 401');
+  ok(r.status === 403, 'insights with a student session -> 403');
   r = await call('GET', '/api/admin/insights?weeks=3', { cookie: admin });
   ok(r.status === 400, 'weeks below 4 -> 400');
   r = await call('GET', '/api/admin/insights', { cookie: admin });

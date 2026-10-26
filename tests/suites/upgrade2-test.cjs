@@ -21,7 +21,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
   ok(h('x-content-type-options') === 'nosniff', 'nosniff');
   ok(h('x-frame-options') === 'SAMEORIGIN', 'X-Frame-Options SAMEORIGIN', h('x-frame-options'));
   ok(!h('x-powered-by'), 'no X-Powered-By');
-  const pre = await fetch(API + '/api/placements', { headers: { Origin: APP } });
+  const pre = await fetch(API + '/api/drives', { headers: { Origin: APP } });
   ok(pre.headers.get('access-control-allow-origin') === APP && pre.headers.get('access-control-allow-credentials') === 'true', 'CORS still allows the client origin with credentials');
 
   console.log('# bcryptjs 3');
@@ -34,7 +34,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
   const known2a = '$2a$04$' + old2a.slice(7); // same salt+digest with $2a$ prefix: identical algorithm for ASCII input
   ok(await bcrypt.compare('college123', known2a), '$2a$ variant of the same hash verifies');
   ok(!(await bcrypt.compare('college124', known2a)), 'wrong password rejected');
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   ok(login.status === 200, 'admin login with hash created before the upgrade');
 
   console.log('# express-rate-limit 8');
@@ -45,11 +45,11 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
   const email = `rl${Date.now()}@example.com`;
   let last;
   for (let i = 0; i < 6; i++) {
-    last = await fetch(API + '/api/students/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, password: 'wrongpass1' }) });
+    last = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: email, password: 'wrongpass1' }) });
   }
   ok(last.status === 429, 'per-account login limiter still trips after 5 failures', String(last.status));
   ok(last.headers.get('ratelimit-limit') === '5' || /limit=5/.test(last.headers.get('ratelimit') || '') || last.headers.has('ratelimit-policy'), 'standard RateLimit headers present');
-  const other = await fetch(API + '/api/students/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email: 'x' + email, password: 'wrongpass1' }) });
+  const other = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'x' + email, password: 'wrongpass1' }) });
   ok(other.status !== 429, 'a different account from the same IP is not locked', String(other.status));
 
   console.log('# boot log');

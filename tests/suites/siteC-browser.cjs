@@ -31,7 +31,7 @@ const axeViolations = async (page) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
   const api = async (method, url, body, headers = H) => {
@@ -40,13 +40,13 @@ const axeViolations = async (page) => {
   };
   await api('PUT', '/api/admin/catalog/university', { name: `${TAG} University` });
   const instA = (await api('POST', '/api/admin/catalog/institutes', { name: `${TAG} Alpha Institute` })).json.data;
-  const drive = (await api('POST', '/api/placements', { company: `${TAG} Corp`, role: 'Analyst', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(5), driveDate: istDate(9) })).json.data;
+  const drive = (await api('POST', '/api/admin/drives', { company: `${TAG} Corp`, role: 'Analyst', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(5), driveDate: istDate(9) })).json.data;
 
   const email = `${TAG.toLowerCase()}_s@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
-  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
+  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
   const SH = { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie };
-  await api('PATCH', '/api/students/me', { firstName: 'Isha', lastName: 'Patel', branch: 'CE', cgpa: 8.4, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }, SH);
+  await api('PATCH', '/api/student/profile', { firstName: 'Isha', lastName: 'Patel', branch: 'CE', cgpa: 8.4, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }, SH);
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -79,7 +79,7 @@ const axeViolations = async (page) => {
   await page.reload();
   ok(await until(async () => (await page.locator('#instituteId').count()) === 0) && await hasText(page, `${TAG} Alpha Institute`), 'still locked after a reload');
   ok(!(await hasText(page, 'Still needed', 1500)), 'profile is complete now');
-  await api('POST', '/api/applications', { driveId: drive._id, consentGiven: true }, SH);
+  await api('POST', '/api/student/applications', { driveId: drive._id, consentGiven: true }, SH);
 
   console.log('# Admin: Settings page');
   await page.goto(APP + '/admin/login');

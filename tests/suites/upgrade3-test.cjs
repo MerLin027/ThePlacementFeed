@@ -31,76 +31,76 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
-  const drive = (await req('POST', '/api/placements', { cookie: admin, body: { company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(8), eligibility: { branches: ['CE'] }, tags: [] } })).json.data;
+  const drive = (await req('POST', '/api/admin/drives', { cookie: admin, body: { company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(8), eligibility: { branches: ['CE'] }, tags: [] } })).json.data;
   const email = `${TAG.toLowerCase()}@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
-  const student = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await req('PATCH', '/api/students/me', { cookie: student, body: { firstName: 'Up', lastName: 'Three', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' } });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
+  const student = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await req('PATCH', '/api/student/profile', { cookie: student, body: { firstName: 'Up', lastName: 'Three', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' } });
   await chooseInstitute(student);
-  const created = (await req('POST', '/api/applications', { cookie: student, body: { driveId: drive._id, consentGiven: true } })).json;
+  const created = (await req('POST', '/api/student/applications', { cookie: student, body: { driveId: drive._id, consentGiven: true } })).json;
   const appId = created?.data?._id || created?.data?.id;
   ok(Boolean(appId), 'setup: application created', JSON.stringify(created).slice(0, 150));
 
   console.log('# empty and odd bodies never cause a 500');
   const noBody = [
     ['POST', '/api/auth/login', null],
-    ['POST', '/api/students/auth/login', null],
-    ['POST', '/api/students/auth/signup', null],
-    ['PATCH', '/api/students/me', student],
-    ['POST', '/api/students/me/password', student],
-    ['POST', '/api/applications', student],
-    ['POST', '/api/placements', admin],
-    ['PUT', `/api/placements/${drive._id}`, admin],
-    ['PATCH', `/api/placements/${drive._id}/postpone`, admin],
-    ['PATCH', `/api/placements/${drive._id}/reset-status-automation`, admin],
-    ['PATCH', `/api/placements/${drive._id}/applicants/bulk-status`, admin],
-    ['POST', `/api/placements/${drive._id}/applicants/bulk-delete`, admin],
-    ['PATCH', `/api/placements/${drive._id}/applicants/${appId}`, admin],
+    ['POST', '/api/auth/login', null],
+    ['POST', '/api/auth/signup', null],
+    ['PATCH', '/api/student/profile', student],
+    ['POST', '/api/auth/password', student],
+    ['POST', '/api/student/applications', student],
+    ['POST', '/api/admin/drives', admin],
+    ['PUT', `/api/admin/drives/${drive._id}`, admin],
+    ['PATCH', `/api/admin/drives/${drive._id}/postpone`, admin],
+    ['PATCH', `/api/admin/drives/${drive._id}/status-automation`, admin],
+    ['PATCH', `/api/admin/drives/${drive._id}/applicants/bulk-status`, admin],
+    ['POST', `/api/admin/drives/${drive._id}/applicants/bulk-delete`, admin],
+    ['PATCH', `/api/admin/drives/${drive._id}/applicants/${appId}`, admin],
   ];
   for (const [m, u, c] of noBody) {
     const r = await req(m, u, { cookie: c || undefined });
     const label = u.replace(drive._id, ':id').replace(String(appId), ':appId');
     ok(r.status >= 200 && r.status < 500 && r.json && r.json.success !== undefined, `${m} ${label} with no body → ${r.status}`, r.text.slice(0, 120));
   }
-  const plain = await req('POST', '/api/placements', { cookie: admin, raw: 'company=x', type: 'text/plain' });
+  const plain = await req('POST', '/api/admin/drives', { cookie: admin, raw: 'company=x', type: 'text/plain' });
   ok(plain.status === 415 && plain.json?.code === 'UNSUPPORTED_MEDIA_TYPE', 'text/plain body → 415 (JSON only)', `${plain.status} ${plain.text.slice(0, 100)}`);
-  const formPost = await req('POST', '/api/placements', { cookie: admin, raw: 'company=x', type: 'application/x-www-form-urlencoded' });
+  const formPost = await req('POST', '/api/admin/drives', { cookie: admin, raw: 'company=x', type: 'application/x-www-form-urlencoded' });
   ok(formPost.status === 415, 'form-encoded body → 415 (no HTML form can post to the API)', `${formPost.status} ${formPost.text.slice(0, 100)}`);
-  const bad = await req('POST', '/api/placements', { cookie: admin, raw: '{"company": ' });
+  const bad = await req('POST', '/api/admin/drives', { cookie: admin, raw: '{"company": ' });
   ok(bad.status === 400 && !/\bat |node_modules/.test(bad.text), 'malformed JSON → 400, no stack', `${bad.status} ${bad.text.slice(0, 100)}`);
   ok(bad.json?.code === 'INVALID_JSON' && !/Unexpected|position/.test(bad.text), 'malformed JSON → no parser message echoed', bad.text.slice(0, 100));
   const unknown = await req('GET', '/api/nope-at-all');
   ok(unknown.status === 404 && unknown.json?.code === 'NOT_FOUND', 'unknown API route → JSON 404', unknown.text.slice(0, 80));
-  const repeated = await req('GET', '/api/placements?page=1&page=2');
+  const repeated = await req('GET', '/api/drives?page=1&page=2');
   ok(repeated.status === 400 && repeated.json?.code === 'INVALID_QUERY', 'repeated query key → 400', repeated.text.slice(0, 80));
 
   console.log('# NoSQL injection is still blocked');
   const a1 = await req('POST', '/api/auth/login', { body: { username: { $ne: null }, password: { $ne: null } } });
   ok(a1.status !== 200 && a1.status < 500, `admin login with operator objects → ${a1.status}`);
-  const a2 = await req('POST', '/api/students/auth/login', { body: { email: { $gt: '' }, password: 'x' } });
+  const a2 = await req('POST', '/api/auth/login', { body: { email: { $gt: '' }, password: 'x' } });
   ok(a2.status !== 200 && a2.status < 500, `student login with operator email → ${a2.status}`);
-  const allCount = (await req('GET', '/api/placements?limit=100')).json?.pagination?.total;
+  const allCount = (await req('GET', '/api/drives?limit=100')).json?.pagination?.total;
   for (const q of ['branch=CE&branch=IT', 'search=a&search=b', 'branch[$ne]=zzz','search[$regex]=.*', 'status[$ne]=Upcoming', 'ctcMin[$gt]=0', 'sort[$ne]=x']) {
-    const r = await req('GET', `/api/placements?${q}`);
+    const r = await req('GET', `/api/drives?${q}`);
     ok(r.status < 500, `GET placements ?${q} → ${r.status} (no 500)`, r.text.slice(0, 120));
   }
-  const ch = await req('GET', '/api/placements/changes?since[$gt]=');
+  const ch = await req('GET', '/api/drives/changes?since[$gt]=');
   ok(ch.status < 500, `GET changes ?since[$gt]= → ${ch.status} (no 500)`, ch.text.slice(0, 120));
-  for (const [u, c] of [['/api/placements?status[$ne]=x', null], ['/api/placements/changes?since[$gt]=', null], ['/api/admin/students?search[$ne]=x', admin], ['/api/applications/my?page[$gt]=0', student]]) {
+  for (const [u, c] of [['/api/drives?status[$ne]=x', null], ['/api/drives/changes?since[$gt]=', null], ['/api/admin/students?search[$ne]=x', admin], ['/api/student/applications?page[$gt]=0', student]]) {
     const r = await req('GET', u, { cookie: c || undefined });
     ok(r.status === 400 && r.json?.success === false, `bracketed query key rejected: ${u.split('?')[1]} → ${r.status}`, r.text.slice(0, 100));
   }
-  const ninj = await req('GET', '/api/placements?branch[$ne]=zzz&limit=100');
+  const ninj = await req('GET', '/api/drives?branch[$ne]=zzz&limit=100');
   ok(ninj.status !== 200 || ninj.json.pagination.total <= allCount, 'operator in query never widens results');
   const s1 = await req('GET', '/api/admin/students?search[$ne]=x', { cookie: admin });
   ok(s1.status < 500, `admin students ?search[$ne] → ${s1.status}`);
-  const s2 = await req('GET', `/api/placements/${drive._id}/applicants?status[$ne]=x`, { cookie: admin });
+  const s2 = await req('GET', `/api/admin/drives/${drive._id}/applicants?status[$ne]=x`, { cookie: admin });
   ok(s2.status < 500, `applicants ?status[$ne] → ${s2.status}`);
-  const p1 = await req('PATCH', '/api/students/me', { cookie: student, body: { branch: { $ne: 'x' } } });
+  const p1 = await req('PATCH', '/api/student/profile', { cookie: student, body: { branch: { $ne: 'x' } } });
   ok(p1.status === 400, `profile branch as operator object → ${p1.status}`);
-  const p2 = await req('PUT', `/api/placements/${drive._id}`, { cookie: admin, body: { company: { $gt: '' }, role: 'x' } });
+  const p2 = await req('PUT', `/api/admin/drives/${drive._id}`, { cookie: admin, body: { company: { $gt: '' }, role: 'x' } });
   ok(p2.status === 400, `placement company as operator object → ${p2.status}`);
   const stillThere = await Student.findOne({ email }).lean();
   ok(stillThere && stillThere.branch === 'CE', 'profile unchanged by injection attempts');
@@ -140,27 +140,27 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
   console.log('# validated query values are still numbers');
   const l1 = await req('GET', '/api/admin/students?page=1&limit=5', { cookie: admin });
   ok(l1.status === 200 && l1.json.pagination.page === 1 && l1.json.pagination.limit === 5, 'admin students pagination numeric', JSON.stringify(l1.json?.pagination));
-  const l2 = await req('GET', `/api/placements/${drive._id}/applicants?page=1&limit=5&cgpaMin=7`, { cookie: admin });
+  const l2 = await req('GET', `/api/admin/drives/${drive._id}/applicants?page=1&limit=5&cgpaMin=7`, { cookie: admin });
   ok(l2.status === 200 && l2.json.pagination.page === 1 && l2.json.pagination.limit === 5 && l2.json.data.length === 1, 'applicants pagination numeric and cgpaMin filter works', JSON.stringify(l2.json?.pagination));
-  const l3 = await req('GET', `/api/placements/${drive._id}/applicants?cgpaMin=9`, { cookie: admin });
+  const l3 = await req('GET', `/api/admin/drives/${drive._id}/applicants?cgpaMin=9`, { cookie: admin });
   ok(l3.status === 200 && l3.json.data.length === 0, 'cgpaMin=9 excludes the 8.0 applicant', JSON.stringify(l3.json).slice(0, 120));
-  const l4 = await req('GET', '/api/placements?status=Upcoming,Ongoing&sort=closing_soon&page=1&limit=5');
+  const l4 = await req('GET', '/api/drives?status=Upcoming,Ongoing&sort=closing_soon&page=1&limit=5');
   ok(l4.status === 200 && l4.json.data.length <= 5 && l4.json.data.every((d) => ['Upcoming', 'Ongoing'].includes(d.status)), 'multi-status + closing_soon + paging');
   const l5 = await req('GET', '/api/admin/students?page=0', { cookie: admin });
   ok(l5.status === 400, `invalid page still rejected → ${l5.status}`);
-  const l6 = await req('GET', '/api/applications/my?page=1&limit=2', { cookie: student });
+  const l6 = await req('GET', '/api/student/applications?page=1&limit=2', { cookie: student });
   ok(l6.status === 200, 'my applications paging');
 
   console.log('# routing and errors');
   const n1 = await req('GET', '/api/nope');
   ok(n1.status === 404, `unknown API route → ${n1.status}`);
-  const n2 = await req('GET', '/api/auth/check', { cookie: 'admin_token=garbage' });
-  ok(n2.status === 401 && n2.json?.success === false, 'admin check with a bad cookie → 401 JSON');
-  const n2b = await req('GET', '/api/auth/check');
+  const n2 = await req('GET', '/api/auth/session', { cookie: 'tpf_session=garbage' });
+  ok(n2.status === 200 && n2.json?.authenticated === false && n2.json?.expired === true, 'session probe with an unknown cookie → logged out, flagged expired');
+  const n2b = await req('GET', '/api/auth/session');
   ok(n2b.status === 200 && n2b.json?.authenticated === false, 'admin check without cookie → 200, logged out');
-  const n3 = await req('GET', '/api/placements/not-an-id');
+  const n3 = await req('GET', '/api/drives/not-an-id');
   ok(n3.status === 400 && n3.json?.success === false && !/stack|\bat /.test(n3.text), `bad id → ${n3.status} JSON, no stack`, n3.text.slice(0, 100));
-  const n4 = await req('GET', `/api/placements/${drive._id}`);
+  const n4 = await req('GET', `/api/drives/${drive._id}`);
   ok(n4.status === 200 && n4.json.data.company === `${TAG} Corp`, 'drive detail');
   const n5 = await req('GET', '/api/cron/trigger');
   ok([401, 503].includes(n5.status), `cron without secret → ${n5.status}`);

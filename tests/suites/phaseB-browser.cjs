@@ -22,12 +22,12 @@ const call = async (method, url, body) => {
   const res = await fetch(API + url, { method, headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: admin }, body: body ? JSON.stringify(body) : undefined });
   return res.json().catch(() => null);
 };
-const mkDrive = async (name, extra = {}) => (await call('POST', '/api/placements', { company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 5, deadline: istDate(4), driveDate: istDate(8), ...extra })).data;
+const mkDrive = async (name, extra = {}) => (await call('POST', '/api/admin/drives', { company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 5, deadline: istDate(4), driveDate: istDate(8), ...extra })).data;
 // Waiting on the poll itself instead of a fixed sleep: run `action` and wait for the request it
 // triggers (drive changes, and/or the student's application summary). The short pause after the
 // response is deliberate: it lets the toast render, and the "no toast" checks rely on it.
-const isChanges = (r) => r.url().includes('/api/placements/changes');
-const isSummary = (r) => r.url().includes('/api/applications/my/summary');
+const isChanges = (r) => r.url().includes('/api/drives/changes');
+const isSummary = (r) => r.url().includes('/api/student/applications/summary');
 const RENDER_MS = 300;
 const afterPoll = async (page, action, { changes = true, summary = false } = {}) => {
   const responses = [];
@@ -50,7 +50,7 @@ const bellItems = async (page) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   admin = login.headers.getSetCookie()[0].split(';')[0];
   await mkDrive('Existing');
 
@@ -88,18 +88,18 @@ const bellItems = async (page) => {
   ok(await page.getByRole('button', { name: /^Notifications/ }).getAttribute('aria-label') === 'Notifications', 'badge cleared after opening');
 
   console.log('# Status / postpone wording');
-  await call('PUT', `/api/placements/${d1._id}`, { company: d1.company, role: d1.role, type: d1.type, ctc: d1.ctc, deadline: istDate(-1), driveDate: istDate(8), status: 'auto' });
+  await call('PUT', `/api/admin/drives/${d1._id}`, { company: d1.company, role: d1.role, type: d1.type, ctc: d1.ctc, deadline: istDate(-1), driveDate: istDate(8), status: 'auto' });
   await poll(page);
   ok((await toastCount(page, `${TAG} Fresh is now Ongoing`)) === 1, 'status change says the new status');
-  await call('PATCH', `/api/placements/${d1._id}/postpone`, { isPostponed: true });
+  await call('PATCH', `/api/admin/drives/${d1._id}/postpone`, { isPostponed: true });
   await poll(page);
   ok((await toastCount(page, `${TAG} Fresh has been postponed`)) === 1, 'postponed wording');
   const warnIcon = await page.locator('[role=status]', { hasText: 'has been postponed' }).locator('xpath=..').locator('.material-symbols-outlined').first().innerText();
   ok(warnIcon === 'pause_circle', 'Material icon instead of emoji');
-  await call('PATCH', `/api/placements/${d1._id}/postpone`, { isPostponed: false });
+  await call('PATCH', `/api/admin/drives/${d1._id}/postpone`, { isPostponed: false });
   await poll(page);
   ok((await toastCount(page, `${TAG} Fresh is back on schedule`)) === 1, 'un-postponed wording');
-  await call('PATCH', `/api/placements/${d1._id}/reset-status-automation`, { statusManuallySet: false });
+  await call('PATCH', `/api/admin/drives/${d1._id}/status-automation`, { statusManuallySet: false });
   await poll(page);
   items = await bellItems(page);
   ok(!items.some((t) => /automation/i.test(t)), 'no admin-only "automation reset" noise');
@@ -159,11 +159,11 @@ const bellItems = async (page) => {
   console.log('# Student application status notifications');
   const inApp = await mkDrive('InApp', { applicationMode: 'in_app' });
   const email = `${TAG.toLowerCase()}_s@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
-  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Sen', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
+  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Sen', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
   await chooseInstitute(sCookie);
-  const ap = await (await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: inApp._id, consentGiven: true }) })).json();
+  const ap = await (await fetch(API + '/api/student/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: inApp._id, consentGiven: true }) })).json();
   const sctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const sp = await sctx.newPage();
   await sp.goto(APP + '/login');
@@ -173,10 +173,10 @@ const bellItems = async (page) => {
   await afterPoll(sp, () => sp.click('button[type=submit]'), { changes: false, summary: true });
   await sp.waitForURL(APP + '/');
   ok((await sp.locator('[role=status]').filter({ hasText: 'Your application' }).count()) === 0, 'no notification for existing statuses on first load');
-  await call('PATCH', `/api/placements/${inApp._id}/applicants/${ap.data.id}`, { adminNote: 'note only' });
+  await call('PATCH', `/api/admin/drives/${inApp._id}/applicants/${ap.data.id}`, { adminNote: 'note only' });
   await poll(sp, { changes: false, summary: true });
   ok((await sp.locator('[role=status]').filter({ hasText: 'Your application' }).count()) === 0, 'admin note change is not announced');
-  await call('PATCH', `/api/placements/${inApp._id}/applicants/${ap.data.id}`, { status: 'Shortlisted' });
+  await call('PATCH', `/api/admin/drives/${inApp._id}/applicants/${ap.data.id}`, { status: 'Shortlisted' });
   await poll(sp, { changes: false, summary: true });
   ok((await toastCount(sp, `Your application to ${TAG} InApp: Shortlisted`)) === 1, 'student told about Shortlisted');
   const sItems = await bellItems(sp);

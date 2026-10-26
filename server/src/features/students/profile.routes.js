@@ -3,12 +3,15 @@ const Student = require('../../models/Student');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
 const { fail, fieldError } = require('../../lib/http');
-const { requireStudent, requireStudentAllowPending } = require('../auth/guards');
 const catalog = require('../catalog/cache');
 const { profileRules, chooseInstituteRules } = require('./validators');
 const { toProfileDTO } = require('./dto');
 
-// The signed-in student's own profile
+/**
+ * The signed-in student's own profile, mounted at /api/student/profile (routes/student.js applies
+ * the session guard). readProfile is mounted separately, before the guard that blocks accounts with
+ * a pending password change, because the change-password page needs it.
+ */
 const router = express.Router();
 
 // Fields a student may edit. Identity and auth fields are never accepted from the body.
@@ -25,23 +28,26 @@ const EDITABLE_PROFILE_FIELDS = [
 
 const profileUpdate = limit('profileUpdate');
 
-const invalidSession = (res) => fail(res, 401, 'Invalid or expired session');
+const invalidSession = (res) => fail(res, 401, 'Invalid or expired session', { code: 'SESSION_EXPIRED' });
 
-// GET /me — allowed while a password change is pending
-router.get('/me', limit('profileRead'), requireStudentAllowPending, async (req, res, next) => {
-  try {
-    const student = await Student.findById(req.student.id);
-    if (!student) return invalidSession(res);
-    res.json({ success: true, data: toProfileDTO(student) });
-  } catch (error) {
-    next(error);
-  }
-});
+// GET /api/student/profile — allowed while a password change is pending
+const readProfile = [
+  limit('profileRead'),
+  async (req, res, next) => {
+    try {
+      const student = await Student.findById(req.account.id);
+      if (!student) return invalidSession(res);
+      res.json({ success: true, data: toProfileDTO(student) });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
 
-// PATCH /me
-router.patch('/me', requireStudent, profileUpdate, profileRules, validate, async (req, res, next) => {
+// PATCH /
+router.patch('/', profileUpdate, profileRules, validate, async (req, res, next) => {
   try {
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.account.id);
     if (!student) return invalidSession(res);
 
     // An archived branch can be kept, but not newly chosen
@@ -64,9 +70,9 @@ router.patch('/me', requireStudent, profileUpdate, profileRules, validate, async
   }
 });
 
-// PUT /me/institute — a one-time choice. The update only matches while no institute is set, so a
+// PUT /institute — a one-time choice. The update only matches while no institute is set, so a
 // second (or concurrent) request can't change it; only the admin can clear it.
-router.put('/me/institute', requireStudent, profileUpdate, chooseInstituteRules, validate, async (req, res, next) => {
+router.put('/institute', profileUpdate, chooseInstituteRules, validate, async (req, res, next) => {
   try {
     const institute = catalog.getInstitute(req.body.instituteId);
     if (!institute || !institute.active) {
@@ -74,13 +80,13 @@ router.put('/me/institute', requireStudent, profileUpdate, chooseInstituteRules,
     }
 
     const student = await Student.findOneAndUpdate(
-      { _id: req.student.id, instituteId: null },
+      { _id: req.account.id, instituteId: null },
       { $set: { instituteId: institute.id, instituteSetAt: new Date() } },
       { returnDocument: 'after' }
     );
 
     if (!student) {
-      if (!(await Student.exists({ _id: req.student.id }))) return invalidSession(res);
+      if (!(await Student.exists({ _id: req.account.id }))) return invalidSession(res);
       return fail(res, 409, 'Your institute is already set. Ask the CDPC admin if it needs to change.', { code: 'INSTITUTE_LOCKED' });
     }
     res.json({ success: true, data: toProfileDTO(student) });
@@ -89,4 +95,4 @@ router.put('/me/institute', requireStudent, profileUpdate, chooseInstituteRules,
   }
 });
 
-module.exports = router;
+module.exports = { readProfile, router };

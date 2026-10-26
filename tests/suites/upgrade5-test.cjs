@@ -46,10 +46,10 @@ const HOSTILE = [
 ].join('\n');
 
 (async () => {
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
-  const created = await (await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 5, applicationMode: 'external', formUrl: 'https://forms.gle/x', deadline: istDate(2), driveDate: istDate(5), eligibility: { branches: ['CE'] }, jdDescription: HOSTILE }) })).json();
+  const created = await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 5, applicationMode: 'external', formUrl: 'https://forms.gle/x', deadline: istDate(2), driveDate: istDate(5), eligibility: { branches: ['CE'] }, jdDescription: HOSTILE }) })).json();
   ok(created.success, 'setup: drive with hostile description created', JSON.stringify(created).slice(0, 200));
   const id = created.data._id;
 
@@ -112,7 +112,7 @@ const HOSTILE = [
   ok(consoleErrors.filter((e) => !/40[0-9]|ERR_ABORTED/.test(e)).length === 0, 'no console errors', consoleErrors.join(' | '));
 
   await browser.close();
-  await fetch(API + `/api/placements/${id}`, { method: 'DELETE', headers: H });
+  await fetch(API + `/api/admin/drives/${id}`, { method: 'DELETE', headers: H });
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('CRASH', e); process.exit(2); });

@@ -1,12 +1,9 @@
 // Phase 1 verification — runs against a local throwaway server/DB only.
 import { createRequire } from 'node:module';
 const TEST = createRequire(import.meta.url)('../lib/env.cjs');
-const require = createRequire(`${TEST.SERVER}/index.js`);
-const jwt = require('jsonwebtoken');
 
 const BASE = TEST.API.replace('localhost', '127.0.0.1');
 const ORIGIN = TEST.APP;
-const SECRET = 'test-secret-0123456789abcdef0123456789';
 let pass = 0, fail = 0;
 const ok = (cond, label, extra = '') => {
   if (cond) { pass++; console.log('  PASS', label); }
@@ -28,28 +25,38 @@ const cookieFrom = (r, name) => {
   return c ? c.split(';')[0] : null;
 };
 
-console.log('# Admin auth');
-let r = await req('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
-const adminCookie = cookieFrom(r, 'admin_token');
-ok(r.status === 200 && adminCookie, 'admin login sets admin_token');
-ok(!r.setCookie.some((s) => s.startsWith('token=')), 'no legacy token cookie set');
-ok(r.setCookie[0]?.includes('HttpOnly'), 'admin cookie HttpOnly');
-r = await req('GET', '/api/auth/check', { cookie: adminCookie });
-ok(r.status === 200 && r.json.authenticated, 'admin check with admin_token');
+console.log('# Staff sign-in and server-side sessions');
+let r = await req('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
+const adminCookie = cookieFrom(r, 'tpf_session');
+ok(r.status === 200 && adminCookie && r.json.account.type === 'staff', 'staff login sets the session cookie');
+ok(r.setCookie.length === 1, 'exactly one cookie set', r.setCookie.join(' | '));
+ok(/HttpOnly/i.test(r.setCookie[0]) && /SameSite=Lax/i.test(r.setCookie[0]) && /Path=\//.test(r.setCookie[0]), 'cookie HttpOnly, SameSite=Lax, Path=/');
+ok(/^tpf_session=[A-Za-z0-9_-]{43};/.test(r.setCookie[0]), 'the cookie is an opaque 256-bit token (no readable claims)', r.setCookie[0].slice(0, 30));
+r = await req('GET', '/api/auth/session', { cookie: adminCookie });
+ok(r.status === 200 && r.json.authenticated && r.json.account.role === 'super_admin', 'session probe names the account and role');
 
-const legacy = jwt.sign({ id: 'x', username: 'testadmin' }, SECRET, { expiresIn: '1h' });
-// No admin_token at all (a legacy 'token' cookie is just an unknown cookie): logged out, not an error
-r = await req('GET', '/api/auth/check', { cookie: `token=${legacy}` });
-ok(r.status === 200 && r.json.authenticated === false, 'legacy token cookie not accepted (logged out)');
-r = await req('GET', '/api/auth/check');
-ok(r.status === 200 && r.json.success === true && r.json.authenticated === false, 'admin check without cookie: 200, logged out');
-r = await req('GET', '/api/auth/check', { cookie: 'admin_token=garbage' });
-ok(r.status === 401 && r.json.success === false, 'garbage admin_token still 401');
-r = await req('GET', '/api/auth/check', { cookie: `admin_token=${legacy}` });
-ok(r.status === 401, 'role-less token in admin_token rejected');
-const noneAlg = jwt.sign({ sub: 'x', role: 'admin' }, '', { algorithm: 'none' });
-r = await req('GET', '/api/auth/check', { cookie: `admin_token=${noneAlg}` });
-ok(r.status === 401, 'alg=none token rejected');
+r = await req('GET', '/api/auth/session');
+ok(r.status === 200 && r.json.success === true && r.json.authenticated === false && !r.json.expired, 'no cookie: 200, logged out');
+r = await req('GET', '/api/auth/session', { cookie: 'tpf_session=garbage' });
+ok(r.status === 200 && r.json.authenticated === false && r.json.expired === true, 'unknown token: logged out, flagged expired');
+ok(r.setCookie.some((s) => s.startsWith('tpf_session=;')), 'unknown token: cookie cleared');
+r = await req('GET', '/api/auth/session', { cookie: `tpf_session=${'A'.repeat(43)}` });
+ok(r.status === 200 && r.json.authenticated === false, 'well-formed but made-up token rejected');
+r = await req('GET', '/api/admin/students', { cookie: 'tpf_session=garbage' });
+ok(r.status === 401 && r.json.code === 'SESSION_EXPIRED', 'admin route with an unknown token -> 401 SESSION_EXPIRED');
+r = await req('GET', '/api/auth/session', { cookie: 'admin_token=eyJhbGciOiJIUzI1NiJ9.e30.x' });
+ok(r.status === 200 && r.json.authenticated === false, 'an old JWT cookie is not a session');
+
+console.log('# Logout ends the session on the server');
+r = await req('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
+const throwaway = cookieFrom(r, 'tpf_session');
+ok(throwaway && throwaway !== adminCookie, 'each login gets a new session');
+r = await req('POST', '/api/auth/logout', { cookie: throwaway });
+ok(r.status === 200, 'logout 200');
+r = await req('GET', '/api/auth/session', { cookie: throwaway });
+ok(r.json.authenticated === false, 'the logged-out cookie no longer works (even if copied)');
+r = await req('GET', '/api/auth/session', { cookie: adminCookie });
+ok(r.json.authenticated === true, 'another session of the same account is unaffected');
 
 console.log('# CSRF');
 r = await req('POST', '/api/auth/logout', { origin: `${TEST.APP}.evil.com` });
@@ -61,66 +68,60 @@ ok(r.status === 403, 'missing origin rejected');
 r = await req('POST', '/api/auth/logout', { origin: null, headers: { Referer: `${TEST.APP}/admin/dashboard` } });
 ok(r.status === 200, 'valid referer accepted');
 r = await req('POST', '/api/auth/logout');
-ok(r.status === 200 && r.setCookie.some((s) => s.startsWith('admin_token=;')), 'admin logout clears admin_token');
+ok(r.status === 200 && r.setCookie.some((s) => s.startsWith('tpf_session=;')), 'admin logout clears admin_token');
 
 console.log('# Student signup');
 const email = `Stu${Date.now()}@Example.com`;
-r = await req('POST', '/api/students/auth/signup', { body: { email, rollNumber: '21ce001', password: 'goodpass123' } });
-const stuCookie = cookieFrom(r, 'student_token');
+r = await req('POST', '/api/auth/signup', { body: { email, rollNumber: '21ce001', password: 'goodpass123' } });
+const stuCookie = cookieFrom(r, 'tpf_session');
 ok(r.status === 201 && stuCookie, 'signup 201 + student_token', JSON.stringify(r.json));
 ok(!r.text.includes('passwordHash') && !r.text.includes('$2'), 'signup response has no hash');
-r = await req('POST', '/api/students/auth/signup', { body: { email, rollNumber: '21CE999', password: 'goodpass123' } });
+r = await req('POST', '/api/auth/signup', { body: { email, rollNumber: '21CE999', password: 'goodpass123' } });
 ok(r.status === 409, 'duplicate email 409');
 const dupEmailMsg = r.json.message;
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'other' + email, rollNumber: '21CE001', password: 'goodpass123' } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'other' + email, rollNumber: '21CE001', password: 'goodpass123' } });
 ok(r.status === 409 && r.json.message === dupEmailMsg, 'duplicate roll number 409 (case-insensitive) same message');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'college123' } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'college123' } });
 ok(r.status === 400, 'default password rejected at signup');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'short' } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'short' } });
 ok(r.status === 400, 'short password rejected');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'a'.repeat(73) } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE002', password: 'a'.repeat(73) } });
 ok(r.status === 400, '73-char password rejected');
-r = await req('POST', '/api/students/auth/signup', { body: { email: { $gt: '' }, rollNumber: '21CE002', password: 'goodpass123' } });
+r = await req('POST', '/api/auth/signup', { body: { email: { $gt: '' }, rollNumber: '21CE002', password: 'goodpass123' } });
 ok(r.status === 400, 'operator object as email rejected');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'x@y.com', rollNumber: '../$x', password: 'goodpass123' } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'x@y.com', rollNumber: '../$x', password: 'goodpass123' } });
 ok(r.status === 400, 'bad roll number rejected');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE003', institute: 'MIT', password: 'goodpass123' } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'x@y.com', rollNumber: '21CE003', institute: 'MIT', password: 'goodpass123' } });
 ok(r.status === 400, 'unknown institute rejected');
-r = await req('POST', '/api/students/auth/signup', { body: { email: 'mass@y.com', rollNumber: '21CE004', password: 'goodpass123', tokenVersion: 99, mustChangePassword: true, cgpa: 10 } });
+r = await req('POST', '/api/auth/signup', { body: { email: 'mass@y.com', rollNumber: '21CE004', password: 'goodpass123', tokenVersion: 99, mustChangePassword: true, cgpa: 10 } });
 ok(r.status === 201, 'signup ignores extra fields (status)');
-const massCookie = cookieFrom(r, 'student_token');
-r = await req('GET', '/api/students/auth/check', { cookie: massCookie });
-ok(r.status === 200 && r.json.student.mustChangePassword === false, 'mass-assigned mustChangePassword ignored');
+const massCookie = cookieFrom(r, 'tpf_session');
+r = await req('GET', '/api/auth/session', { cookie: massCookie });
+ok(r.status === 200 && r.json.account.mustChangePassword === false, 'mass-assigned mustChangePassword ignored');
 
 console.log('# Student login');
-r = await req('POST', '/api/students/auth/login', { body: { email: email.toUpperCase(), password: 'goodpass123' } });
-ok(r.status === 200 && cookieFrom(r, 'student_token') && r.json.mustChangePassword === false, 'login 200 (email case-insensitive)');
+r = await req('POST', '/api/auth/login', { body: { identifier: email.toUpperCase(), password: 'goodpass123' } });
+ok(r.status === 200 && cookieFrom(r, 'tpf_session') && r.json.account.type === 'student' && r.json.account.mustChangePassword === false, 'login 200 (email case-insensitive)');
 let t0 = Date.now();
-r = await req('POST', '/api/students/auth/login', { body: { email, password: 'wrongpass1' } });
+r = await req('POST', '/api/auth/login', { body: { identifier: email, password: 'wrongpass1' } });
 const tWrong = Date.now() - t0;
 const wrongBody = r.text;
 ok(r.status === 401, 'wrong password 401');
 t0 = Date.now();
-r = await req('POST', '/api/students/auth/login', { body: { email: 'nobody@nowhere.com', password: 'wrongpass1' } });
+r = await req('POST', '/api/auth/login', { body: { identifier: 'nobody@nowhere.com', password: 'wrongpass1' } });
 const tUnknown = Date.now() - t0;
 ok(r.status === 401 && r.text === wrongBody, 'unknown email 401 identical body');
 console.log(`    timing wrong=${tWrong}ms unknown=${tUnknown}ms`);
 ok(Math.abs(tWrong - tUnknown) < Math.max(tWrong, tUnknown) * 0.5, 'timings comparable');
 
-console.log('# Student check / cross-role');
-r = await req('GET', '/api/students/auth/check', { cookie: stuCookie });
-ok(r.status === 200 && r.json.student.missingFields.length === 8 && r.json.student.missingFields.includes('instituteId'), 'student check 200 with missingFields (incl. institute)');
-ok(!r.text.includes('tokenVersion') && !r.text.includes('passwordHash'), 'check has no internals');
-r = await req('GET', '/api/auth/check', { cookie: stuCookie.replace('student_token', 'admin_token') });
-ok(r.status === 401, 'student JWT in admin_token rejected');
-r = await req('POST', '/api/placements', { cookie: stuCookie.replace('student_token', 'admin_token'), body: { company: 'x' } });
-ok(r.status === 401, 'student JWT cannot create placement');
-r = await req('GET', '/api/students/auth/check', { cookie: adminCookie.replace('admin_token', 'student_token') });
-ok(r.status === 401, 'admin JWT in student_token rejected');
-r = await req('GET', '/api/students/auth/check');
-ok(r.status === 200 && r.json.success === true && r.json.authenticated === false && !('student' in r.json), 'student check without cookie: 200, logged out');
-r = await req('GET', '/api/students/auth/check', { cookie: 'student_token=garbage' });
-ok(r.status === 401 && r.json.success === false, 'garbage student_token still 401');
+console.log('# Student session / cross-role');
+r = await req('GET', '/api/auth/session', { cookie: stuCookie });
+ok(r.status === 200 && r.json.account.type === 'student' && r.json.account.missingFields.length === 8 && r.json.account.missingFields.includes('instituteId'), 'student session with missingFields (incl. institute)');
+ok(!r.text.includes('passwordHash') && !r.text.includes('tokenHash') && !('permissions' in r.json.account), 'session has no internals and no staff fields');
+r = await req('POST', '/api/admin/drives', { cookie: stuCookie, body: { company: 'x' } });
+ok(r.status === 403 && r.json.code === 'FORBIDDEN', 'a student session cannot create a drive (403)');
+r = await req('GET', '/api/student/profile', { cookie: adminCookie });
+ok(r.status === 403 && r.json.code === 'FORBIDDEN', 'a staff session cannot use student routes (403)');
 
 console.log('# Revocation & restricted session (DB flips via mongosh helper)');
 // export state for the DB step
@@ -129,9 +130,9 @@ console.log('STATE', JSON.stringify({ email, stuCookie }));
 console.log('# Rate limit (per IP+email)');
 const victim = 'ratelimit@example.com';
 let last;
-for (let i = 0; i < 6; i++) last = await req('POST', '/api/students/auth/login', { body: { email: victim, password: 'wrongpass1' } });
+for (let i = 0; i < 6; i++) last = await req('POST', '/api/auth/login', { body: { identifier: victim, password: 'wrongpass1' } });
 ok(last.status === 429, '6th failed login for same email -> 429');
-r = await req('POST', '/api/students/auth/login', { body: { email, password: 'goodpass123' } });
+r = await req('POST', '/api/auth/login', { body: { identifier: email, password: 'goodpass123' } });
 ok(r.status === 200, 'other account from same IP still allowed');
 
 console.log(`\n${pass} passed, ${fail} failed`);

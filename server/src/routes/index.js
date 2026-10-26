@@ -1,35 +1,27 @@
 const express = require('express');
-const adminAuth = require('../features/auth/admin.routes');
-const studentAuth = require('../features/auth/student.routes');
-const publicDrives = require('../features/drives/public.routes');
-const adminDrives = require('../features/drives/admin.routes');
-const studentProfile = require('../features/students/profile.routes');
-const adminStudents = require('../features/students/admin.routes');
-const studentApplications = require('../features/applications/routes');
-const publicCatalog = require('../features/catalog/public.routes');
-const adminCatalog = require('../features/catalog/admin.routes');
-const adminInsights = require('../features/insights/routes');
-const cron = require('../features/cron/routes');
+const legacy = require('./legacy');
+const publicRoutes = require('./public');
+const studentRoutes = require('./student');
+const adminRoutes = require('./admin');
+const auth = require('../features/auth/routes');
 
-// Every API route, by URL
+/**
+ * The API by audience. Access control lives in the namespace files, applied once at the top, so a
+ * route added later is covered automatically:
+ *   /api/health, /drives, /catalog, /cron  public (routes/public.js)
+ *   /api/auth                              signing in, out and up; one's own password
+ *   /api/student/*                         a signed-in student (routes/student.js)
+ *   /api/admin/*                           a signed-in staff account, plus a permission per area
+ *                                          (routes/admin.js)
+ */
 const api = express.Router();
 
-api.get('/health', (req, res) => {
-  res.json({ success: true, message: 'Server is running' });
-});
+// TEMPORARY: old addresses for the website version that is being replaced (see legacy.js)
+api.use(legacy);
 
-api.use('/auth', adminAuth.authRouter, adminAuth.passwordRouter);
-// Public reads first; anything they don't match (writes, admin reads) falls through to the admin
-// router, whose routes each require an admin session
-api.use('/placements', publicDrives, adminDrives);
-api.use('/students/auth', studentAuth.authRouter);
-api.use('/students/me', studentAuth.passwordRouter);
-api.use('/students', studentProfile);
-api.use('/applications', studentApplications);
-api.use('/admin/students', adminStudents);
-api.use('/catalog', publicCatalog);
-api.use('/admin/catalog', adminCatalog);
-api.use('/admin/insights', adminInsights);
-api.use('/cron', cron);
+api.use(publicRoutes);
+api.use('/auth', auth);
+api.use('/student', studentRoutes);
+api.use('/admin', adminRoutes);
 
 module.exports = api;

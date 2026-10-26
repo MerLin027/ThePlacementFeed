@@ -40,10 +40,10 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
-  const pinned = (await (await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Pinned`, role: 'Analyst', type: 'Full-Time', ctc: 5, deadline: istDate(3), driveDate: istDate(6), status: 'Ongoing', applicationMode: 'in_app' }) })).json()).data;
+  const pinned = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Pinned`, role: 'Analyst', type: 'Full-Time', ctc: 5, deadline: istDate(3), driveDate: istDate(6), status: 'Ongoing', applicationMode: 'in_app' }) })).json()).data;
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -116,7 +116,7 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await dialog.locator('input[name=applicationMode][value=in_app]').check();
   await dialog.getByRole('button', { name: 'Add question' }).click();
   await dialog.getByLabel('Question 1', { exact: true }).fill('Fine with Pune?');
-  await page.route('**/api/placements', async (route) => {
+  await page.route('**/api/drives', async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
     await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ success: false, message: 'Validation failed', errors: [{ field: 'customPrompts[0].question', message: 'Questions cannot exceed 500 characters' }] }) });
   });
@@ -149,13 +149,13 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
 
   console.log('# Applicants and students pages');
   const email = `${TAG.toLowerCase()}@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
-  const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Das', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
+  const sc = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ira', lastName: 'Das', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/i.pdf' }) });
   await chooseInstitute(sc);
-  await fetch(`${API}/api/placements/${pinned._id}/postpone`, { method: 'PATCH', headers: H, body: JSON.stringify({ isPostponed: false }) });
+  await fetch(`${API}/api/admin/drives/${pinned._id}/postpone`, { method: 'PATCH', headers: H, body: JSON.stringify({ isPostponed: false }) });
   await Placement.updateOne({ _id: pinned._id }, { status: 'Upcoming', statusManuallySet: false });
-  const ap = await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: pinned._id, consentGiven: true }) });
+  const ap = await fetch(API + '/api/student/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: pinned._id, consentGiven: true }) });
   ok(ap.status === 201, 'seeded an application');
   await page.goto(`${APP}/admin/drives/${pinned._id}/applicants`);
   await page.getByLabel('Select Ira Das').waitFor();

@@ -27,9 +27,9 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
 (async () => {
   console.log(`# node ${process.version}`);
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
-  const drive = (await (await fetch(API + '/api/placements', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(7), eligibility: { branches: ['CE', 'IT'] }, customPrompts: [{ question: 'Relocate?', required: true }] }) })).json()).data;
+  const drive = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(7), eligibility: { branches: ['CE', 'IT'] }, customPrompts: [{ question: 'Relocate?', required: true }] }) })).json()).data;
   const promptId = drive.customPrompts[0]._id;
 
   const students = [
@@ -38,19 +38,19 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ];
   const appIds = [];
   for (const s of students) {
-    const r = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email: s.email, rollNumber: s.roll, password: 'goodpass123' }) });
-    const c = r.headers.getSetCookie().find((x) => x.startsWith('student_token=')).split(';')[0];
-    await fetch(API + '/api/students/me', { method: 'PATCH', headers: J(c), body: JSON.stringify({ firstName: s.first, lastName: 'Test', branch: s.branch, cgpa: s.cgpa, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' }) });
+    const r = await fetch(API + '/api/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email: s.email, rollNumber: s.roll, password: 'goodpass123' }) });
+    const c = r.headers.getSetCookie().find((x) => x.startsWith('tpf_session=')).split(';')[0];
+    await fetch(API + '/api/student/profile', { method: 'PATCH', headers: J(c), body: JSON.stringify({ firstName: s.first, lastName: 'Test', branch: s.branch, cgpa: s.cgpa, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/r.pdf' }) });
     await chooseInstitute(c);
-    const a = await (await fetch(API + '/api/applications', { method: 'POST', headers: J(c), body: JSON.stringify({ driveId: drive._id, consentGiven: true, coverNote: s.note, customAnswers: [{ promptId, answer: s.answer }] }) })).json();
+    const a = await (await fetch(API + '/api/student/applications', { method: 'POST', headers: J(c), body: JSON.stringify({ driveId: drive._id, consentGiven: true, coverNote: s.note, customAnswers: [{ promptId, answer: s.answer }] }) })).json();
     appIds.push(a.data?._id || a.data?.id);
   }
   ok(appIds.every(Boolean), 'setup: two applications created');
-  const note = await fetch(API + `/api/placements/${drive._id}/applicants/${appIds[0]}`, { method: 'PATCH', headers: J(admin), body: JSON.stringify({ status: 'Shortlisted', adminNote: '+1 strong' }) });
+  const note = await fetch(API + `/api/admin/drives/${drive._id}/applicants/${appIds[0]}`, { method: 'PATCH', headers: J(admin), body: JSON.stringify({ status: 'Shortlisted', adminNote: '+1 strong' }) });
   ok(note.status === 200, `admin note + status update → ${note.status}`);
 
   console.log('# Excel export round-trip (write-excel-file → exceljs reader)');
-  const ex = await fetch(API + `/api/placements/${drive._id}/applicants/export`, { headers: { Origin: APP, Cookie: admin } });
+  const ex = await fetch(API + `/api/admin/drives/${drive._id}/applicants/export`, { headers: { Origin: APP, Cookie: admin } });
   const buf = Buffer.from(await ex.arrayBuffer());
   ok(ex.status === 200 && /spreadsheetml/.test(ex.headers.get('content-type')), `export → ${ex.status} ${ex.headers.get('content-type')}`);
   ok(/attachment; filename="applicants-UP9\d+-Corp-\d{4}-\d{2}-\d{2}\.xlsx"/.test(ex.headers.get('content-disposition') || ''), 'safe attachment filename', ex.headers.get('content-disposition'));
@@ -74,7 +74,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ok(asha.CGPA.value === 8.4 && typeof bina.CGPA.value === 'number', 'CGPA exported as a number');
   ok(asha['Applied At'].value instanceof Date && asha['Applied At'].numFmt === 'dd mmm yyyy hh:mm', 'Applied At is a date with the dd mmm yyyy format', String(asha['Applied At'].numFmt));
   ok(asha.Status.value === 'Shortlisted' && bina['Note from Student'].value === 'Plain note', 'status and plain text unchanged');
-  const fx = await fetch(API + `/api/placements/${drive._id}/applicants/export?status=Shortlisted`, { headers: { Origin: APP, Cookie: admin } });
+  const fx = await fetch(API + `/api/admin/drives/${drive._id}/applicants/export?status=Shortlisted`, { headers: { Origin: APP, Cookie: admin } });
   const fwb = new ExcelJS.Workbook();
   await fwb.xlsx.load(Buffer.from(await fx.arrayBuffer()));
   ok(fwb.getWorksheet('Applicants').actualRowCount === 2, 'filtered export (status=Shortlisted) has 1 row');
@@ -87,10 +87,11 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   srv.stderr.on('data', (d) => { log += d; });
   const up = await until(async () => (await fetch('http://localhost:5098/api/health')).status === 200, { every: 250 });
   ok(up, 'production server answers /api/health', log.slice(-300));
-  const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
-  const ck = pl.headers.getSetCookie().find((c) => c.startsWith('admin_token=')) || '';
-  ok(pl.status === 200 && /HttpOnly/i.test(ck) && /Secure/i.test(ck) && /SameSite=Lax/i.test(ck), 'prod cookie is HttpOnly; Secure; SameSite=Lax', ck.replace(/=[^;]+/, '=…'));
-  const bad = await fetch('http://localhost:5098/api/placements/not-an-id');
+  const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
+  const ck = pl.headers.getSetCookie().find((c) => c.startsWith('__Host-tpf_session=')) || '';
+  ok(pl.status === 200 && /HttpOnly/i.test(ck) && /Secure/i.test(ck) && /SameSite=Lax/i.test(ck) && /Path=\//.test(ck) && !/Domain=/i.test(ck),
+    'prod cookie is __Host- prefixed; HttpOnly; Secure; SameSite=Lax; Path=/; no Domain', ck.replace(/=[^;]+/, '=…'));
+  const bad = await fetch('http://localhost:5098/api/drives/not-an-id');
   const badText = await bad.text();
   ok(bad.status === 400 && !/stack|\bat /.test(badText), 'prod error response has no stack trace');
   const csrf = await fetch('http://localhost:5098/api/auth/logout', { method: 'POST', headers: { Origin: 'https://evil.example.test' } });
@@ -106,7 +107,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ra.stdout.on('data', (d) => { raOut += d; });
   ra.stderr.on('data', (d) => { raOut += d; });
   const raCode = await new Promise((r) => ra.on('close', r));
-  ok(/Enter new admin username/.test(raOut) && !/FATAL/.test(raOut), 'resetAdmin finds server/.env from the project root and prompts', raOut.trim());
+  ok(/Restore super admin access/.test(raOut) && /Username:/.test(raOut) && !/Error/.test(raOut), 'resetAdmin finds server/.env from the project root and prompts', raOut.trim());
   ok(raCode === 0, `resetAdmin exits cleanly (${raCode})`);
 
   await Application.deleteMany({ driveId: drive._id });

@@ -19,7 +19,7 @@ const call = async (method, url, body, headers = {}) => {
   const res = await fetch(API + url, { method, headers: { 'Content-Type': 'application/json', Origin: ORIGIN, Cookie: admin, ...headers }, body: body ? JSON.stringify(body) : undefined });
   return { status: res.status, json: await res.json().catch(() => null) };
 };
-const create = (name, extra) => call('POST', '/api/placements', { company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 5, ...extra });
+const create = (name, extra) => call('POST', '/api/admin/drives', { company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 5, ...extra });
 const formPayload = (doc, extra) => ({
   company: doc.company, role: doc.role, type: doc.type, ctc: doc.ctc,
   driveDate: doc.driveDate ? doc.driveDate.slice(0, 10) : null,
@@ -29,8 +29,10 @@ const formPayload = (doc, extra) => ({
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: ORIGIN }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: ORIGIN }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   admin = login.headers.getSetCookie()[0].split(';')[0];
+  // The drive's change log (staff responses don't include it; it feeds student notifications)
+  const changesOf = async (id) => (await Placement.findById(id).lean()).recentChanges;
 
   console.log('# Status computed on create');
   let r = await create('Open', { deadline: istDate(3), driveDate: istDate(6) });
@@ -41,62 +43,62 @@ const formPayload = (doc, extra) => ({
   ok(r.json.data.status === 'Upcoming', 'deadline today -> still Upcoming');
   r = await create('Past', { deadline: istDate(-9), driveDate: istDate(-2) });
   ok(r.json.data.status === 'Completed', 'drive date passed -> Completed');
-  ok(r.json.data.recentChanges.length === 1 && r.json.data.recentChanges[0].type === 'new', 'one "new" log entry');
+  ok((await changesOf(r.json.data._id)).length === 1 && (await changesOf(r.json.data._id))[0].type === 'new', 'one "new" log entry');
   r = await create('NoDates', {});
   ok(r.json.data.status === 'Upcoming' && !r.json.data.statusManuallySet, 'no dates -> Upcoming, automatic');
   r = await create('Pinned', { deadline: istDate(3), driveDate: istDate(6), status: 'Completed' });
   ok(r.json.data.status === 'Completed' && r.json.data.statusManuallySet === true, 'explicit status -> pinned');
   r = await create('Sneaky', { deadline: istDate(3), driveDate: istDate(6), statusManuallySet: true, recentChanges: [{ type: 'edit' }], status: 'auto' });
-  ok(r.json.data.statusManuallySet === false && r.json.data.recentChanges.length === 1, 'statusManuallySet/recentChanges in body ignored');
+  ok(r.json.data.statusManuallySet === false && (await changesOf(r.json.data._id)).length === 1, 'statusManuallySet/recentChanges in body ignored');
 
   console.log('# Date order enforced on create AND edit (S1)');
   r = await create('BadOrder', { deadline: istDate(9), driveDate: istDate(3) });
   ok(r.status === 400, 'create: deadline after drive date -> 400');
   const open = (await create('Edit', { deadline: istDate(-1), driveDate: istDate(4) })).json.data;
-  r = await call('PUT', `/api/placements/${open._id}`, formPayload(open, { deadline: istDate(10), status: 'auto' }));
+  r = await call('PUT', `/api/admin/drives/${open._id}`, formPayload(open, { deadline: istDate(10), status: 'auto' }));
   ok(r.status === 400, 'edit: deadline after drive date -> 400');
   const unchanged = await Placement.findById(open._id).lean();
   ok(unchanged.deadline.toISOString().slice(0, 10) === istDate(-1), 'rejected edit saved nothing');
 
   console.log('# Status follows edits in both directions (S2/S4)');
   ok(open.status === 'Ongoing', 'starts Ongoing');
-  r = await call('PUT', `/api/placements/${open._id}`, formPayload(open, { deadline: istDate(2), status: 'auto' }));
+  r = await call('PUT', `/api/admin/drives/${open._id}`, formPayload(open, { deadline: istDate(2), status: 'auto' }));
   ok(r.status === 200 && r.json.data.status === 'Upcoming', 'deadline extended -> back to Upcoming');
-  const last = r.json.data.recentChanges.at(-1);
+  const last = (await changesOf(r.json.data._id)).at(-1);
   ok(last.type === 'statusChange' && last.status === 'Upcoming', 'logged statusChange with new status');
-  r = await call('PUT', `/api/placements/${open._id}`, formPayload(r.json.data, { role: 'SDE II', status: 'auto' }));
-  ok(r.json.data.recentChanges.at(-1).type === 'edit', 'plain edit logs "edit"');
-  r = await call('PUT', `/api/placements/${open._id}`, formPayload(r.json.data, { driveDate: null, deadline: null, status: 'auto' }));
+  r = await call('PUT', `/api/admin/drives/${open._id}`, formPayload(r.json.data, { role: 'SDE II', status: 'auto' }));
+  ok((await changesOf(r.json.data._id)).at(-1).type === 'edit', 'plain edit logs "edit"');
+  r = await call('PUT', `/api/admin/drives/${open._id}`, formPayload(r.json.data, { driveDate: null, deadline: null, status: 'auto' }));
   ok(r.status === 200 && r.json.data.driveDate === undefined || r.json.data.driveDate === null, 'dates can be cleared');
 
   console.log('# Manual pin and restore');
   const m = (await create('Manual', { deadline: istDate(-3), driveDate: istDate(5) })).json.data;
-  r = await call('PUT', `/api/placements/${m._id}`, formPayload(m, { status: 'Upcoming' }));
+  r = await call('PUT', `/api/admin/drives/${m._id}`, formPayload(m, { status: 'Upcoming' }));
   ok(r.json.data.status === 'Upcoming' && r.json.data.statusManuallySet === true, 'pin Upcoming despite past deadline');
-  r = await call('PUT', `/api/placements/${m._id}`, formPayload(r.json.data, { ctc: 6 }));
+  r = await call('PUT', `/api/admin/drives/${m._id}`, formPayload(r.json.data, { ctc: 6 }));
   ok(r.json.data.status === 'Upcoming' && r.json.data.statusManuallySet === true, 'edit without status keeps the pin');
   let changed = await runStatusTransitionJob();
   ok((await Placement.findById(m._id).lean()).status === 'Upcoming', 'cron leaves pinned drive alone');
-  r = await call('PATCH', `/api/placements/${m._id}/reset-status-automation`, { statusManuallySet: false });
+  r = await call('PATCH', `/api/admin/drives/${m._id}/status-automation`, { statusManuallySet: false });
   ok(r.json.data.status === 'Ongoing' && r.json.data.statusManuallySet === false, 'restore automation -> recomputed immediately');
-  r = await call('PUT', `/api/placements/${m._id}`, formPayload(r.json.data, { status: 'Completed' }));
-  r = await call('PUT', `/api/placements/${m._id}`, formPayload(r.json.data, { status: 'auto' }));
+  r = await call('PUT', `/api/admin/drives/${m._id}`, formPayload(r.json.data, { status: 'Completed' }));
+  r = await call('PUT', `/api/admin/drives/${m._id}`, formPayload(r.json.data, { status: 'auto' }));
   ok(r.json.data.status === 'Ongoing' && !r.json.data.statusManuallySet, "status 'auto' in form restores automation");
-  r = await call('PUT', `/api/placements/${m._id}`, formPayload(r.json.data, { status: 'Hired' }));
+  r = await call('PUT', `/api/admin/drives/${m._id}`, formPayload(r.json.data, { status: 'Hired' }));
   ok(r.status === 400, 'invalid status -> 400');
 
   console.log('# Postponed drives are frozen (S3)');
   const pp = (await create('Postponed', { deadline: istDate(2), driveDate: istDate(4) })).json.data;
-  r = await call('PATCH', `/api/placements/${pp._id}/postpone`, { isPostponed: true });
-  ok(r.json.data.isPostponed && r.json.data.status === 'Upcoming' && r.json.data.recentChanges.at(-1).type === 'postponed', 'postpone keeps status, logs postponed');
+  r = await call('PATCH', `/api/admin/drives/${pp._id}/postpone`, { isPostponed: true });
+  ok(r.json.data.isPostponed && r.json.data.status === 'Upcoming' && (await changesOf(r.json.data._id)).at(-1).type === 'postponed', 'postpone keeps status, logs postponed');
   await Placement.updateOne({ _id: pp._id }, { deadline: utcDay(-6), driveDate: utcDay(-2) }); // dates pass while postponed
   await runStatusTransitionJob();
   ok((await Placement.findById(pp._id).lean()).status === 'Upcoming', 'cron skips postponed drive');
-  r = await call('PATCH', `/api/placements/${pp._id}/postpone`, { isPostponed: false });
-  ok(r.json.data.status === 'Completed' && r.json.data.recentChanges.at(-1).type === 'unpostponed' && r.json.data.recentChanges.at(-1).status === 'Completed', 'un-postpone -> recomputed, one entry with status');
+  r = await call('PATCH', `/api/admin/drives/${pp._id}/postpone`, { isPostponed: false });
+  ok(r.json.data.status === 'Completed' && (await changesOf(r.json.data._id)).at(-1).type === 'unpostponed' && (await changesOf(r.json.data._id)).at(-1).status === 'Completed', 'un-postpone -> recomputed, one entry with status');
   const pp2 = (await create('FormPostpone', { deadline: istDate(2), driveDate: istDate(4) })).json.data;
-  r = await call('PUT', `/api/placements/${pp2._id}`, formPayload(pp2, { isPostponed: true, status: 'auto' }));
-  ok(r.json.data.recentChanges.at(-1).type === 'postponed', 'postponing via the form logs "postponed"');
+  r = await call('PUT', `/api/admin/drives/${pp2._id}`, formPayload(pp2, { isPostponed: true, status: 'auto' }));
+  ok((await changesOf(r.json.data._id)).at(-1).type === 'postponed', 'postponing via the form logs "postponed"');
 
   console.log('# Cron: both directions, one change each, idempotent');
   const back = (await create('CronBack', { deadline: istDate(-2), driveDate: istDate(5) })).json.data;
@@ -119,7 +121,7 @@ const formPayload = (doc, extra) => ({
   ok((await Placement.findById(back._id).lean()).status === 'Upcoming', 'explicit run fixes it');
 
   console.log('# Change feed includes status');
-  r = await fetch(`${API}/api/placements/changes?since=${encodeURIComponent(new Date(Date.now() - 600e3).toISOString())}`).then((x) => x.json());
+  r = await fetch(`${API}/api/drives/changes?since=${encodeURIComponent(new Date(Date.now() - 600e3).toISOString())}`).then((x) => x.json());
   const sc = r.data.find((c) => c.type === 'statusChange' && c.placementId === back._id);
   ok(sc && sc.status === 'Upcoming', '/changes items carry the new status');
 

@@ -6,25 +6,25 @@ const Student = require('../../models/Student');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
 const { fail } = require('../../lib/http');
-const { requireStudent } = require('../auth/guards');
 const { freshStatuses } = require('../drives/freshness');
 const { applicationSubmitRules, myApplicationsRules, STATUS_GROUPS } = require('./validators');
 const { checkApplicationRules, buildCustomAnswers, buildSnapshot } = require('./rules');
 const { toStudentApplicationDTO } = require('./dto');
 
-// A student's own applications: apply, list, and the per-drive summary for button states
+// Mounted at /api/student/applications — the signed-in student's own applications: apply, list,
+// and the per-drive summary for button states (routes/student.js applies the session guard)
 const router = express.Router();
 
 const readLimiter = limit('applicationsRead');
 
 // POST / — submit an in-app application
-router.post('/', requireStudent, limit('apply'), freshStatuses, applicationSubmitRules, validate, async (req, res, next) => {
+router.post('/', limit('apply'), freshStatuses, applicationSubmitRules, validate, async (req, res, next) => {
   try {
     const { driveId, resumeUrl, coverNote, customAnswers } = req.body;
 
     const [drive, student] = await Promise.all([
       Placement.findById(driveId),
-      Student.findById(req.student.id),
+      Student.findById(req.account.id),
     ]);
     if (!drive) {
       return fail(res, 404, 'Drive not found', { code: 'DRIVE_NOT_FOUND' });
@@ -69,10 +69,10 @@ router.post('/', requireStudent, limit('apply'), freshStatuses, applicationSubmi
   }
 });
 
-// GET /my/summary — { driveId, status } for every own application (button state)
-router.get('/my/summary', readLimiter, requireStudent, async (req, res, next) => {
+// GET /summary — { driveId, status } for every own application (button state)
+router.get('/summary', readLimiter, async (req, res, next) => {
   try {
-    const apps = await Application.find({ studentId: req.student.id })
+    const apps = await Application.find({ studentId: req.account.id })
       .select('driveId status updatedAt')
       .sort({ createdAt: -1 })
       .limit(500)
@@ -96,14 +96,14 @@ router.get('/my/summary', readLimiter, requireStudent, async (req, res, next) =>
   }
 });
 
-// GET /my[?group=active|selected|closed] — paginated list of own applications, with counts per
-// group for the tabs
-router.get('/my', readLimiter, requireStudent, myApplicationsRules, validate, async (req, res, next) => {
+// GET /[?group=active|selected|closed] — paginated list of own applications, with counts per group
+// for the tabs
+router.get('/', readLimiter, myApplicationsRules, validate, async (req, res, next) => {
   try {
     const page = req.query.page || 1;
     const pageSize = req.query.limit || 20;
     const { group } = req.query;
-    const studentId = new mongoose.Types.ObjectId(req.student.id);
+    const studentId = new mongoose.Types.ObjectId(req.account.id);
     const filter = group ? { studentId, status: { $in: STATUS_GROUPS[group] } } : { studentId };
 
     const [apps, total, byStatus] = await Promise.all([

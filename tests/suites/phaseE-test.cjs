@@ -32,11 +32,11 @@ const axeScan = async (page, label) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
   const mk = async (name, extra = {}) => {
-    const r = await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 6, ...extra }) });
+    const r = await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type: 'Full-Time', ctc: 6, ...extra }) });
     const j = await r.json();
     if (r.status !== 201) throw new Error(name + ' ' + JSON.stringify(j));
     return j.data;
@@ -50,7 +50,7 @@ const axeScan = async (page, label) => {
   const G = await mk('Gale', { deadline: istDate(-9), driveDate: istDate(-3) });
 
   console.log('# API: multi-status + closing soon');
-  const q = async (qs) => (await fetch(`${API}/api/placements?search=${TAG}&${qs}`)).json();
+  const q = async (qs) => (await fetch(`${API}/api/drives?search=${TAG}&${qs}`)).json();
   let r = await q('status=Upcoming,Ongoing&sort=closing_soon&limit=50');
   const names = r.data.map((p) => p.company.replace(`${TAG} `, ''));
   ok(names.join(',') === 'Bolt,Cyan,Apex,Dune,Echo,Flux', `closing-soon order (${names.join(',')})`);
@@ -58,11 +58,11 @@ const axeScan = async (page, label) => {
   r = await q('status=Upcoming,Ongoing&sort=closing_soon&limit=2&page=2');
   ok(r.data.map((p) => p.company.replace(`${TAG} `, '')).join(',') === 'Apex,Dune' && r.pagination.totalPages === 3, 'pagination over the aggregate');
   ok(r.data.every((p) => p._rank === undefined && p._closesAt === undefined), 'helper fields not leaked');
-  let res = await fetch(`${API}/api/placements?status=Upcoming,Hired`);
+  let res = await fetch(`${API}/api/drives?status=Upcoming,Hired`);
   ok(res.status === 400, 'invalid status in list -> 400');
-  res = await fetch(`${API}/api/placements?sort=random`);
+  res = await fetch(`${API}/api/drives?sort=random`);
   ok(res.status === 400, 'unknown sort -> 400');
-  res = await fetch(`${API}/api/placements?status[$ne]=x`);
+  res = await fetch(`${API}/api/drives?status[$ne]=x`);
   ok(res.status === 400, 'operator object as status -> 400');
 
   const browser = await chromium.launch();
@@ -151,9 +151,9 @@ const axeScan = async (page, label) => {
 
   console.log('# Dialog focus (apply modal) + mobile menu');
   const email = `${TAG.toLowerCase()}@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
-  const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ved', lastName: 'Shah', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/v.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
+  const sc = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ved', lastName: 'Shah', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/v.pdf' }) });
   await chooseInstitute(sc);
   await page.goto(APP + '/login');
   await page.fill('#email', email);

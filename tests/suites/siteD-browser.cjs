@@ -33,17 +33,17 @@ const inkAround = (page, x, y) => page.evaluate(([px, py]) => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
-  const mk = async (name, type) => (await (await fetch(API + '/api/placements', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type, ctc: 7, applicationMode: 'in_app', deadline: istDate(4), driveDate: istDate(8) }) })).json()).data;
+  const mk = async (name, type) => (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} ${name}`, role: 'Analyst', type, ctc: 7, applicationMode: 'in_app', deadline: istDate(4), driveDate: istDate(8) }) })).json()).data;
   const d1 = await mk('Alpha', 'Full-Time');
   const d2 = await mk('Beta', 'Internship');
   const email = `${TAG.toLowerCase()}_s@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
-  const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: J(sc), body: JSON.stringify({ firstName: 'Kavya', lastName: 'Rao', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/k.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: J(), body: JSON.stringify({ email, rollNumber: `${TAG}S1`, password: 'goodpass123' }) });
+  const sc = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: J(sc), body: JSON.stringify({ firstName: 'Kavya', lastName: 'Rao', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/k.pdf' }) });
   await chooseInstitute(sc);
-  for (const d of [d1, d2]) await fetch(API + '/api/applications', { method: 'POST', headers: J(sc), body: JSON.stringify({ driveId: d._id, consentGiven: true }) });
+  for (const d of [d1, d2]) await fetch(API + '/api/student/applications', { method: 'POST', headers: J(sc), body: JSON.stringify({ driveId: d._id, consentGiven: true }) });
   await Application.updateOne({ driveId: d2._id }, { $set: { status: 'Offered' } });
 
   const browser = await chromium.launch();
@@ -127,9 +127,9 @@ const inkAround = (page, x, y) => page.evaluate(([px, py]) => {
   ok(await hasText(page, 'Nothing closed'), 'empty tab explains itself');
   await page.reload();
   ok(await until(async () => (await page.locator('[role=tab][aria-selected=true]').innerText()).startsWith('Closed')), 'tab survives a reload');
-  let r = await fetch(API + '/api/applications/my?group=bogus', { headers: J(sc) });
+  let r = await fetch(API + '/api/student/applications?group=bogus', { headers: J(sc) });
   ok(r.status === 400, 'API: unknown group -> 400');
-  r = await (await fetch(API + '/api/applications/my?group=active', { headers: J(sc) })).json();
+  r = await (await fetch(API + '/api/student/applications?group=active', { headers: J(sc) })).json();
   ok(r.data.length === 1 && r.counts.all === 2 && r.counts.selected === 1 && r.data[0].type === 'Full-Time', 'API: group filter, counts and drive details');
   await ctx.close();
 

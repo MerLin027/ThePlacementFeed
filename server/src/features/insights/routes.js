@@ -4,16 +4,13 @@ const Application = require('../../models/Application');
 const Placement = require('../../models/Placement');
 const Student = require('../../models/Student');
 const { APPLICATION_STATUSES } = require('../../models/Application');
-const { requireAdmin } = require('../auth/guards');
 const { limit } = require('../../middleware/rateLimit');
 const { validate } = require('../../middleware/validate');
 const { completeProfileFilter } = require('../students/filters');
 const { DAY_MS, IST_OFFSET_MS, istWeekStart } = require('../../lib/time');
 
-// Numbers for the dashboard charts, admin-only
+// Mounted at /api/admin/insights — numbers for the dashboard charts (staff, insights:view)
 const router = express.Router();
-
-router.use(requireAdmin);
 
 // GET /api/admin/insights?weeks=12
 router.get(

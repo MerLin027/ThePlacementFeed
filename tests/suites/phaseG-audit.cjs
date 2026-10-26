@@ -53,16 +53,16 @@ const audit = async (page, label, consoleErrors) => {
 (async () => {
   require('fs').mkdirSync(OUT, { recursive: true });
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
-  const drive = (await (await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 7.5, applicationMode: 'both', formUrl: 'https://forms.gle/pg', deadline: istDate(4), driveDate: istDate(9), eligibility: { branches: ['CE', 'IT'], cgpa: 6.5 }, jdDescription: '## Role\n- Build things\n\n| A | B |\n|---|---|\n| 1 | 2 |', selectionRounds: [{ roundName: 'Test', roundDescription: 'Aptitude' }], customPrompts: [{ question: 'Relocate?', required: true }], tags: ['Pune'] }) })).json()).data;
+  const drive = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 7.5, applicationMode: 'both', formUrl: 'https://forms.gle/pg', deadline: istDate(4), driveDate: istDate(9), eligibility: { branches: ['CE', 'IT'], cgpa: 6.5 }, jdDescription: '## Role\n- Build things\n\n| A | B |\n|---|---|\n| 1 | 2 |', selectionRounds: [{ roundName: 'Test', roundDescription: 'Aptitude' }], customPrompts: [{ question: 'Relocate?', required: true }], tags: ['Pune'] }) })).json()).data;
   const email = `${TAG.toLowerCase()}@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
-  const sc = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Mira', lastName: 'Shah', branch: 'CE', cgpa: 8.1, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/m.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
+  const sc = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Mira', lastName: 'Shah', branch: 'CE', cgpa: 8.1, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/m.pdf' }) });
   await chooseInstitute(sc);
-  await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: drive._id, consentGiven: true, customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Yes' }] }) });
+  await fetch(API + '/api/student/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ driveId: drive._id, consentGiven: true, customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Yes' }] }) });
 
   const browser = await chromium.launch();
   for (const [vp, width, height] of [['desktop', 1280, 900], ['phone', 390, 844]]) {

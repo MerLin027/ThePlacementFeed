@@ -1,9 +1,9 @@
 const express = require('express');
 const Student = require('../../models/Student');
 const Application = require('../../models/Application');
-const { config } = require('../../config/env');
-const { requireAdmin } = require('../auth/guards');
 const { hashPassword } = require('../auth/passwords');
+const { generateTempPassword } = require('../auth/tempPassword');
+const { endSessionsFor } = require('../auth/sessions');
 const { TEMP_PASSWORD_TTL_MS } = require('../auth/constants');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
@@ -13,11 +13,8 @@ const { buildStudentFilter, STUDENT_SORTS } = require('./filters');
 const { toAdminStudentDTO, ADMIN_LIST_SELECT } = require('./dto');
 const { record } = require('../audit/service');
 
-// Admin management of student accounts
+// Mounted at /api/admin/students — staff management of student accounts (students:manage)
 const router = express.Router();
-
-// Every route here is admin-only
-router.use(requireAdmin);
 
 const listLimiter = limit('studentsRead');
 const actionLimiter = limit('studentsWrite');
@@ -61,30 +58,32 @@ router.get('/', listLimiter, adminStudentListRules, validate, async (req, res, n
   }
 });
 
-// POST /:id/reset-password — sets the temporary default password and ends every session
+// POST /:id/reset-password — a random one-time password, returned in this response only (the admin
+// passes it on in person). It only opens the change-password page, for 72 hours; every session of
+// the account ends now.
 router.post('/:id/reset-password', actionLimiter, mongoIdParam('id'), validate, async (req, res, next) => {
   try {
+    const temporaryPassword = generateTempPassword();
     const student = await Student.findByIdAndUpdate(
       req.params.id,
       {
         $set: {
-          passwordHash: await hashPassword(config().defaultStudentPassword),
+          passwordHash: await hashPassword(temporaryPassword),
           mustChangePassword: true,
           tempPasswordExpiresAt: new Date(Date.now() + TEMP_PASSWORD_TTL_MS),
         },
-        // Ends every existing session for this account
-        $inc: { tokenVersion: 1 },
       },
       { returnDocument: 'after' }
     );
     if (!student) return studentNotFound(res);
 
+    await endSessionsFor({ type: 'student', id: student._id });
     await record(req, 'student.resetPassword', { target: { type: 'student', id: student._id } });
-    // The password itself is never returned
     res.json({
       success: true,
-      message: 'Password reset to the default. The student must choose a new one within 72 hours.',
+      message: 'Password reset. Give the student this one-time password; they must choose a new one within 72 hours.',
       data: toAdminStudentDTO(student),
+      temporaryPassword,
     });
   } catch (error) {
     next(error);
@@ -154,6 +153,7 @@ router.delete('/:id', actionLimiter, mongoIdParam('id'), adminStudentDeleteRules
     }
 
     await Student.deleteOne({ _id: student._id });
+    await endSessionsFor({ type: 'student', id: student._id });
 
     await record(req, 'student.delete', { target: { type: 'student', id: student._id }, details: { applications: mode, ...result } });
     res.json({ success: true, message: 'Account deleted', ...result });

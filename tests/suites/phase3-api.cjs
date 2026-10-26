@@ -34,11 +34,11 @@ let seq = 0;
 const newStudent = async (profile) => {
   seq++;
   const email = `${TAG}_${seq}@example.com`;
-  const r = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `P3${String(Date.now()).slice(-6)}${seq}`, password: 'goodpass123' } });
+  const r = await call('POST', '/api/auth/signup', { body: { email, rollNumber: `P3${String(Date.now()).slice(-6)}${seq}`, password: 'goodpass123' } });
   if (r.status !== 201) throw new Error('signup failed ' + r.status + ' ' + r.text);
-  const cookie = r.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
+  const cookie = r.setCookie.find((c) => c.startsWith('tpf_session=')).split(';')[0];
   if (profile) {
-    const p = await call('PATCH', '/api/students/me', { cookie, body: profile });
+    const p = await call('PATCH', '/api/student/profile', { cookie, body: profile });
     await chooseInstitute(cookie);
     if (p.status !== 200) throw new Error('profile failed ' + p.text);
   }
@@ -49,10 +49,10 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
 
-  let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
+  let r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
   const admin = r.setCookie[0].split(';')[0];
   const mk = async (overrides) => {
-    const res = await call('POST', '/api/placements', {
+    const res = await call('POST', '/api/admin/drives', {
       cookie: admin,
       body: { company: `${TAG}-Co`, role: 'SDE', type: 'Full-Time', ctc: 10, driveDate: istDate(10), deadline: istDate(5), ...overrides },
     });
@@ -61,13 +61,13 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
   };
 
   console.log('# Drive config validation');
-  r = await call('POST', '/api/placements', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'both' } });
+  r = await call('POST', '/api/admin/drives', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'both' } });
   ok(r.status === 400, "'both' without formUrl rejected");
-  r = await call('POST', '/api/placements', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'magic' } });
+  r = await call('POST', '/api/admin/drives', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'magic' } });
   ok(r.status === 400, 'unknown applicationMode rejected');
-  r = await call('POST', '/api/placements', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'in_app', customPrompts: Array(6).fill({ question: 'q' }) } });
+  r = await call('POST', '/api/admin/drives', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'in_app', customPrompts: Array(6).fill({ question: 'q' }) } });
   ok(r.status === 400, '6 custom prompts rejected');
-  r = await call('POST', '/api/placements', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'in_app', customPrompts: [{ question: '   ' }] } });
+  r = await call('POST', '/api/admin/drives', { cookie: admin, body: { company: 'x', role: 'y', type: 'Full-Time', ctc: 1, applicationMode: 'in_app', customPrompts: [{ question: '   ' }] } });
   ok(r.status === 400, 'blank prompt rejected');
 
   const ext = await mk({ formUrl: 'https://forms.gle/abc' });
@@ -78,7 +78,7 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
     customPrompts: [{ question: 'Willing to relocate?', required: true }, { question: 'GitHub profile', required: false }],
   });
   const postponed = await mk({ applicationMode: 'in_app' });
-  await call('PATCH', `/api/placements/${postponed._id}/postpone`, { cookie: admin, body: { isPostponed: true } });
+  await call('PATCH', `/api/admin/drives/${postponed._id}/postpone`, { cookie: admin, body: { isPostponed: true } });
   const pastDeadline = await mk({ applicationMode: 'in_app', deadline: istDate(-1) });
   const todayDeadline = await mk({ applicationMode: 'in_app', deadline: istDate(0) });
   const completed = await mk({ applicationMode: 'in_app', status: 'Completed' });
@@ -89,7 +89,7 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
   const [q1, q2] = inApp.customPrompts;
 
   console.log('# Rules engine');
-  const apply = (s, driveId, extra = {}) => call('POST', '/api/applications', { cookie: s.cookie, body: { driveId, consentGiven: true, ...extra } });
+  const apply = (s, driveId, extra = {}) => call('POST', '/api/student/applications', { cookie: s.cookie, body: { driveId, consentGiven: true, ...extra } });
 
   const incomplete = await newStudent();
   r = await apply(incomplete, inApp._id);
@@ -124,7 +124,7 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
   ok(r.status === 400, 'invalid driveId -> 400');
   r = await apply(s2, '507f1f77bcf86cd799439011');
   ok(r.status === 404, 'unknown drive -> 404');
-  r = await call('POST', '/api/applications', { cookie: s2.cookie, origin: `${TEST.APP}.evil.com`, body: { driveId: inApp._id, consentGiven: true } });
+  r = await call('POST', '/api/student/applications', { cookie: s2.cookie, origin: `${TEST.APP}.evil.com`, body: { driveId: inApp._id, consentGiven: true } });
   ok(r.status === 403, 'lookalike origin -> 403');
 
   console.log('# Successful application + mass assignment');
@@ -157,25 +157,25 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
   ok(r.status === 201, "'both' drive accepts in-app application");
   ok((await Application.findOne({ driveId: both._id, studentId: s3Doc._id }).lean()).resumeUrl === COMPLETE.resumeUrl, 'resume defaults to profile link');
 
-  await call('PATCH', '/api/students/me', { cookie: s3.cookie, body: { cgpa: 9.5, firstName: 'Ravindra' } });
+  await call('PATCH', '/api/student/profile', { cookie: s3.cookie, body: { cgpa: 9.5, firstName: 'Ravindra' } });
   app = await Application.findOne({ driveId: inApp._id, studentId: s3Doc._id }).lean();
   ok(app.snapshot.cgpa === 8 && app.snapshot.firstName === 'Ravi', 'later profile edit does not change snapshot');
 
   console.log('# Ownership');
-  r = await call('GET', '/api/applications/my/summary', { cookie: s3.cookie });
+  r = await call('GET', '/api/student/applications/summary', { cookie: s3.cookie });
   ok(r.status === 200 && r.json.data.length === 3, 'own summary lists 3');
-  r = await call('GET', '/api/applications/my/summary', { cookie: s1.cookie });
+  r = await call('GET', '/api/student/applications/summary', { cookie: s1.cookie });
   ok(r.status === 200 && r.json.data.length === 0, "other student's summary is empty");
-  r = await call('GET', '/api/applications/my', { cookie: s3.cookie });
+  r = await call('GET', '/api/student/applications', { cookie: s3.cookie });
   ok(r.status === 200 && r.json.data.length === 3 && r.json.data[0].company && r.json.pagination.total === 3, 'own paginated list with drive names');
   ok(!r.text.includes('snapshot') && !r.text.includes('phone'), 'list exposes no snapshot/PII');
-  r = await call('GET', '/api/applications/my/summary');
+  r = await call('GET', '/api/student/applications/summary');
   ok(r.status === 401, 'summary without session -> 401');
-  r = await call('GET', '/api/applications/my/summary', { cookie: admin.replace('admin_token', 'student_token') });
-  ok(r.status === 401, 'admin token cannot read student summary');
+  r = await call('GET', '/api/student/applications/summary', { cookie: admin });
+  ok(r.status === 403, 'admin token cannot read student summary');
 
   console.log('# Public drive data has no applicant info');
-  r = await call('GET', `/api/placements/${inApp._id}`);
+  r = await call('GET', `/api/drives/${inApp._id}`);
   ok(r.status === 200 && !/applicant|application(s|Count)|snapshot|Ravi/i.test(r.text), 'public drive JSON has no applicant data');
 
   console.log('# Restricted session cannot apply');
@@ -184,11 +184,11 @@ const COMPLETE = { firstName: 'Ravi', lastName: 'Patel', branch: 'CE', cgpa: 8, 
   ok(r.status === 403 && r.json.code === 'PASSWORD_CHANGE_REQUIRED', 'restricted student -> 403');
 
   console.log('# Admin count + cascade delete');
-  r = await call('GET', `/api/placements/${inApp._id}/application-count`, { cookie: admin });
+  r = await call('GET', `/api/admin/drives/${inApp._id}/application-count`, { cookie: admin });
   ok(r.status === 200 && r.json.data.count === 1, 'admin application-count = 1');
-  r = await call('GET', `/api/placements/${inApp._id}/application-count`, { cookie: s3.cookie });
-  ok(r.status === 401, 'student cannot read application-count');
-  r = await call('DELETE', `/api/placements/${inApp._id}`, { cookie: admin });
+  r = await call('GET', `/api/admin/drives/${inApp._id}/application-count`, { cookie: s3.cookie });
+  ok(r.status === 403, 'student cannot read application-count');
+  r = await call('DELETE', `/api/admin/drives/${inApp._id}`, { cookie: admin });
   ok(r.status === 200 && r.json.deletedApplications === 1, 'drive delete reports deleted applications');
   ok((await Application.countDocuments({ driveId: inApp._id })) === 0, 'applications removed with drive');
 

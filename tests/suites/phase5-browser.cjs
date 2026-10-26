@@ -35,9 +35,9 @@ const TAG = `P5B${Date.now() % 100000}`;
   require('fs').mkdirSync(SHOTS, { recursive: true });
   await mongoose.connect(TEST.MONGODB_URI);
 
-  let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
+  let r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
   const adminApi = r.setCookie[0].split(';')[0];
-  r = await call('POST', '/api/placements', { cookie: adminApi, body: { company: `${TAG} Acme`, role: 'Analyst', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', driveDate: istDate(10), deadline: istDate(5), customPrompts: [{ question: 'Hometown?', required: true }] } });
+  r = await call('POST', '/api/admin/drives', { cookie: adminApi, body: { company: `${TAG} Acme`, role: 'Analyst', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', driveDate: istDate(10), deadline: istDate(5), customPrompts: [{ question: 'Hometown?', required: true }] } });
   const drive = r.json.data;
   const people = [
     { n: 'a', firstName: 'Asha', lastName: 'Iyer', branch: 'CE', cgpa: 9.1 },
@@ -47,11 +47,11 @@ const TAG = `P5B${Date.now() % 100000}`;
   const students = {};
   for (const p of people) {
     const email = `${TAG.toLowerCase()}_${p.n}@example.com`;
-    const s = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber: `${TAG}${p.n}`, password: 'goodpass123' } });
-    const cookie = s.setCookie.find((c) => c.startsWith('student_token=')).split(';')[0];
-    await call('PATCH', '/api/students/me', { cookie, body: { firstName: p.firstName, lastName: p.lastName, branch: p.branch, cgpa: p.cgpa, activeBacklogs: 0, graduationYear: 2026, phone: '9000000002', resumeUrl: `https://example.com/${p.n}.pdf` } });
+    const s = await call('POST', '/api/auth/signup', { body: { email, rollNumber: `${TAG}${p.n}`, password: 'goodpass123' } });
+    const cookie = s.setCookie.find((c) => c.startsWith('tpf_session=')).split(';')[0];
+    await call('PATCH', '/api/student/profile', { cookie, body: { firstName: p.firstName, lastName: p.lastName, branch: p.branch, cgpa: p.cgpa, activeBacklogs: 0, graduationYear: 2026, phone: '9000000002', resumeUrl: `https://example.com/${p.n}.pdf` } });
     await chooseInstitute(cookie);
-    await call('POST', '/api/applications', { cookie, body: { driveId: drive._id, consentGiven: true, coverNote: p.n === 'a' ? '=HYPERLINK("http://evil.example","x") <script>alert(1)</script>' : 'Hi', customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Anand' }] } });
+    await call('POST', '/api/student/applications', { cookie, body: { driveId: drive._id, consentGiven: true, coverNote: p.n === 'a' ? '=HYPERLINK("http://evil.example","x") <script>alert(1)</script>' : 'Hi', customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Anand' }] } });
     students[p.n] = { email };
   }
 

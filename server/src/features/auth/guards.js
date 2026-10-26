@@ -1,70 +1,94 @@
-const mongoose = require('mongoose');
 const Admin = require('../../models/Admin');
 const Student = require('../../models/Student');
-const { readSession } = require('./sessions');
-const { ADMIN_COOKIE, STUDENT_COOKIE } = require('./constants');
 const { fail } = require('../../lib/http');
-
-const deny = (res, message) => fail(res, 401, message);
+const { readSession, endSessionsFor } = require('./sessions');
+const { permissionsFor } = require('./permissions');
 
 /**
- * Admin session guard. The account is read on every request, so a replaced admin
- * (scripts/resetAdmin.js) or a password change (tokenVersion bump) ends old sessions at once.
- * Tokens from before tokenVersion existed carry none and match version 0.
+ * Who is making the request. authenticate() reads the session cookie and loads the account on every
+ * request (one indexed read each), so a disabled account, a reset or a deleted account takes effect
+ * immediately. It sets:
+ *
+ *   req.account = { type: 'student' | 'staff', id, role, permissions, mustChangePassword, ... } or null
+ *   req.sessionState = 'none' (no cookie) | 'invalid' (unknown, expired, idle, account gone) | 'valid'
+ *
+ * The require* guards below decide; they are applied once per namespace (routes/student.js,
+ * routes/admin.js), so everything mounted after them is covered.
  */
-const requireAdmin = async (req, res, next) => {
-  const { present, claims } = readSession(req, 'admin');
-  if (!present) return deny(res, 'Authentication required');
-  if (!claims || !mongoose.isValidObjectId(claims.sub)) return deny(res, 'Invalid or expired token');
 
+const loadAccount = async ({ accountType, accountId }) => {
+  if (accountType === 'student') {
+    const student = await Student.findById(accountId).select('email firstName mustChangePassword').lean();
+    return student && { type: 'student', id: student._id.toString(), email: student.email, mustChangePassword: Boolean(student.mustChangePassword), permissions: [] };
+  }
+  const staff = await Admin.findById(accountId).select('username name email role active mustChangePassword').lean();
+  if (!staff) return null;
+  if (staff.active === false) {
+    // Disabling ends sessions; this catches any that slipped through
+    await endSessionsFor({ type: 'staff', id: staff._id });
+    return null;
+  }
+  return {
+    type: 'staff',
+    id: staff._id.toString(),
+    username: staff.username,
+    name: staff.name || '',
+    email: staff.email || '',
+    role: staff.role,
+    permissions: permissionsFor(staff.role),
+    mustChangePassword: Boolean(staff.mustChangePassword),
+  };
+};
+
+const authenticate = async (req, res, next) => {
   try {
-    const admin = await Admin.findById(claims.sub).select('username tokenVersion').lean();
-    if (!admin || (admin.tokenVersion ?? 0) !== (claims.tv ?? 0)) return deny(res, 'Invalid or expired token');
-    req.admin = { id: claims.sub, username: admin.username };
+    const { present, session } = await readSession(req);
+    const account = session ? await loadAccount(session) : null;
+    req.account = account;
+    req.sessionState = account ? 'valid' : present ? 'invalid' : 'none';
     next();
   } catch (error) {
     next(error);
   }
 };
 
+const unauthenticated = (req, res) =>
+  fail(res, 401, req.sessionState === 'invalid' ? 'Invalid or expired session' : 'Authentication required', {
+    code: req.sessionState === 'invalid' ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED',
+  });
+
 /**
- * Student session guards. After an admin password reset, `mustChangePassword` is set and the
- * session is restricted: every route is denied with PASSWORD_CHANGE_REQUIRED unless it uses
- * requireStudentAllowPending (session check, profile read, change password). Deny by default:
- * new routes are restricted automatically.
+ * Requires a signed-in account of the given type. allowPendingPasswordChange: also let through an
+ * account whose password was just reset or created (only the routes needed to set a new password).
+ * Deny by default: without it, such an account gets 403 PASSWORD_CHANGE_REQUIRED everywhere.
  */
-const buildRequireStudent = ({ allowPendingPasswordChange }) => async (req, res, next) => {
-  const { present, claims } = readSession(req, 'student');
-  if (!present) return deny(res, 'Authentication required');
-  if (!claims || !mongoose.isValidObjectId(claims.sub)) return deny(res, 'Invalid or expired session');
-
-  try {
-    const student = await Student.findById(claims.sub).select('tokenVersion mustChangePassword').lean();
-    // Account deleted, or token revoked by a password change/reset
-    if (!student || student.tokenVersion !== claims.tv) return deny(res, 'Invalid or expired session');
-
-    if (student.mustChangePassword && !allowPendingPasswordChange) {
-      return fail(res, 403, 'Please set a new password to continue.', { code: 'PASSWORD_CHANGE_REQUIRED' });
-    }
-
-    req.student = { id: claims.sub, mustChangePassword: student.mustChangePassword };
-    next();
-  } catch (error) {
-    next(error);
+const requireAccount = (type, { allowPendingPasswordChange = false } = {}) => (req, res, next) => {
+  if (!req.account) return unauthenticated(req, res);
+  if (type && req.account.type !== type) return fail(res, 403, "You don't have access to this.", { code: 'FORBIDDEN' });
+  if (req.account.mustChangePassword && !allowPendingPasswordChange) {
+    return fail(res, 403, 'Please set a new password to continue.', { code: 'PASSWORD_CHANGE_REQUIRED' });
   }
-};
-
-const requireStudent = buildRequireStudent({ allowPendingPasswordChange: false });
-const requireStudentAllowPending = buildRequireStudent({ allowPendingPasswordChange: true });
-
-// For the session probes: with no session cookie at all the visitor is simply logged out, so answer
-// 200 { authenticated: false } instead of 401 (every page asks on load, and a 401 there showed up as
-// a console error for every guest). A cookie that is present but expired, forged, revoked or of the
-// wrong role still reaches the real guard and gets its 401.
-const PROBE_COOKIES = { admin: ADMIN_COOKIE, student: STUDENT_COOKIE };
-const sessionProbe = (role) => (req, res, next) => {
-  if (!req.cookies?.[PROBE_COOKIES[role]]) return res.json({ success: true, authenticated: false });
   next();
 };
 
-module.exports = { requireAdmin, requireStudent, requireStudentAllowPending, sessionProbe };
+const requireStudent = requireAccount('student');
+const requireStudentAllowPending = requireAccount('student', { allowPendingPasswordChange: true });
+const requireStaff = requireAccount('staff');
+const requireAnyAccountAllowPending = requireAccount(null, { allowPendingPasswordChange: true });
+
+// A staff permission (features/auth/permissions.js); runs after requireStaff
+const requirePermission = (permission) => (req, res, next) => {
+  if (!req.account?.permissions.includes(permission)) {
+    return fail(res, 403, "You don't have access to this.", { code: 'FORBIDDEN' });
+  }
+  next();
+};
+
+module.exports = {
+  authenticate,
+  requireStudent,
+  requireStudentAllowPending,
+  requireStaff,
+  requireAnyAccountAllowPending,
+  requirePermission,
+};

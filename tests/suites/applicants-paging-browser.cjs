@@ -17,8 +17,8 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
   const db = mongoose.connection.db;
-  const admin = (await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) })).headers.getSetCookie()[0].split(';')[0];
-  const drive = (await (await fetch(API + '/api/placements', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(8), eligibility: { branches: ['CE'], cgpa: 6 } }) })).json()).data;
+  const admin = (await fetch(API + '/api/auth/login', { method: 'POST', headers: J(), body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) })).headers.getSetCookie()[0].split(';')[0];
+  const drive = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: J(admin), body: JSON.stringify({ company: `${TAG} Corp`, role: 'Eng', type: 'Full-Time', ctc: 6, applicationMode: 'in_app', deadline: istDate(3), driveDate: istDate(8), eligibility: { branches: ['CE'], cgpa: 6 } }) })).json()).data;
   const driveId = new mongoose.Types.ObjectId(drive._id);
   const now = Date.now();
   // 30 applications: 25 fill page 1, 5 spill onto page 2; 4 of them are Shortlisted

@@ -19,12 +19,12 @@ const ATTEMPTS = 'Too many attempts. Please try again after 15 minutes.';
 // new password the policy turned down or a successful change
 const wrongPasswordOnly = (req, res) => !res.locals.wrongPassword;
 
-const byAdmin = (req) => req.admin.id;
-const byStudent = (req) => req.student.id;
+// The signed-in account (these limiters run after a session guard)
+const byAccount = (req) => `${req.account.type}:${req.account.id}`;
 // ipKeyGenerator groups IPv6 clients by /56 so one user cannot rotate addresses to dodge the limit
-const byAddressAndEmail = (req) => {
-  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  return `${ipKeyGenerator(req.ip)}|${email}`;
+const byAddressAndIdentifier = (req) => {
+  const identifier = typeof req.body?.identifier === 'string' ? req.body.identifier.trim().toLowerCase() : '';
+  return `${ipKeyGenerator(req.ip)}|${identifier}`;
 };
 
 const POLICIES = {
@@ -33,21 +33,19 @@ const POLICIES = {
   catalogRead: { limit: 300, message: TRY_LATER },
   cronTrigger: { limit: 10, message: 'Too many cron trigger attempts. Please try again later.' },
 
-  // --- Sign-in ---
-  adminLogin: { limit: 5, message: LOGIN },
-  adminPassword: { limit: 5, key: byAdmin, countOnly: wrongPasswordOnly, message: ATTEMPTS },
+  // --- Signing in (students and staff alike) ---
+  login: { limit: 100, message: LOGIN },
+  // Brute force is throttled per (address, identifier): failed attempts only
+  loginAccount: { limit: 5, key: byAddressAndIdentifier, skipSuccessfulRequests: true, message: LOGIN },
   studentSignup: { limit: 30, message: 'Too many sign-up attempts. Please try again in a few minutes.' },
-  studentLoginAddress: { limit: 100, message: LOGIN },
-  // Brute force is throttled per (address, email): wrong passwords only
-  studentLoginAccount: { limit: 5, key: byAddressAndEmail, skipSuccessfulRequests: true, message: LOGIN },
-  studentSession: { limit: 300, message: TRY_LATER },
-  studentPassword: { limit: 5, key: byStudent, countOnly: wrongPasswordOnly, message: ATTEMPTS },
+  session: { limit: 300, message: TRY_LATER },
+  password: { limit: 5, key: byAccount, countOnly: wrongPasswordOnly, message: ATTEMPTS },
 
   // --- Students ---
   profileRead: { limit: 300, message: TRY_LATER },
-  profileUpdate: { limit: 30, key: byStudent, message: 'Too many updates. Please try again in a few minutes.' },
+  profileUpdate: { limit: 30, key: byAccount, message: 'Too many updates. Please try again in a few minutes.' },
   applicationsRead: { limit: 300, message: TRY_LATER },
-  apply: { limit: 10, key: byStudent, message: 'Too many applications in a short time. Please try again in a few minutes.' },
+  apply: { limit: 10, key: byAccount, message: 'Too many applications in a short time. Please try again in a few minutes.' },
 
   // --- Admin ---
   driveWrite: { limit: 50, message: 'Too many updates. Please try again later.' },
@@ -60,6 +58,8 @@ const POLICIES = {
   catalogAdminRead: { limit: 300, message: TRY_LATER },
   catalogAdminWrite: { limit: 60, message: 'Too many changes. Please try again in a few minutes.' },
   insightsRead: { limit: 120, message: TRY_LATER },
+  staffRead: { limit: 300, message: TRY_LATER },
+  staffWrite: { limit: 30, message: 'Too many account changes. Please try again in a few minutes.' },
 };
 
 const limit = (name) => {

@@ -26,7 +26,7 @@ const call = async (method, url, { body, cookie, origin = ORIGIN } = {}) => {
   return { status: res.status, json, headers: res.headers, setCookie: res.headers.getSetCookie() };
 };
 const cookieOf = (r, name) => (r.setCookie.find((c) => c.startsWith(name + '=')) || '').split(';')[0];
-const login = async (password) => call('POST', '/api/auth/login', { body: { username: 'testadmin', password } });
+const login = async (password) => call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password } });
 const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === field)?.message || '';
 
 (async () => {
@@ -34,10 +34,10 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
   try {
     console.log('# The admin check names the account');
     let r = await login(PASSWORD);
-    const first = cookieOf(r, 'admin_token');
+    const first = cookieOf(r, 'tpf_session');
     ok(r.status === 200 && first, 'admin logs in');
-    r = await call('GET', '/api/auth/check', { cookie: first });
-    ok(r.status === 200 && r.json.authenticated === true && r.json.username === 'testadmin', 'check returns the username', JSON.stringify(r.json));
+    r = await call('GET', '/api/auth/session', { cookie: first });
+    ok(r.status === 200 && r.json.authenticated === true && r.json.account.username === 'testadmin' && r.json.account.role === 'super_admin', 'session names the account and role', JSON.stringify(r.json));
     ok(r.headers.get('cache-control') === 'no-store', 'API responses are no-store', r.headers.get('cache-control'));
 
     console.log('# Guards and validation');
@@ -62,24 +62,22 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(await bcrypt.compare(PASSWORD, (await Admin.findOne({ username: 'testadmin' }).select('+passwordHash')).passwordHash), 'failed attempts leave the password alone');
 
     console.log('# A change signs out every other session and keeps this one');
-    const other = cookieOf(await login(PASSWORD), 'admin_token');
-    const versionBefore = (await Admin.findOne({ username: 'testadmin' }).lean()).tokenVersion ?? 0;
+    const other = cookieOf(await login(PASSWORD), 'tpf_session');
     r = await call('POST', '/api/auth/password', { cookie: first, body: { currentPassword: PASSWORD, newPassword: NEW_PASSWORD } });
-    const fresh = cookieOf(r, 'admin_token');
+    const fresh = cookieOf(r, 'tpf_session');
     ok(r.status === 200 && fresh && fresh !== first, 'change -> 200 with a fresh session cookie', JSON.stringify(r.json));
-    ok((await call('GET', '/api/auth/check', { cookie: fresh })).status === 200, 'the fresh session works');
-    ok((await call('GET', '/api/auth/check', { cookie: first })).status === 401, 'the session that changed it, old token -> 401');
+    ok((await call('GET', '/api/auth/session', { cookie: fresh })).status === 200, 'the fresh session works');
+    ok((await call('GET', '/api/auth/session', { cookie: first })).json.authenticated === false, 'the session that changed it is replaced (old cookie no longer works)');
     ok((await call('GET', '/api/admin/students', { cookie: other })).status === 401, 'another device -> 401');
     ok((await login(PASSWORD)).status === 401, 'old password no longer logs in');
     r = await login(NEW_PASSWORD);
     ok(r.status === 200, 'new password logs in');
-    const admin = await Admin.findOne({ username: 'testadmin' }).lean();
-    ok(admin.tokenVersion === versionBefore + 1 && !JSON.stringify(r.json).includes('passwordHash'), 'tokenVersion bumped; no hash in the response');
+    ok(!JSON.stringify(r.json).includes('passwordHash') && !/\$2[ab]\$/.test(JSON.stringify(r.json)), 'no hash in the response');
 
     console.log('# Changing it again (the shared test password is restored at the end)');
-    r = await call('POST', '/api/auth/password', { cookie: cookieOf(r, 'admin_token'), body: { currentPassword: NEW_PASSWORD, newPassword: SECOND_PASSWORD } });
+    r = await call('POST', '/api/auth/password', { cookie: cookieOf(r, 'tpf_session'), body: { currentPassword: NEW_PASSWORD, newPassword: SECOND_PASSWORD } });
     ok(r.status === 200, 'changed again', JSON.stringify(r.json));
-    const back = cookieOf(r, 'admin_token');
+    const back = cookieOf(r, 'tpf_session');
 
     console.log('# Wrong current passwords are rate limited per admin');
     let limited = 0;
@@ -94,20 +92,20 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     const suiteStart = new Date(Date.now() - 60 * 1000);
     r = await call('POST', '/api/auth/logout', { origin: null });
     ok(r.status === 403 && r.json.code === 'CSRF_REJECTED', 'a write without Origin -> 403 CSRF_REJECTED', JSON.stringify(r.json));
-    r = await call('POST', '/api/students/auth/logout', { origin: 'https://evil.example' });
+    r = await call('POST', '/api/auth/logout', { origin: 'https://evil.example' });
     ok(r.status === 403, 'student logout from another site -> 403', r.status);
     const TAG = `se${Date.now() % 1000000}`;
-    r = await call('POST', '/api/students/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: 'password123' } });
+    r = await call('POST', '/api/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: 'password123' } });
     ok(r.status === 400 && /common/.test(fieldError(r, 'password')), 'signup with a common password -> 400', JSON.stringify(r.json));
-    r = await call('POST', '/api/students/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: `x-${TAG}r1-pass` } });
+    r = await call('POST', '/api/auth/signup', { body: { email: `${TAG}@example.com`, rollNumber: `${TAG}R1`.toUpperCase(), password: `x-${TAG}r1-pass` } });
     ok(r.status === 400 && /roll number/.test(fieldError(r, 'password')), 'signup with the roll number in the password -> 400', JSON.stringify(r.json));
-    r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'definitely-wrong' } });
+    r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'definitely-wrong' } });
     ok(r.status === 401 && r.json.code === 'INVALID_CREDENTIALS', 'wrong admin password -> 401 INVALID_CREDENTIALS');
     const events = await mongoose.connection.collection('audit_events').find({ at: { $gte: suiteStart } }).toArray();
-    const loginFail = events.find((e) => e.action === 'admin.login' && e.outcome === 'failure');
-    ok(loginFail && loginFail.actor.type === 'admin' && loginFail.ip && loginFail.requestId, 'failed admin login stored (actor, address, request id)', JSON.stringify(loginFail));
-    ok(events.some((e) => e.action === 'admin.login' && e.outcome === 'success'), 'successful admin login stored');
-    ok(events.filter((e) => e.action === 'admin.password.change' && e.outcome === 'success').length >= 2, 'password changes stored');
+    const loginFail = events.find((e) => e.action === 'auth.login' && e.outcome === 'failure' && e.actor.type === 'staff');
+    ok(loginFail && loginFail.actor.type === 'staff' && loginFail.ip && loginFail.requestId, 'failed staff login stored (actor, address, request id)', JSON.stringify(loginFail));
+    ok(events.some((e) => e.action === 'auth.login' && e.outcome === 'success'), 'successful staff login stored');
+    ok(events.filter((e) => e.action === 'auth.password.change' && e.outcome === 'success').length >= 2, 'password changes stored');
     ok(!/definitely-wrong|a-new-admin-pass|testadmin"/.test(JSON.stringify(events)), 'no passwords or usernames in stored events');
 
     console.log('# Proxy secret: the forwarded visitor address is believed only with the secret');

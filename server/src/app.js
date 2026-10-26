@@ -9,6 +9,7 @@ const trustedProxy = require('./middleware/trustedProxy');
 const { csrfProtection, jsonOnly } = require('./middleware/csrf');
 const sanitizeRequest = require('./middleware/sanitize');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { authenticate } = require('./features/auth/guards');
 const api = require('./routes');
 
 // The largest real payload (a drive with a long description and its questions) is about 25 KB
@@ -17,8 +18,8 @@ const BODY_LIMIT = '100kb';
 /**
  * Builds the Express app (index.js starts it). The middleware order is the security model, top to
  * bottom: identify the request, find the real client address, security headers and CORS, refuse
- * cross-site and non-JSON writes, parse and sanitise the body, log, then the routes, a JSON 404 and
- * the error handler.
+ * cross-site and non-JSON writes, parse and sanitise the body, log, find who is signed in (the
+ * session), then the routes (each namespace applies its own guard), a JSON 404 and the error handler.
  */
 const createApp = () => {
   const { clientUrl, isProduction } = config();
@@ -50,6 +51,8 @@ const createApp = () => {
     next();
   });
 
+  // Who is signed in: req.account (or null). Deciding what they may do is the namespaces' job.
+  app.use('/api', authenticate);
   app.use('/api', api);
   app.use('/api', notFound);
   app.use(errorHandler);

@@ -16,9 +16,9 @@ const TAG = `PAB${Date.now() % 100000}`;
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const cookie = login.headers.getSetCookie()[0].split(';')[0];
-  const mk = async (name, extra) => (await (await fetch(API + '/api/placements', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: cookie }, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 5, ...extra }) })).json()).data;
+  const mk = async (name, extra) => (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: cookie }, body: JSON.stringify({ company: `${TAG} ${name}`, role: 'SDE', type: 'Full-Time', ctc: 5, ...extra }) })).json()).data;
   const closedExt = await mk('ClosedExt', { formUrl: 'https://forms.gle/x', deadline: istDate(-1), driveDate: istDate(3) });
   const postponedExt = await mk('PostponedExt', { formUrl: 'https://forms.gle/y', deadline: istDate(4), driveDate: istDate(6), isPostponed: true });
   const openExt = await mk('OpenExt', { formUrl: 'https://forms.gle/z', deadline: istDate(4), driveDate: istDate(6) });

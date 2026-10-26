@@ -47,16 +47,16 @@ const smallTargets = (page) => page.evaluate(() => {
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
-  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ username: 'testadmin', password: 'testadminpass' }) });
+  const login = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const admin = login.headers.getSetCookie()[0].split(';')[0];
   const H = { 'Content-Type': 'application/json', Origin: APP, Cookie: admin };
-  const drive = (await (await fetch(API + '/api/placements', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 7, applicationMode: 'in_app', deadline: istDate(5), driveDate: istDate(9), jdDescription: '## Role\n- Build things', selectionRounds: [{ roundName: 'Test' }], customPrompts: [{ question: 'Relocate?', required: true }] }) })).json()).data;
+  const drive = (await (await fetch(API + '/api/admin/drives', { method: 'POST', headers: H, body: JSON.stringify({ company: `${TAG} Corp`, role: 'Engineer', type: 'Full-Time', ctc: 7, applicationMode: 'in_app', deadline: istDate(5), driveDate: istDate(9), jdDescription: '## Role\n- Build things', selectionRounds: [{ roundName: 'Test' }], customPrompts: [{ question: 'Relocate?', required: true }] }) })).json()).data;
   const email = `${TAG.toLowerCase()}@example.com`;
-  const s = await fetch(API + '/api/students/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
-  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('student_token=')).split(';')[0];
-  await fetch(API + '/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Tara', lastName: 'Rao', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/t.pdf' }) });
+  const s = await fetch(API + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP }, body: JSON.stringify({ email, rollNumber: `${TAG}S`, password: 'goodpass123' }) });
+  const sCookie = s.headers.getSetCookie().find((c) => c.startsWith('tpf_session=')).split(';')[0];
+  await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ firstName: 'Tara', lastName: 'Rao', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/t.pdf' }) });
   await chooseInstitute(sCookie);
-  const ap = await (await fetch(API + '/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: drive._id, consentGiven: true, customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Yes' }] }) })).json();
+  const ap = await (await fetch(API + '/api/student/applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sCookie }, body: JSON.stringify({ driveId: drive._id, consentGiven: true, customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Yes' }] }) })).json();
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -105,13 +105,13 @@ const smallTargets = (page) => page.evaluate(() => {
   ok(await until(() => page.evaluate(() => document.activeElement?.id === 'password')), '...and the next one after fixing it');
 
   console.log('# Loading states (slow network)');
-  await page.route('**/api/placements?*', async (route) => { await wait(4500); await route.continue().catch(() => {}); });
+  await page.route('**/api/drives?*', async (route) => { await wait(4500); await route.continue().catch(() => {}); });
   await page.goto(APP + '/');
   ok(await until(async () => (await page.locator('.skeleton').count()) > 10, { timeout: 3000 }), 'card skeletons while loading');
   // The explanation is designed to appear 3 s into a slow load (this request is held for 4.5 s)
   ok(await until(() => page.getByText('Waking up the server').isVisible(), { timeout: 4400 }), 'cold-start explanation after 3 s');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
-  await page.route(`**/api/placements/${drive._id}`, async (route) => { await wait(2500); await route.continue().catch(() => {}); });
+  await page.route(`**/api/drives/${drive._id}`, async (route) => { await wait(2500); await route.continue().catch(() => {}); });
   await page.goto(`${APP}/placement/${drive._id}`);
   ok(await until(() => page.getByRole('status', { name: 'Loading drive details' }).isVisible(), { timeout: 2400 }), 'detail skeleton while loading');
   await until(async () => !(await page.getByRole('status', { name: 'Loading drive details' }).isVisible()), { timeout: 8000 });

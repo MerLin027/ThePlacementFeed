@@ -8,7 +8,7 @@
  * Warned about at startup: a secret shorter than 32 characters (it still works, but should be
  * replaced; refusing to start would take the site down over a fixable setting).
  */
-const REQUIRED = ['MONGODB_URI', 'JWT_SECRET', 'CLIENT_URL'];
+const REQUIRED = ['MONGODB_URI', 'CLIENT_URL'];
 const MIN_SECRET_LENGTH = 32;
 
 let cached = null;
@@ -36,7 +36,7 @@ const load = () => {
   if (!client) throw new Error('CLIENT_URL must be the website address, e.g. https://example.vercel.app');
   if (isProduction && client.protocol !== 'https:') throw new Error('CLIENT_URL must use https:// in production');
 
-  const warnings = ['JWT_SECRET', 'PROXY_SECRET', 'CRON_SECRET']
+  const warnings = ['PROXY_SECRET', 'CRON_SECRET']
     .filter((key) => env[key] && env[key].length < MIN_SECRET_LENGTH)
     .map((key) => `${key} is shorter than ${MIN_SECRET_LENGTH} characters; replace it with a longer random value.`);
 
@@ -48,14 +48,12 @@ const load = () => {
     // The website's origin: CORS and the CSRF Origin check compare against exactly this
     clientUrl: env.CLIENT_URL,
     clientOrigin: client.origin,
-    jwtSecret: env.JWT_SECRET,
     // Shared with Vercel; see middleware/trustedProxy.js
     proxySecret: env.PROXY_SECRET || null,
     // Enables GET /api/cron/trigger for an external scheduler
     cronSecret: env.CRON_SECRET || null,
     // First boot only: creates the admin account when none exists
     adminSeed: { username: env.ADMIN_USERNAME || null, password: env.ADMIN_PASSWORD || null },
-    defaultStudentPassword: env.DEFAULT_STUDENT_PASSWORD || 'college123',
     warnings: Object.freeze(warnings),
   });
 };

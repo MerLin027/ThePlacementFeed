@@ -29,9 +29,9 @@ const TAG = `p4${Date.now() % 1000000}`;
 const mkStudent = async (n, profile) => {
   const email = `${TAG}_${n}@example.com`;
   const rollNumber = `${TAG}R${n}`.toUpperCase();
-  const r = await call('POST', '/api/students/auth/signup', { body: { email, rollNumber, password: 'origpass123' } });
-  const cookie = cookieOf(r, 'student_token');
-  if (profile) await call('PATCH', '/api/students/me', { cookie, body: profile });
+  const r = await call('POST', '/api/auth/signup', { body: { email, rollNumber, password: 'origpass123' } });
+  const cookie = cookieOf(r, 'tpf_session');
+  if (profile) await call('PATCH', '/api/student/profile', { cookie, body: profile });
   if (profile) await chooseInstitute(cookie);
   const doc = await Student.findOne({ email }).lean();
   return { email, rollNumber, cookie, id: doc._id.toString() };
@@ -40,8 +40,8 @@ const mkStudent = async (n, profile) => {
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
   const suiteStart = new Date();
-  let r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
-  const admin = cookieOf(r, 'admin_token');
+  let r = await call('POST', '/api/auth/login', { body: { identifier: 'testadmin', password: 'testadminpass' } });
+  const admin = cookieOf(r, 'tpf_session');
 
   const a = await mkStudent('a', { firstName: 'Aarav', lastName: 'Mehta', branch: 'CE', cgpa: 8.2, activeBacklogs: 0, graduationYear: 2026, phone: '9876500001', resumeUrl: 'https://example.com/a.pdf' });
   const b = await mkStudent('b', { firstName: 'Bhavna', lastName: 'Rao', branch: 'IT', cgpa: 7.9, activeBacklogs: 0, graduationYear: 2027, phone: '9876500002', resumeUrl: 'https://example.com/b.pdf' });
@@ -51,13 +51,11 @@ const mkStudent = async (n, profile) => {
   r = await call('GET', '/api/admin/students');
   ok(r.status === 401, 'no cookie -> 401');
   r = await call('GET', '/api/admin/students', { cookie: a.cookie });
-  ok(r.status === 401, 'student cookie -> 401 on list');
-  r = await call('GET', '/api/admin/students', { cookie: a.cookie.replace('student_token', 'admin_token') });
-  ok(r.status === 401, 'student JWT in admin cookie -> 401');
+  ok(r.status === 403, 'student cookie -> 403 on list');
   r = await call('POST', `/api/admin/students/${b.id}/reset-password`, { cookie: a.cookie });
-  ok(r.status === 401, 'student cannot reset');
+  ok(r.status === 403, 'student cannot reset');
   r = await call('DELETE', `/api/admin/students/${b.id}`, { cookie: a.cookie });
-  ok(r.status === 401, 'student cannot delete');
+  ok(r.status === 403, 'student cannot delete');
 
   console.log('# List, search, filters');
   r = await call('GET', `/api/admin/students?search=${TAG}&limit=100`, { cookie: admin });
@@ -91,45 +89,52 @@ const mkStudent = async (n, profile) => {
   ok(r.status === 403, 'lookalike origin -> 403');
   r = await call('POST', `/api/admin/students/${b.id}/reset-password`, { cookie: admin });
   ok(r.status === 200 && r.json.data.mustChangePassword === true, 'reset -> 200, pending flag');
-  ok(!r.text.includes('college123') && !/passwordHash|\$2[ab]\$/.test(r.text), 'response never contains the password or hash');
-  r = await call('GET', '/api/students/me', { cookie: b.cookie });
+  const tempB = r.json.temporaryPassword;
+  ok(/^[A-HJ-NP-Za-km-np-z2-9]{4}-[A-HJ-NP-Za-km-np-z2-9]{4}-[A-HJ-NP-Za-km-np-z2-9]{4}$/.test(tempB || ''), 'reset returns a random one-time password (12 unambiguous characters)', tempB);
+  ok(!/passwordHash|\$2[ab]\$/.test(r.text) && !r.text.includes('college123'), 'response never contains a hash or a fixed default');
+  r = await call('POST', `/api/admin/students/${b.id}/reset-password`, { cookie: admin });
+  ok(r.json.temporaryPassword && r.json.temporaryPassword !== tempB, 'each reset gives a different password');
+  const tempB2 = r.json.temporaryPassword;
+  r = await call('GET', '/api/student/profile', { cookie: b.cookie });
   ok(r.status === 401, "student's existing session ended");
-  r = await call('POST', '/api/students/auth/login', { body: { email: b.email, password: 'origpass123' } });
+  r = await call('POST', '/api/auth/login', { body: { identifier: b.email, password: 'origpass123' } });
   ok(r.status === 401, 'old password no longer works');
-  r = await call('POST', '/api/students/auth/login', { body: { email: b.email, password: 'college123' } });
-  const bTemp = cookieOf(r, 'student_token');
-  ok(r.status === 200 && r.json.mustChangePassword === true, 'login with default password -> mustChangePassword');
-  r = await call('PATCH', '/api/students/me', { cookie: bTemp, body: { firstName: 'X' } });
+  r = await call('POST', '/api/auth/login', { body: { identifier: b.email, password: tempB } });
+  ok(r.status === 401, 'the first one-time password stopped working after the second reset');
+  r = await call('POST', '/api/auth/login', { body: { identifier: b.email, password: tempB2 } });
+  const bTemp = cookieOf(r, 'tpf_session');
+  ok(r.status === 200 && r.json.account.mustChangePassword === true, 'login with the one-time password -> mustChangePassword');
+  r = await call('PATCH', '/api/student/profile', { cookie: bTemp, body: { firstName: 'X' } });
   ok(r.status === 403 && r.json.code === 'PASSWORD_CHANGE_REQUIRED', 'restricted: profile edit blocked');
-  r = await call('GET', '/api/applications/my/summary', { cookie: bTemp });
+  r = await call('GET', '/api/student/applications/summary', { cookie: bTemp });
   ok(r.status === 403, 'restricted: applications blocked');
-  r = await call('GET', '/api/students/me', { cookie: bTemp });
+  r = await call('GET', '/api/student/profile', { cookie: bTemp });
   ok(r.status === 200, 'restricted: profile read allowed');
-  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { newPassword: 'college123' } });
-  ok(r.status === 400, 'cannot keep the default');
-  r = await call('POST', '/api/students/me/password', { cookie: bTemp, body: { newPassword: 'brandnew456' } });
-  const bNew = cookieOf(r, 'student_token');
+  r = await call('POST', '/api/auth/password', { cookie: bTemp, body: { newPassword: tempB2 } });
+  ok(r.status === 400 && /temporary/.test(JSON.stringify(r.json)), 'cannot keep the one-time password');
+  r = await call('POST', '/api/auth/password', { cookie: bTemp, body: { newPassword: 'brandnew456' } });
+  const bNew = cookieOf(r, 'tpf_session');
   ok(r.status === 200, 'change from default without the temporary password -> 200');
   const bDoc = await Student.findById(b.id).lean();
   ok(!bDoc.mustChangePassword && !bDoc.tempPasswordExpiresAt, 'pending flags cleared');
-  r = await call('GET', '/api/applications/my/summary', { cookie: bNew });
+  r = await call('GET', '/api/student/applications/summary', { cookie: bNew });
   ok(r.status === 200, 'full access restored');
   r = await call('GET', `/api/admin/students?search=bhavna`, { cookie: admin });
   ok(r.json.data[0].mustChangePassword === false, 'list shows reset no longer pending');
 
   console.log('# Temp password expiry');
-  await call('POST', `/api/admin/students/${c.id}/reset-password`, { cookie: admin });
+  const cReset = await call('POST', `/api/admin/students/${c.id}/reset-password`, { cookie: admin });
   const cDoc = await Student.findById(c.id).lean();
   const ttlH = (cDoc.tempPasswordExpiresAt - Date.now()) / 3600e3;
   ok(ttlH > 71.9 && ttlH <= 72, `temp password expires in 72h (${ttlH.toFixed(2)}h)`);
   await Student.updateOne({ _id: c.id }, { tempPasswordExpiresAt: new Date(Date.now() - 1000) });
-  r = await call('POST', '/api/students/auth/login', { body: { email: c.email, password: 'college123' } });
-  ok(r.status === 401 && r.json.message === 'Invalid credentials', 'expired default password -> generic 401');
+  r = await call('POST', '/api/auth/login', { body: { identifier: c.email, password: cReset.json.temporaryPassword } });
+  ok(r.status === 401 && r.json.message === 'Invalid credentials', 'expired one-time password -> generic 401');
 
   console.log('# Delete with application scrub');
-  r = await call('POST', '/api/placements', { cookie: admin, body: { company: `${TAG} Co`, role: 'SDE', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', driveDate: istDate(10), deadline: istDate(5), customPrompts: [{ question: 'Hometown?', required: true }] } });
+  r = await call('POST', '/api/admin/drives', { cookie: admin, body: { company: `${TAG} Co`, role: 'SDE', type: 'Full-Time', ctc: 9, applicationMode: 'in_app', driveDate: istDate(10), deadline: istDate(5), customPrompts: [{ question: 'Hometown?', required: true }] } });
   const drive = r.json.data;
-  r = await call('POST', '/api/applications', { cookie: a.cookie, body: { driveId: drive._id, consentGiven: true, coverNote: 'Call me on 9876500001', customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Anand' }] } });
+  r = await call('POST', '/api/student/applications', { cookie: a.cookie, body: { driveId: drive._id, consentGiven: true, coverNote: 'Call me on 9876500001', customAnswers: [{ promptId: drive.customPrompts[0]._id, answer: 'Anand' }] } });
   ok(r.status === 201, 'student A applied');
   await Application.updateOne({ driveId: drive._id }, { status: 'Shortlisted', adminNote: 'strong' });
   r = await call('DELETE', `/api/admin/students/${a.id}`, { cookie: admin, origin: 'http://evil.example' });
@@ -142,22 +147,22 @@ const mkStudent = async (n, profile) => {
   ok(app.resumeUrl === undefined && app.coverNote === undefined && app.customAnswers.length === 0, 'resume, note and answers removed');
   ok(app.snapshot.branch === 'CE' && app.snapshot.cgpa === 8.2 && app.status === 'Shortlisted', 'academic data + status kept for records');
   ok(!JSON.stringify(app).includes(a.email) && !JSON.stringify(app).includes('9876500001'), 'no email/phone left anywhere in the application');
-  r = await call('GET', '/api/students/me', { cookie: a.cookie });
+  r = await call('GET', '/api/student/profile', { cookie: a.cookie });
   ok(r.status === 401, "deleted student's session is dead");
   r = await call('DELETE', `/api/admin/students/${a.id}`, { cookie: admin });
   ok(r.status === 404, 'second delete -> 404');
-  r = await call('POST', '/api/students/auth/signup', { body: { email: a.email, rollNumber: a.rollNumber, password: 'again12345' } });
+  r = await call('POST', '/api/auth/signup', { body: { email: a.email, rollNumber: a.rollNumber, password: 'again12345' } });
   ok(r.status === 201, 'same email + roll number can sign up again (D6)');
 
   console.log('# Audit trail');
   const events = await mongoose.connection.collection('audit_events')
-    .find({ at: { $gte: suiteStart }, 'actor.type': 'admin', action: /^student\./ }).toArray();
-  ok(events.filter((e) => e.action === 'student.resetPassword').length === 2 && events.some((e) => e.action === 'student.delete'),
+    .find({ at: { $gte: suiteStart }, 'actor.type': 'staff', action: /^student\./ }).toArray();
+  ok(events.filter((e) => e.action === 'student.resetPassword').length === 3 && events.some((e) => e.action === 'student.delete'),
     `account actions stored (${events.map((e) => e.action).join(', ')})`);
   ok(events.every((e) => e.target?.type === 'student' && e.target.id && e.requestId), 'each names its target and request');
   const log = fs.readFileSync(TEST.SERVER_LOG, 'utf8').split('\n').filter((l) => l.includes('[Audit]'));
-  ok(log.length > 0 && !log.some((l) => /college123|@example\.com|9876/.test(l)), 'audit log has no password, email or phone');
-  ok(!/college123|@example\.com|9876/.test(JSON.stringify(events)), 'stored events have no password, email or phone');
+  ok(log.length > 0 && !log.some((l) => /@example\.com|9876/.test(l) || l.includes(tempB2)), 'audit log has no password, email or phone');
+  ok(!/@example\.com|9876/.test(JSON.stringify(events)) && !JSON.stringify(events).includes(tempB2), 'stored events have no password, email or phone');
 
   // cleanup
   await Application.deleteMany({ driveId: drive._id });

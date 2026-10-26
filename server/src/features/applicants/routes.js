@@ -2,7 +2,6 @@ const express = require('express');
 const Application = require('../../models/Application');
 const Placement = require('../../models/Placement');
 const { APPLICATION_STATUSES } = require('../../models/Application');
-const { requireAdmin } = require('../auth/guards');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
 const { fail } = require('../../lib/http');
@@ -18,10 +17,10 @@ const { toApplicantDTO } = require('./dto');
 const { buildApplicantExport } = require('./export');
 const { record } = require('../audit/service');
 
-// Mounted at …/:driveId/applicants — admin-only
+// Mounted at /api/admin/drives/:driveId/applicants (staff, applicants:manage; guards applied above)
 const router = express.Router({ mergeParams: true });
 
-router.use(requireAdmin, mongoIdParam('driveId'), validate);
+router.use(mongoIdParam('driveId'), validate);
 
 const readLimiter = limit('applicantsRead');
 const updateLimiter = limit('applicantsWrite');

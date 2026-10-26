@@ -4,7 +4,6 @@ const Institute = require('../../models/Institute');
 const Setting = require('../../models/Setting');
 const Student = require('../../models/Student');
 const Placement = require('../../models/Placement');
-const { requireAdmin } = require('../auth/guards');
 const { limit } = require('../../middleware/rateLimit');
 const { mongoIdParam, validate } = require('../../middleware/validate');
 const { fail } = require('../../lib/http');
@@ -18,11 +17,9 @@ const {
 const catalog = require('./cache');
 const { record } = require('../audit/service');
 
-// Mounted at /api/admin/catalog — the lists students and drives choose from
+// Mounted at /api/admin/catalog — the lists students and drives choose from (staff, setup:manage;
+// routes/admin.js applies the guards)
 const router = express.Router();
-
-// Every route here is admin-only
-router.use(requireAdmin);
 
 const readLimiter = limit('catalogAdminRead');
 const writeLimiter = limit('catalogAdminWrite');
