@@ -3,8 +3,8 @@ const TEST = require('../lib/env.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
-const Placement = require(path.join(SERVER, 'models/Placement'));
-const { runStatusTransitionJob, ensureStatusesFresh } = require(path.join(SERVER, 'jobs/statusCron'));
+const Placement = require(path.join(SERVER, 'src/models/Placement'));
+const { runStatusTransitionJob, ensureStatusesFresh } = require(path.join(SERVER, 'src/features/drives/freshness'));
 
 const API = TEST.API;
 const ORIGIN = TEST.APP;

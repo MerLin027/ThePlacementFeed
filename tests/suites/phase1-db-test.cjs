@@ -2,11 +2,17 @@
 const TEST = require('../lib/env.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
-process.env.JWT_SECRET = 'test-secret-0123456789abcdef0123456789';
+// The guards read the server's config, which needs the same settings the API runs with
+Object.assign(process.env, {
+  JWT_SECRET: 'test-secret-0123456789abcdef0123456789',
+  COOKIE_SECRET: 'test-cookie-0123456789abcdef0123456',
+  MONGODB_URI: TEST.MONGODB_URI,
+  CLIENT_URL: TEST.APP,
+});
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
 const bcrypt = require(path.join(SERVER, 'node_modules/bcryptjs'));
-const Student = require(path.join(SERVER, 'models/Student'));
-const { requireStudent, requireStudentAllowPending } = require(path.join(SERVER, 'middleware/requireStudent'));
+const Student = require(path.join(SERVER, 'src/models/Student'));
+const { requireStudent, requireStudentAllowPending } = require(path.join(SERVER, 'src/features/auth/guards'));
 
 const BASE = TEST.API.replace('localhost', '127.0.0.1');
 const H = { 'Content-Type': 'application/json', Origin: TEST.APP };

@@ -7,9 +7,9 @@ const path = require('path');
 const fs = require('fs');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
-const Placement = require(path.join(SERVER, 'models/Placement'));
-const Student = require(path.join(SERVER, 'models/Student'));
-const Application = require(path.join(SERVER, 'models/Application'));
+const Placement = require(path.join(SERVER, 'src/models/Placement'));
+const Student = require(path.join(SERVER, 'src/models/Student'));
+const Application = require(path.join(SERVER, 'src/models/Application'));
 const API = TEST.API;
 const APP = TEST.APP;
 const TAG = `UP3${Date.now() % 100000}`;
@@ -100,7 +100,7 @@ const req = async (method, url, { cookie, body, raw, type } = {}) => {
 
   console.log('# sanitiser in-process (same express as the server)');
   const express = require(path.join(SERVER, 'node_modules/express'));
-  const sanitizeRequest = require(path.join(SERVER, 'middleware/sanitizeRequest'));
+  const sanitizeRequest = require(path.join(SERVER, 'src/middleware/sanitize'));
   const probe = express();
   probe.use(express.json());
   probe.use(express.urlencoded({ extended: true }));

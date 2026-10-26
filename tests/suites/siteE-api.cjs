@@ -6,8 +6,8 @@ const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
 const bcrypt = require(path.join(SERVER, 'node_modules/bcryptjs'));
-const Admin = require(path.join(SERVER, 'models/Admin'));
-const trustedProxy = require(path.join(SERVER, 'middleware/trustedProxy'));
+const Admin = require(path.join(SERVER, 'src/models/Admin'));
+const { createTrustedProxy } = require(path.join(SERVER, 'src/middleware/trustedProxy'));
 
 const API = TEST.API;
 const ORIGIN = TEST.APP;
@@ -85,17 +85,16 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(limited > 0 && limited <= 6, 'too many attempts -> 429', `limited at ${limited}`);
 
     console.log('# Proxy secret: the forwarded visitor address is believed only with the secret');
+    let secret = null;
     const run = (headers) => {
       const req = { headers: { 'x-forwarded-for': '203.0.113.9', ...headers } };
       let called = false;
-      trustedProxy(req, {}, () => { called = true; });
+      createTrustedProxy(secret)(req, {}, () => { called = true; });
       return { xff: req.headers['x-forwarded-for'], secretLeft: 'x-tpf-proxy-secret' in req.headers, called };
     };
-    const saved = process.env.PROXY_SECRET;
-    delete process.env.PROXY_SECRET;
     let out = run({ 'x-real-ip': '198.51.100.7', 'x-tpf-proxy-secret': 'anything' });
     ok(out.xff === '203.0.113.9' && !out.secretLeft && out.called, 'no PROXY_SECRET set: unchanged, header dropped');
-    process.env.PROXY_SECRET = 's3cret-value-for-tests';
+    secret = 's3cret-value-for-tests';
     out = run({ 'x-real-ip': '198.51.100.7' });
     ok(out.xff === '203.0.113.9', 'secret missing: unchanged');
     out = run({ 'x-real-ip': '198.51.100.7', 'x-tpf-proxy-secret': 's3cret-value-for-test' });
@@ -104,7 +103,6 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(out.xff === '198.51.100.7' && !out.secretLeft, 'right secret: the visitor address is used');
     out = run({ 'x-real-ip': 'not-an-ip, 1.2.3.4', 'x-tpf-proxy-secret': 's3cret-value-for-tests' });
     ok(out.xff === '203.0.113.9', 'right secret but a malformed address: unchanged');
-    if (saved === undefined) delete process.env.PROXY_SECRET; else process.env.PROXY_SECRET = saved;
   } finally {
     // Whatever happened above, leave the shared admin with its usual password
     const hash = await bcrypt.hash(PASSWORD, 12);

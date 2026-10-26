@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
 const bcrypt = require(path.join(SERVER, 'node_modules/bcryptjs'));
-const Student = require(path.join(SERVER, 'models/Student'));
+const Student = require(path.join(SERVER, 'src/models/Student'));
 
 const APP = TEST.APP;
 const API = TEST.API;

@@ -4,9 +4,9 @@ const { chooseInstitute } = require('../lib/institute.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
 const mongoose = require(path.join(SERVER, 'node_modules/mongoose'));
-const Student = require(path.join(SERVER, 'models/Student'));
-const Application = require(path.join(SERVER, 'models/Application'));
-const Placement = require(path.join(SERVER, 'models/Placement'));
+const Student = require(path.join(SERVER, 'src/models/Student'));
+const Application = require(path.join(SERVER, 'src/models/Application'));
+const Placement = require(path.join(SERVER, 'src/models/Placement'));
 
 const API = TEST.API;
 const ORIGIN = TEST.APP;

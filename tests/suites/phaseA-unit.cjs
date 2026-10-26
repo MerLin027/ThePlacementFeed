@@ -1,7 +1,7 @@
 // Truth table for computeAutoStatus / applyAutoStatus (pure functions, no DB).
 const TEST = require('../lib/env.cjs');
 const path = require('path');
-const { computeAutoStatus, applyAutoStatus } = require(path.join(TEST.SERVER, 'utils/driveStatus'));
+const { computeAutoStatus, applyAutoStatus } = require(path.join(TEST.SERVER, 'src/features/drives/status'));
 let pass = 0, fail = 0;
 const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS' : '  FAIL', l, c ? '' : extra); };
 

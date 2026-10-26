@@ -54,7 +54,7 @@ const run = async () => {
   // 2. Branches move into the database (the API also does this on boot)
   const branchCount = await db.collection('branches').countDocuments();
   console.log(`2. branches in the database: ${branchCount}${branchCount === 0 ? ' (seeded from the built-in list)' : ''}`);
-  if (APPLY && branchCount === 0) await require('../services/catalog').init();
+  if (APPLY && branchCount === 0) await require('../src/features/catalog/cache').init();
 
   // 3. Backlog history is no longer part of the profile
   const withHistory = await students.countDocuments({ historyBacklogs: { $exists: true } });
