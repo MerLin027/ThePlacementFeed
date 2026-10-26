@@ -1,5 +1,4 @@
 const express = require('express');
-const legacy = require('./legacy');
 const publicRoutes = require('./public');
 const studentRoutes = require('./student');
 const adminRoutes = require('./admin');
@@ -15,9 +14,6 @@ const auth = require('../features/auth/routes');
  *                                          (routes/admin.js)
  */
 const api = express.Router();
-
-// TEMPORARY: old addresses for the website version that is being replaced (see legacy.js)
-api.use(legacy);
 
 api.use(publicRoutes);
 api.use('/auth', auth);

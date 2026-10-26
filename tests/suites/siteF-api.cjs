@@ -5,7 +5,7 @@
 //   delete) under the rules the server enforces (never your own role, always one super admin);
 // - joint sign-in (username or email for staff, email for students), one email per account;
 // - staff idle timeout, sessions ended on disable/reset, audit events;
-// - the temporary legacy addresses for the website version being replaced.
+// - the old (pre-namespace) addresses answer 404.
 const TEST = require('../lib/env.cjs');
 const path = require('path');
 const SERVER = TEST.SERVER;
@@ -182,23 +182,11 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(['staff.create', 'staff.update', 'staff.resetPassword', 'staff.delete'].every((x) => actions.has(x)), `staff changes stored (${[...actions].join(', ')})`);
     ok(events.every((e) => e.actor.type === 'staff' && e.actor.role) && !JSON.stringify(events).includes(adminTemp), 'each names the acting staff role; no passwords');
 
-    console.log('# Legacy addresses (one release)');
+    console.log('# Old addresses are gone');
     r = await call('POST', '/api/students/auth/login', { body: { email: `${TAG}s@example.com`, password: 'goodpass123' } });
-    const legacyStudent = cookieOf(r);
-    ok(r.status === 200 && legacyStudent, 'old student login (email field) works');
-    r = await call('GET', '/api/students/auth/check', { cookie: legacyStudent });
-    ok(r.json.authenticated === true && r.json.student.email === `${TAG}s@example.com`, 'old student check answers in the old shape');
-    r = await call('GET', '/api/auth/check', { cookie: legacyStudent });
-    ok(r.json.authenticated === false, 'old admin check says no for a student');
-    r = await call('POST', '/api/auth/login', { body: { username: 'testadmin', password: 'testadminpass' } });
-    const legacyAdmin = cookieOf(r);
-    ok(r.status === 200 && legacyAdmin, 'old admin login (username field) works');
-    r = await call('GET', '/api/placements?limit=2', { cookie: legacyAdmin });
-    ok(r.status === 200 && r.json.data.every((d) => 'statusManuallySet' in d && !('recentChanges' in d)), 'old drive list gives staff the staff view');
+    ok(r.status === 404, 'old student login -> 404');
     r = await call('GET', '/api/placements?limit=2');
-    ok(r.status === 200 && r.json.data.every((d) => !('statusManuallySet' in d) && !('recentChanges' in d)), 'and everyone else the public view');
-    r = await call('POST', '/api/placements', { cookie: legacyStudent, body: { company: 'x' } });
-    ok(r.status === 403, 'old write addresses still apply the guards');
+    ok(r.status === 404, 'old drive list -> 404');
 
     console.log('# Public drive data');
     r = await call('GET', '/api/drives?limit=5');
