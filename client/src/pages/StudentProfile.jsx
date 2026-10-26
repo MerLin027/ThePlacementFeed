@@ -7,7 +7,7 @@ import { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { PageSpinner } from '../components/RequireRole';
+import { PageSpinner } from '../components/RequireAccount';
 import { useCatalog } from '../stores/catalog';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
@@ -60,7 +60,7 @@ const ReadOnlyRow = ({ label, value }) => (
 
 const StudentProfile = () => {
   usePageTitle('My profile');
-  const { refreshStudent } = useAuth();
+  const { refresh } = useAuth();
   const { activeBranches, institutes, branchLabel } = useCatalog();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,7 +84,7 @@ const StudentProfile = () => {
   useEffect(() => {
     const controller = new AbortController();
     api
-      .get('/api/students/me', { signal: controller.signal })
+      .get('/api/student/profile', { signal: controller.signal })
       .then((res) => {
         setProfile(res.data.data);
         setForm(toForm(res.data.data));
@@ -103,15 +103,15 @@ const StudentProfile = () => {
     setIsSavingInstitute(true);
     setInstituteError('');
     try {
-      const res = await api.put('/api/students/me/institute', { instituteId: instituteChoice });
+      const res = await api.put('/api/student/profile/institute', { instituteId: instituteChoice });
       setProfile(res.data.data);
-      await refreshStudent();
+      await refresh();
       toast.success('Institute saved');
     } catch (err) {
       setInstituteError(parseApiError(err, 'Could not save your institute. Please try again.').message);
       // Already set (e.g. in another tab): show what the server has
       if (err.response?.status === 409) {
-        const res = await api.get('/api/students/me').catch(() => null);
+        const res = await api.get('/api/student/profile').catch(() => null);
         if (res) setProfile(res.data.data);
       }
     } finally {
@@ -125,11 +125,11 @@ const StudentProfile = () => {
     setFieldErrors({});
     setIsSaving(true);
     try {
-      const res = await api.patch('/api/students/me', toPayload(form));
+      const res = await api.patch('/api/student/profile', toPayload(form));
       const next = res.data.data;
       setProfile(next);
       setForm(toForm(next));
-      await refreshStudent();
+      await refresh();
       toast.success('Profile saved');
       if (returnTo && next.missingFields.length === 0) {
         navigate(returnTo);

@@ -35,7 +35,7 @@ export const MyApplicationsProvider = ({ children }) => {
     if (!studentId || restricted || inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await api.get('/api/applications/my/summary');
+      const res = await api.get('/api/student/applications/summary');
       setByDrive(new Map(res.data.data.map((a) => [a.driveId, a])));
       setLoadedFor(studentId);
     } catch {

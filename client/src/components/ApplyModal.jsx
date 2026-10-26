@@ -25,7 +25,7 @@ const SummaryRow = ({ label, value }) => (
  */
 const ApplyModal = ({ drive, isOpen, onClose }) => {
   const { branchLabel } = useCatalog();
-  const { refreshStudent } = useAuth();
+  const { refresh } = useAuth();
   const { markApplied } = useMyApplications();
   const prompts = drive.customPrompts || [];
 
@@ -54,7 +54,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
     if (!isOpen) return undefined;
     const controller = new AbortController();
     api
-      .get('/api/students/me', { signal: controller.signal })
+      .get('/api/student/profile', { signal: controller.signal })
       .then((res) => {
         setProfile(res.data.data);
         setResumeUrl(res.data.data.resumeUrl || '');
@@ -86,7 +86,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
 
     setIsSubmitting(true);
     try {
-      await api.post('/api/applications', {
+      await api.post('/api/student/applications', {
         driveId: drive._id,
         resumeUrl: resumeUrl.trim(),
         coverNote: coverNote.trim(),
@@ -108,7 +108,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
       }
       if (code === 'INCOMPLETE_PROFILE' || code?.startsWith('INELIGIBLE')) {
         // Profile changed since the page loaded — refresh so the button updates
-        await refreshStudent();
+        await refresh();
       }
       if (code === 'MISSING_ANSWERS') {
         const missing = {};

@@ -39,7 +39,7 @@ const PlacementDetail = () => {
       setError('');
       setNotFound(false);
       try {
-        const res = await api.get(`/api/placements/${id}`, {
+        const res = await api.get(`/api/drives/${id}`, {
           signal: abortController.signal
         });
         setPlacement(res.data.data);

@@ -80,7 +80,7 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ok(fwb.getWorksheet('Applicants').actualRowCount === 2, 'filtered export (status=Shortlisted) has 1 row');
 
   console.log('# production-mode boot on this Node (cwd without .env, local DB only)');
-  const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, MONGODB_URI: TEST.MONGODB_URI, JWT_SECRET: 'test-secret-0123456789abcdef0123456789', COOKIE_SECRET: 'test-cookie-0123456789abcdef0123456', CLIENT_URL: 'https://client.example.test', NODE_ENV: 'production', PORT: '5098', ADMIN_USERNAME: 'testadmin', ADMIN_PASSWORD: 'testadminpass', NODE_OPTIONS: '--trace-deprecation' };
+  const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, MONGODB_URI: TEST.MONGODB_URI, CLIENT_URL: 'https://client.example.test', NODE_ENV: 'production', PORT: '5098', ADMIN_USERNAME: 'testadmin', ADMIN_PASSWORD: 'testadminpass', NODE_OPTIONS: '--trace-deprecation' };
   const srv = spawn(process.execPath, [path.join(SERVER, 'index.js')], { cwd: TEST.OUT, env });
   let log = '';
   srv.stdout.on('data', (d) => { log += d; });

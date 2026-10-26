@@ -44,7 +44,7 @@ const TAG = `PAB${Date.now() % 100000}`;
 
   console.log('# Admin status control');
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);

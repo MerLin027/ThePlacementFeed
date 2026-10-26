@@ -108,7 +108,7 @@ const inkAround = (page, x, y) => page.evaluate(([px, py]) => {
   page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(APP + '/login');
-  await page.fill('#email', email);
+  await page.fill('#identifier', email);
   await page.fill('#password', 'goodpass123');
   await page.click('button[type=submit]');
   await page.waitForURL(APP + '/');
@@ -137,7 +137,7 @@ const inkAround = (page, x, y) => page.evaluate(([px, py]) => {
   ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   page = await ctx.newPage();
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);

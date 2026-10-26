@@ -65,7 +65,7 @@ const TAG = `P5B${Date.now() % 100000}`;
 
   console.log('# Navigate from dashboard');
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);
@@ -141,7 +141,7 @@ const TAG = `P5B${Date.now() % 100000}`;
   const sctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const spage = await sctx.newPage();
   await spage.goto(APP + '/login');
-  await spage.fill('#email', students.a.email);
+  await spage.fill('#identifier', students.a.email);
   await spage.fill('#password', 'goodpass123');
   await spage.click('button[type=submit]');
   await spage.waitForURL(APP + '/');

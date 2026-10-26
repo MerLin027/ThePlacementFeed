@@ -6,15 +6,19 @@ import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
+import { homeFor } from '../utils/accountHome';
 import { parseApiError } from '../utils/formErrors';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-// One page for both accounts: `forAdmin` (the /admin/change-password route) changes the admin's
-// password; otherwise the student's, including the forced change after an admin reset
-const ChangePassword = ({ forAdmin = false }) => {
+/**
+ * Change your own password: one page for students and staff. After an admin reset (or for a new
+ * staff account) the one-time password isn't asked for again: setting a new one is the only thing
+ * such an account can do.
+ */
+const ChangePassword = () => {
   usePageTitle('Change password');
-  const { student, refreshStudent, logoutStudent } = useAuth();
+  const { account, refresh, logout } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -23,7 +27,10 @@ const ChangePassword = ({ forAdmin = false }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const isReset = !forAdmin && Boolean(student?.mustChangePassword);
+  const isStaff = account?.type === 'staff';
+  const isPending = Boolean(account?.mustChangePassword);
+  // Staff accounts can see every student's details: a longer minimum (the server enforces both)
+  const minLength = isStaff ? 12 : 8;
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
@@ -31,30 +38,21 @@ const ChangePassword = ({ forAdmin = false }) => {
     setError('');
 
     const errors = {};
-    if (!isReset && !form.currentPassword) errors.currentPassword = 'Please enter your current password';
-    if (form.newPassword.length < 8) errors.newPassword = 'Password must be at least 8 characters';
+    if (!isPending && !form.currentPassword) errors.currentPassword = 'Please enter your current password';
+    if (form.newPassword.length < minLength) errors.newPassword = `Password must be at least ${minLength} characters`;
     if (form.confirmPassword !== form.newPassword) errors.confirmPassword = "Passwords don't match";
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
     setIsLoading(true);
     try {
-      if (forAdmin) {
-        await api.post('/api/auth/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
-        toast.success('Password updated');
-        navigate('/admin/dashboard', { replace: true });
-        return;
-      }
-      // A reset session was opened with the temporary password, so it isn't asked for again
       await api.post(
-        '/api/students/me/password',
-        isReset
-          ? { newPassword: form.newPassword }
-          : { currentPassword: form.currentPassword, newPassword: form.newPassword }
+        '/api/auth/password',
+        isPending ? { newPassword: form.newPassword } : { currentPassword: form.currentPassword, newPassword: form.newPassword }
       );
-      await refreshStudent();
+      const next = await refresh();
       toast.success('Password updated');
-      navigate('/profile', { replace: true });
+      navigate(next?.type === 'student' ? '/profile' : homeFor(next), { replace: true });
     } catch (err) {
       const parsed = parseApiError(err, 'Could not update your password. Please try again.');
       setFieldErrors(parsed.fieldErrors);
@@ -66,15 +64,15 @@ const ChangePassword = ({ forAdmin = false }) => {
 
   return (
     <AuthCard
-      title={isReset ? 'Set a new password to continue' : 'Change password'}
-      subtitle={isReset ? 'Required before you can use your account' : "You'll stay logged in here; other devices will be signed out"}
+      title={isPending ? 'Set a new password to continue' : 'Change password'}
+      subtitle={isPending ? 'Required before you can use your account' : "You'll stay logged in here; other devices will be signed out"}
       footer={
-        isReset ? (
+        isPending ? (
           <p>
             Not you?{' '}
             <button
               type="button"
-              onClick={logoutStudent}
+              onClick={logout}
               className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
             >
               Log out
@@ -84,18 +82,20 @@ const ChangePassword = ({ forAdmin = false }) => {
       }
     >
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-sm" noValidate>
-        {isReset && (
+        {isPending && (
           <FormAlert tone="warning" icon="lock_reset">
-            <p className="font-semibold">Your password was reset by the CDPC admin.</p>
+            <p className="font-semibold">
+              {isStaff ? 'You signed in with a one-time password.' : 'Your password was reset by the CDPC admin.'}
+            </p>
             <p className="mt-[2px]">
-              Choose a new password that only you know before you browse, apply or edit your profile.
-              You won&apos;t need the temporary password again.
+              Choose a password that only you know before you continue. You won&apos;t need the one-time
+              password again.
             </p>
           </FormAlert>
         )}
         {error && <FormAlert>{error}</FormAlert>}
 
-        {!isReset && (
+        {!isPending && (
           <FormField
             id="currentPassword"
             label="Current password"
@@ -117,9 +117,9 @@ const ChangePassword = ({ forAdmin = false }) => {
           onChange={update('newPassword')}
           autoComplete="new-password"
           maxLength={72}
-          helper="At least 8 characters."
+          helper={`At least ${minLength} characters. Avoid common passwords and your own name, email or roll number.`}
           error={fieldErrors.newPassword}
-          autoFocus={isReset}
+          autoFocus={isPending}
         />
 
         <FormField

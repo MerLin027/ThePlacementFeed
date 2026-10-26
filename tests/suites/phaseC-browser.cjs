@@ -41,7 +41,7 @@ const TAG = `PC${Date.now() % 100000}`;
   const page = await ctx.newPage();
   const loginStudent = async (pw = 'goodpass123') => {
     await page.goto(APP + '/login');
-    await page.fill('#email', email);
+    await page.fill('#identifier', email);
     await page.fill('#password', pw);
     await page.click('button[type=submit]');
   };
@@ -78,11 +78,11 @@ const TAG = `PC${Date.now() % 100000}`;
   await Student.updateOne({ email }, { passwordHash: await bcrypt.hash('college123', 12), mustChangePassword: true, tempPasswordExpiresAt: new Date(Date.now() + 72 * 3600e3), $inc: { tokenVersion: 1 } });
   await page.goto(APP + '/login');
   await page.getByText('Trouble logging in?').click(); // the reset hints sit in a disclosure
-  ok(await hasText(page, 'Log in with the temporary password the admin gave you'), 'login page hint for reset students');
+  ok(await hasText(page, 'Log in with the one-time password you were given'), 'login page hint for reset accounts');
   await loginStudent('college123');
   await page.waitForURL(/\/change-password/);
   ok(await hasText(page, 'Set a new password to continue') && await hasText(page, 'Required before you can use your account'), 'title says it is required');
-  ok(await hasText(page, "You won't need the temporary password again"), 'explains the temporary password is not asked for again');
+  ok(await hasText(page, "You won't need the one-time"), 'explains the one-time password is not asked for again');
 
   console.log('# Route matrix');
   const routes = ['/', '/timeline', '/login', '/signup', '/profile', '/applications', '/change-password', '/admin/login', '/admin/dashboard', '/admin/students', `/admin/drives/${d1._id}/applicants`, `/placement/${d1._id}`, '/nope'];
@@ -101,18 +101,18 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.click('button[type=submit]');
   await page.waitForURL(/\/profile$/);
   // Student
-  const studentExpect = { '/profile': '/profile', '/applications': '/applications', '/change-password': '/change-password', '/admin/dashboard': '/admin/login', '/admin/students': '/admin/login', [`/admin/drives/${d1._id}/applicants`]: '/admin/login', '/login': '/', '/signup': '/profile' };
+  const studentExpect = { '/profile': '/profile', '/applications': '/applications', '/change-password': '/change-password', '/admin/dashboard': '/', '/admin/students': '/', [`/admin/drives/${d1._id}/applicants`]: '/', '/login': '/', '/signup': '/profile' };
   for (const [r, exp] of Object.entries(studentExpect)) ok((await landing(r, exp)) === exp, `student ${r} -> ${exp}`);
   // Guest
   await page.goto(APP + '/');
   await logout(page);
   await until(async () => (await page.locator('header nav').first().innerText()).includes('Login'));
-  const guestExpect = { '/profile': '/login', '/applications': '/login', '/change-password': '/login', '/admin/dashboard': '/admin/login', '/admin/students': '/admin/login', '/timeline': '/timeline', '/nope': '/nope' };
+  const guestExpect = { '/profile': '/login', '/applications': '/login', '/change-password': '/login', '/admin/dashboard': '/login', '/admin/students': '/login', '/timeline': '/timeline', '/nope': '/nope' };
   for (const [r, exp] of Object.entries(guestExpect)) ok((await landing(r, exp)) === exp, `guest ${r} -> ${exp}`);
   ok(await hasText(page, 'Page not found') || await hasText(page, '404'), '404 page renders');
   // Admin
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);

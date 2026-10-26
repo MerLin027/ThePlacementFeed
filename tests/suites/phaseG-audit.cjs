@@ -78,7 +78,7 @@ const audit = async (page, label, consoleErrors) => {
       await audit(page, `${vp} guest ${name}`, consoleErrors);
     }
     await page.goto(APP + '/login');
-    await page.fill('#email', email);
+    await page.fill('#identifier', email);
     await page.fill('#password', 'goodpass123');
     await page.click('button[type=submit]');
     await page.waitForURL(APP + '/');
@@ -90,7 +90,7 @@ const audit = async (page, label, consoleErrors) => {
     await page.goto(APP + '/');
     await logout(page);
     await page.goto(APP + '/admin/login');
-    await page.fill('#username', 'testadmin');
+    await page.fill('#identifier', 'testadmin');
     await page.fill('#password', 'testadminpass');
     await page.click('button[type=submit]');
     await page.waitForURL(/dashboard/);

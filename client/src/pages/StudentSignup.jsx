@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
+import { afterSignIn } from '../utils/accountHome';
 import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
@@ -17,14 +18,14 @@ const StudentSignup = () => {
   useFocusFirstInvalid(formRef, fieldErrors);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { student, signupStudent } = useAuth();
+  const { account, signup } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get('returnTo'), '/profile');
 
   useEffect(() => {
-    if (student) navigate(returnTo, { replace: true });
-  }, [student, navigate, returnTo]);
+    if (account) navigate(afterSignIn(account, returnTo), { replace: true });
+  }, [account, navigate, returnTo]);
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -46,7 +47,7 @@ const StudentSignup = () => {
 
     setIsLoading(true);
     try {
-      await signupStudent({
+      await signup({
         email: form.email.trim(),
         rollNumber: form.rollNumber.trim(),
         password: form.password,

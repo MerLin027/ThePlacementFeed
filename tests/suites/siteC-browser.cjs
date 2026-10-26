@@ -56,7 +56,7 @@ const axeViolations = async (page) => {
 
   console.log('# Student profile: university and the one-time institute picker');
   await page.goto(APP + '/login');
-  await page.fill('#email', email);
+  await page.fill('#identifier', email);
   await page.fill('#password', 'goodpass123');
   await page.click('button[type=submit]');
   await page.waitForURL(APP + '/');
@@ -82,8 +82,9 @@ const axeViolations = async (page) => {
   await api('POST', '/api/student/applications', { driveId: drive._id, consentGiven: true }, SH);
 
   console.log('# Admin: Settings page');
-  await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.context().clearCookies(); // one session per browser: sign the student out first
+  await page.goto(APP + '/login');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);

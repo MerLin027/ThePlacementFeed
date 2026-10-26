@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../../context/auth';
+import { PERMISSIONS } from '../../constants/permissions';
 import NotificationBell from '../Notifications/NotificationBell';
 import AccountMenu from './AccountMenu';
 import logo from '../../assets/logo.png';
@@ -41,11 +42,11 @@ const initialOf = (student) => {
  * dotted background showing around it, and the notification bell in its own round button beside it
  * (so it never crowds the student's avatar). No full-width border line; both are set apart by a
  * near-invisible hairline and a soft shadow that grows a little once the page scrolls.
- * Both roles log out (and change their password) from the account menu on the right; on phones,
- * from the menu.
+ * Students and staff log out (and change their password) from the account menu on the right; on
+ * phones, from the menu. Staff see the areas their role allows (Setup and Team: super admins).
  */
 const Navbar = () => {
-  const { role, student, adminName, logoutAdmin, logoutStudent } = useAuth();
+  const { student, staff, can, logout } = useAuth();
   const location = useLocation();
   const menuButtonRef = useRef(null);
 
@@ -86,17 +87,19 @@ const Navbar = () => {
     { to: '/timeline', label: 'Timeline', icon: 'timeline' },
   ];
 
-  // Auth-aware links. The admin login is intentionally not linked publicly;
-  // /admin/login stays reachable by URL.
-  if (role === 'admin') {
+  // Account-aware links: staff see the areas their role allows (the server checks them too)
+  if (staff) {
     navLinks.push(
-      { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
-      { to: '/admin/students', label: 'Students', icon: 'group' },
-      { to: '/admin/settings', label: 'Setup', icon: 'tune' },
+      ...[
+        can(PERMISSIONS.DRIVES) && { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
+        can(PERMISSIONS.STUDENTS) && { to: '/admin/students', label: 'Students', icon: 'group' },
+        can(PERMISSIONS.SETUP) && { to: '/admin/settings', label: 'Setup', icon: 'tune' },
+        can(PERMISSIONS.STAFF) && { to: '/admin/team', label: 'Team', icon: 'badge' },
+      ].filter(Boolean),
       // The account menu holds this on wider screens; phones (no account button) get it in their menu
-      { to: '/admin/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
+      { to: '/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
     );
-  } else if (role === 'student') {
+  } else if (student) {
     // Profile and the password live in the avatar menu; phones (no avatar) get them in their menu
     navLinks.push(
       { to: '/applications', label: 'My Applications', icon: 'work_history' },
@@ -107,7 +110,7 @@ const Navbar = () => {
     navLinks.push({ to: '/login', label: 'Login', icon: 'login' }, { to: '/signup', label: 'Sign up', icon: 'person_add', cta: true });
   }
 
-  const logout = role === 'admin' ? logoutAdmin : role === 'student' ? logoutStudent : null;
+  const signedIn = Boolean(staff || student);
 
   const isActive = (path) => location.pathname === path;
   // Already home: the logo and Home link take you back to the top instead of doing nothing
@@ -189,20 +192,20 @@ const Navbar = () => {
 
           {/* Right — flex-1 balances the logo; the menu button lives here on phones */}
           <div className="flex-1 flex items-center justify-end gap-2">
-            {role === 'admin' && (
+            {staff && (
               <div className="hidden md:block">
                 <AccountMenu
-                  label="Admin account"
+                  label={`${staff.roleLabel || 'Admin'} account`}
                   avatar={<span className="material-symbols-outlined text-[18px]">verified_user</span>}
-                  tag="Admin"
-                  name="CDPC admin"
-                  detail={adminName ? `Signed in as ${adminName}` : null}
-                  links={[{ to: '/admin/change-password', label: 'Change password', icon: 'key' }]}
-                  onLogout={logoutAdmin}
+                  tag={staff.roleLabel || 'Admin'}
+                  name={staff.name || 'CDPC admin'}
+                  detail={`Signed in as ${staff.username}`}
+                  links={[{ to: '/change-password', label: 'Change password', icon: 'key' }]}
+                  onLogout={logout}
                 />
               </div>
             )}
-            {role === 'student' && (
+            {student && (
               <div className="hidden md:block">
                 <AccountMenu
                   avatar={initialOf(student)}
@@ -212,7 +215,7 @@ const Navbar = () => {
                     { to: '/profile', label: 'Profile', icon: 'person' },
                     { to: '/change-password', label: 'Change password', icon: 'key' },
                   ]}
-                  onLogout={logoutStudent}
+                  onLogout={logout}
                 />
               </div>
             )}
@@ -258,7 +261,7 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            {logout && (
+            {signedIn && (
               <>
                 <div className="h-px mx-sm my-1 bg-outline-variant/70" aria-hidden="true" />
                 <button

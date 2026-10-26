@@ -7,7 +7,7 @@ import IconAction from '../components/IconAction';
 import TwoStepConfirmDialog from '../components/TwoStepConfirmDialog';
 import FormField from '../components/FormField';
 import { FormAlert } from '../components/AuthCard';
-import { PageSpinner } from '../components/RequireRole';
+import { PageSpinner } from '../components/RequireAccount';
 import { loadCatalog } from '../stores/catalog';
 import { parseApiError } from '../utils/formErrors';
 import { usePageTitle } from '../hooks/usePageTitle';

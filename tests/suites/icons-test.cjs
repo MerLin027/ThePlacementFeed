@@ -57,12 +57,12 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
       await page.fill('input[placeholder*="Search"]', 'zzzz-none'); await collect(page, 'empty search');
     }
     // student pages
-    await page.goto(APP + '/login'); await page.fill('#email', email); await page.fill('#password', 'goodpass123'); await page.click('button[type=submit]');
+    await page.goto(APP + '/login'); await page.fill('#identifier', email); await page.fill('#password', 'goodpass123'); await page.click('button[type=submit]');
     await page.waitForURL((u) => !u.pathname.startsWith('/login')).catch(() => {});
     for (const r of ['/', '/profile', '/applications', '/change-password', `/placement/${drive._id}`]) { await page.goto(APP + r); await collect(page, `${vp} student ${r}`); }
     await page.goto(APP + '/'); await logout(page);
     // admin pages
-    await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
+    await page.goto(APP + '/admin/login'); await page.fill('#identifier', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
     await page.waitForURL(/dashboard/).catch(() => {});
     for (const r of ['/admin/dashboard', '/admin/students', `/admin/drives/${drive._id}/applicants`]) { await page.goto(APP + r); await collect(page, `${vp} admin ${r}`); }
     await page.goto(APP + '/admin/dashboard'); await page.getByRole('button', { name: 'Add placement' }).click(); await collect(page, `${vp} drive form`);

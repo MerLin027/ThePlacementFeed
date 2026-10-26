@@ -22,16 +22,21 @@ and apply. The CDPC admin posts drives and manages applicants from a protected d
 - A notification bell reports new drives, status changes and postponements, plus changes to the
   student's own applications.
 
-**For the admin**
+**For CDPC staff**
 
-- Create, edit, postpone and delete drives. A drive's status follows its dates automatically, and the
-  admin can pin a status by hand.
+- Create, edit, postpone and delete drives. A drive's status follows its dates automatically, and
+  staff can pin a status by hand.
 - For each drive, review applicants, change their status one at a time or in bulk, and export to
   Excel.
 - Manage student accounts: search, reset a password, delete.
+- Two roles. **Admins** can do all of the above. **Super admins** also manage Setup (branches,
+  institutes, the university name) and the team: add admins, change roles, reset passwords, disable
+  and delete accounts. There is always at least one super admin.
 
-There is no email. A student who forgets their password asks the CDPC, and the admin issues a
-temporary one. It works for 72 hours and has to be changed at the next login.
+Everyone signs in on the same page: students with their email, staff with their username or email.
+There is no email sending. A student who forgets their password asks the CDPC, and staff issue a
+random one-time password, shown once. It works for 72 hours and only to set a new password. New
+staff accounts start the same way.
 
 ## Built with
 
@@ -71,9 +76,10 @@ npm install
 npm run dev
 ```
 
-On first start, the API creates the admin account from `ADMIN_USERNAME` and `ADMIN_PASSWORD`. The
-admin signs in at `/admin/login`, which is deliberately not linked in the menu. To change the admin
-credentials later, run `node server/scripts/resetAdmin.js`.
+On first start, the API creates the super admin from `ADMIN_USERNAME` and `ADMIN_PASSWORD` (an
+existing single admin from an older version becomes the super admin automatically). Staff sign in on
+the normal login page with their username. If nobody can sign in as a super admin any more, run
+`node server/scripts/resetAdmin.js` to restore one account.
 
 ### Configuration
 
@@ -82,22 +88,22 @@ credentials later, run `node server/scripts/resetAdmin.js`.
 | Variable | Needed | Purpose |
 |---|---|---|
 | `MONGODB_URI` | yes | Database connection string |
-| `JWT_SECRET` | yes | Signs session tokens (32+ random characters) |
-| `COOKIE_SECRET` | yes | Signs cookies (32+ random characters) |
-| `CLIENT_URL` | yes | The website's address, for CORS and CSRF checks |
+| `CLIENT_URL` | yes | The website's address (https in production), for CORS and CSRF checks |
 | `NODE_ENV` | yes | `development` locally, `production` when deployed |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | first start | Create the admin account |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | first start | Create the super admin |
 | `PORT` | no | Defaults to 5000 (Render sets it) |
 | `CRON_SECRET` | no | Enables `GET /api/cron/trigger` for an external scheduler |
-| `DEFAULT_STUDENT_PASSWORD` | no | Temporary password after an admin reset (default `college123`) |
 | `PROXY_SECRET` | no | Same value as in Vercel; lets rate limits see each visitor's address (see Deployment) |
 
 `client/.env`: `VITE_API_URL`, the address of the API in development. Production builds call `/api`
 on the site's own domain instead.
 
+Sessions are kept on the server (no signing secret to manage): see [server/API.md](server/API.md)
+for how access works, every endpoint, its limits and what it records in the audit trail.
+
 ## Tests
 
-The `tests/` folder holds 791 automated checks in 27 suites. They cover the API, the website in a
+The `tests/` folder holds the automated checks (about 1,300 in 36 suites). They cover the API, the website in a
 real browser (Playwright) and accessibility (axe-core) at desktop and phone sizes. They only run
 against a local, throwaway MongoDB on port 27099 and refuse any other database, so your real data
 is never touched.
@@ -123,8 +129,9 @@ node run.mjs phaseE-test      # or run selected suites by file name
   believes the visitor address Vercel forwards only when that matches its own `PROXY_SECRET`.
   Every other path goes to the single-page app. `vercel.json` also
   sets the security headers (Content-Security-Policy, no framing, no MIME sniffing). The policy only
-  lets the site call its own origin and the API at `https://theplacementfeed-api.onrender.com`. If the
-  API moves, or you add another outside service, update `connect-src` (or the matching directive) too.
+  lets the site call its own origin (the API is reached through the proxy). If the API moves, update
+  the proxy destination in `vercel.json`; to add another outside service, update `connect-src` (or
+  the matching directive) too.
   Scripts must come from the site itself. Inline *styles* are allowed on purpose: React `style`
   attributes and the toast library need them, and a static host can't issue per-request nonces.
 - **API:** Render, with the root directory set to `server`. It builds on Node 24, as set by
@@ -139,8 +146,10 @@ Chrome 99, Safari 15.4 and Firefox 97 or newer. Older browsers can't load the st
 ## Project layout
 
 ```
-client/   React website: pages/, components/, context/ (sessions), index.css (theme and motion)
-server/   Express API: routes/, models/, middleware/, services/ (apply rules), jobs/ (daily status update)
+client/   React website: pages/, components/, context/ (the signed-in account), index.css (theme)
+server/   Express API. index.js starts it; src/app.js builds it; src/routes/ decides who may call what
+          (public, auth, student, admin); src/features/ holds each area's routes, rules and logic;
+          src/models/, src/middleware/, src/lib/. API.md describes every endpoint
 tests/    Regression suites and their runner
 ```
 

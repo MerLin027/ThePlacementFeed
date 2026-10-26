@@ -39,7 +39,7 @@ const Timeline = () => {
       let all = first.data;
       const totalPages = Math.min(first.pagination.totalPages, MAX_PAGES);
       for (let page = 2; page <= totalPages && !cancelled; page++) {
-        const res = await api.get('/api/placements', { params: { limit: PAGE_LIMIT, sort: 'date_desc', page } });
+        const res = await api.get('/api/drives', { params: { limit: PAGE_LIMIT, sort: 'date_desc', page } });
         all = all.concat(res.data.data);
       }
       if (!cancelled) {

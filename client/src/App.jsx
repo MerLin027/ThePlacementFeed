@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { MyApplicationsProvider } from './context/MyApplicationsContext';
@@ -7,7 +7,8 @@ import { Toaster } from 'react-hot-toast';
 import { LazyMotion, MotionConfig } from 'motion/react';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
-import RequireRole, { PageSpinner } from './components/RequireRole';
+import RequireAccount, { PageSpinner } from './components/RequireAccount';
+import { PERMISSIONS } from './constants/permissions';
 import RouteEffects from './components/RouteEffects';
 import PageTransition from './components/PageTransition';
 import Backdrop from './components/backdrop/Backdrop';
@@ -16,9 +17,8 @@ import Home from './pages/Home';
 // Only Home is in the first download; every other page loads when it is first visited
 const PlacementDetail = lazy(() => import('./pages/PlacementDetail'));
 const Timeline = lazy(() => import('./pages/Timeline'));
-const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const StudentLogin = lazy(() => import('./pages/StudentLogin'));
+const Login = lazy(() => import('./pages/Login'));
 const StudentSignup = lazy(() => import('./pages/StudentSignup'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword'));
@@ -29,6 +29,16 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminStudents = lazy(() => import('./pages/AdminStudents'));
 const AdminApplicants = lazy(() => import('./pages/AdminApplicants'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const AdminTeam = lazy(() => import('./pages/AdminTeam'));
+
+// Old addresses that moved, kept so bookmarks and links still work (the query string is carried over)
+const MovedTo = ({ to }) => {
+  const { search } = useLocation();
+  return <Navigate to={`${to}${search}`} replace />;
+};
+
+const student = (page) => <RequireAccount type="student">{page}</RequireAccount>;
+const staff = (page, permission) => <RequireAccount type="staff" permission={permission}>{page}</RequireAccount>;
 
 // Motion's features load after the first render (motionFeatures.js); `strict` keeps code on the
 // lightweight `m.` components
@@ -75,73 +85,27 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/placement/:id" element={<PlacementDetail />} />
               <Route path="/timeline" element={<Timeline />} />
-              <Route path="/login" element={<StudentLogin />} />
+              {/* One sign-in page for students and staff */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin/login" element={<MovedTo to="/login" />} />
               <Route path="/signup" element={<StudentSignup />} />
-              <Route
-                path="/profile"
-                element={
-                  <RequireRole role="student">
-                    <StudentProfile />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/applications"
-                element={
-                  <RequireRole role="student">
-                    <MyApplications />
-                  </RequireRole>
-                }
-              />
+              <Route path="/profile" element={student(<StudentProfile />)} />
+              <Route path="/applications" element={student(<MyApplications />)} />
+              {/* Any account; also the only page open while a reset password must be changed */}
               <Route
                 path="/change-password"
                 element={
-                  <RequireRole role="student" allowPendingPasswordChange>
+                  <RequireAccount allowPendingPasswordChange>
                     <ChangePassword />
-                  </RequireRole>
+                  </RequireAccount>
                 }
               />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route
-                path="/admin/change-password"
-                element={
-                  <RequireRole role="admin">
-                    <ChangePassword forAdmin />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <RequireRole role="admin">
-                    <AdminDashboard />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/admin/drives/:driveId/applicants"
-                element={
-                  <RequireRole role="admin">
-                    <AdminApplicants />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/admin/students"
-                element={
-                  <RequireRole role="admin">
-                    <AdminStudents />
-                  </RequireRole>
-                }
-              />
-              <Route
-                path="/admin/settings"
-                element={
-                  <RequireRole role="admin">
-                    <AdminSettings />
-                  </RequireRole>
-                }
-              />
+              <Route path="/admin/change-password" element={<MovedTo to="/change-password" />} />
+              <Route path="/admin/dashboard" element={staff(<AdminDashboard />, PERMISSIONS.DRIVES)} />
+              <Route path="/admin/drives/:driveId/applicants" element={staff(<AdminApplicants />, PERMISSIONS.APPLICANTS)} />
+              <Route path="/admin/students" element={staff(<AdminStudents />, PERMISSIONS.STUDENTS)} />
+              <Route path="/admin/settings" element={staff(<AdminSettings />, PERMISSIONS.SETUP)} />
+              <Route path="/admin/team" element={staff(<AdminTeam />, PERMISSIONS.STAFF)} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>

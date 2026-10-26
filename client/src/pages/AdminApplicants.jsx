@@ -101,7 +101,7 @@ const AdminApplicants = () => {
     const controller = new AbortController();
     const key = JSON.stringify([driveId, JSON.stringify(params), page, reloadKey]);
     api
-      .get(`/api/placements/${driveId}/applicants`, {
+      .get(`/api/admin/drives/${driveId}/applicants`, {
         params: { ...params, page, limit: PAGE_SIZE },
         signal: controller.signal,
       })
@@ -135,7 +135,7 @@ const AdminApplicants = () => {
   const toggleAll = (checked) => setSelected(checked ? new Set(applicants.map((a) => a.id)) : new Set());
 
   const saveApplicant = async (applicant, changes) => {
-    const res = await api.patch(`/api/placements/${driveId}/applicants/${applicant.id}`, changes);
+    const res = await api.patch(`/api/admin/drives/${driveId}/applicants/${applicant.id}`, changes);
     setApplicants((prev) => prev.map((a) => (a.id === applicant.id ? res.data.data : a)));
     if (changes.status && changes.status !== applicant.status) reload(); // refresh stats
     return res.data.data;
@@ -160,7 +160,7 @@ const AdminApplicants = () => {
   const handleBulkUpdate = async () => {
     setIsBulkSaving(true);
     try {
-      const res = await api.patch(`/api/placements/${driveId}/applicants/bulk-status`, {
+      const res = await api.patch(`/api/admin/drives/${driveId}/applicants/bulk-status`, {
         applicationIds: [...selected],
         status: bulkStatus,
       });
@@ -176,7 +176,7 @@ const AdminApplicants = () => {
   const handleBulkDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await api.post(`/api/placements/${driveId}/applicants/bulk-delete`, { applicationIds: [...selected] });
+      const res = await api.post(`/api/admin/drives/${driveId}/applicants/bulk-delete`, { applicationIds: [...selected] });
       toast.success(`${res.data.deleted} application${res.data.deleted === 1 ? '' : 's'} deleted`);
       // Emptied the last page: step back one so the list isn't left blank
       if (page > 1 && selected.size >= applicants.length) setPage(page - 1);
@@ -190,7 +190,7 @@ const AdminApplicants = () => {
 
   // From the details dialog: one application
   const handleDeleteOne = async (applicant) => {
-    await api.post(`/api/placements/${driveId}/applicants/bulk-delete`, { applicationIds: [applicant.id] });
+    await api.post(`/api/admin/drives/${driveId}/applicants/bulk-delete`, { applicationIds: [applicant.id] });
     toast.success('Application deleted');
     setViewing(null);
     if (page > 1 && applicants.length === 1) setPage(page - 1);
@@ -200,7 +200,7 @@ const AdminApplicants = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await api.get(`/api/placements/${driveId}/applicants/export`, {
+      const res = await api.get(`/api/admin/drives/${driveId}/applicants/export`, {
         params,
         responseType: 'blob',
       });

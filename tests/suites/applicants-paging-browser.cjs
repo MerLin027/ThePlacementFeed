@@ -31,7 +31,7 @@ const J = (c) => ({ 'Content-Type': 'application/json', Origin: APP, ...(c ? { C
 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
+  await page.goto(APP + '/admin/login'); await page.fill('#identifier', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);
   await page.goto(`${APP}/admin/drives/${drive._id}/applicants`);
   const rows = page.locator('tbody tr');

@@ -136,7 +136,7 @@ const MyApplications = () => {
     const key = `${tab}|${page}`;
     const params = { page, limit: PAGE_SIZE, ...(tab !== 'all' && { group: tab }) };
     api
-      .get('/api/applications/my', { params, signal: controller.signal })
+      .get('/api/student/applications', { params, signal: controller.signal })
       .then((res) => {
         setResult({ key, applications: res.data.data, pagination: res.data.pagination, counts: res.data.counts, error: '' });
       })

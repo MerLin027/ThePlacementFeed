@@ -10,7 +10,7 @@ import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { parseApiError } from '../../utils/formErrors';
 
 /**
- * One drive's applicants by CGPA band and by branch (GET /api/placements/:driveId/applicants/insights).
+ * One drive's applicants by CGPA band and by branch (GET /api/admin/drives/:driveId/applicants/insights).
  * Loaded lazily from the applicants page when its "Insights" section is opened, so the chart
  * library is fetched only then.
  */
@@ -23,7 +23,7 @@ const DriveInsights = ({ driveId, reloadKey }) => {
   useEffect(() => {
     const controller = new AbortController();
     api
-      .get(`/api/placements/${driveId}/applicants/insights`, { signal: controller.signal })
+      .get(`/api/admin/drives/${driveId}/applicants/insights`, { signal: controller.signal })
       .then((res) => {
         setData(res.data.data);
         setError('');

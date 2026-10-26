@@ -1,7 +1,6 @@
-// Session probes (audit L-3): without a session cookie, GET /api/auth/session and /api/auth/session
-// answer 200 { authenticated: false }, so pages no longer log a 401 for every visitor. A guest, a student
-// (no admin cookie) and the admin (no student cookie) browse a few pages; no probe may answer 401.
-// A cookie that is present but invalid must still get 401 (covered in phase1-test and upgrade3-test).
+// The session probe: one GET /api/auth/session per page load, answering 200 for guests, students and
+// staff alike (signed out, or an expired session, is a normal answer, not a console error). A stale
+// cookie reads as logged out, flagged expired, and student-only pages send the visitor to log in.
 const TEST = require('../lib/env.cjs');
 const { logout } = require('../lib/logout.cjs');
 const { until } = require('../lib/wait.cjs');
@@ -14,7 +13,7 @@ const TAG = `PS${Date.now() % 100000}`;
 let pass = 0, fail = 0;
 const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS' : '  FAIL', l, c ? '' : extra); };
 const J = { 'Content-Type': 'application/json', Origin: APP };
-const PROBES = /\/api\/(students\/)?auth\/check$/;
+const PROBES = /\/api\/auth\/session$/;
 
 (async () => {
   await mongoose.connect(TEST.MONGODB_URI);
@@ -37,30 +36,31 @@ const PROBES = /\/api\/(students\/)?auth\/check$/;
 
   console.log('# guest');
   let seen = await browse(routes);
-  ok(seen.length >= routes.length * 2, `both probes asked on every page (${seen.length} responses)`);
-  ok(seen.every((p) => p.status === 200), 'guest: no probe answers 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
+  ok(seen.length >= routes.length, `the probe is asked on every page (${seen.length} responses)`);
+  ok(seen.every((p) => p.status === 200), 'guest: the probe never answers 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
 
   console.log('# student');
-  await page.goto(APP + '/login'); await page.fill('#email', email); await page.fill('#password', 'goodpass123'); await page.click('button[type=submit]');
+  await page.goto(APP + '/login'); await page.fill('#identifier', email); await page.fill('#password', 'goodpass123'); await page.click('button[type=submit]');
   await page.waitForURL((u) => !u.pathname.startsWith('/login'));
   seen = await browse(['/', '/applications', '/profile']);
-  ok(seen.some((p) => p.path === '/api/auth/session' && p.status === 200), 'student session recognised');
-  ok(seen.every((p) => p.status === 200), 'student: the admin probe does not answer 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
+  ok(seen.length > 0 && seen.every((p) => p.status === 200), 'student: the probe answers 200 on every page', JSON.stringify(seen));
   ok(await page.getByRole('link', { name: 'My Applications' }).first().isVisible(), 'student navigation shown');
   await logout(page);
 
   console.log('# admin');
-  await page.goto(APP + '/admin/login'); await page.fill('#username', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
+  await page.goto(APP + '/login'); await page.fill('#identifier', 'testadmin'); await page.fill('#password', 'testadminpass'); await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);
   seen = await browse(['/admin/dashboard', '/', '/admin/students']);
-  ok(seen.every((p) => p.status === 200), 'admin: the student probe does not answer 401', JSON.stringify(seen.filter((p) => p.status !== 200)));
+  ok(seen.every((p) => p.status === 200), 'staff: the probe answers 200 on every page', JSON.stringify(seen.filter((p) => p.status !== 200)));
   ok(await page.getByRole('button', { name: 'Add placement' }).isVisible().catch(() => false) || page.url().includes('/admin/students'), 'admin pages still load');
 
   console.log('# expired session still reads as logged out');
   await ctx.addCookies([{ name: 'tpf_session', value: 'garbage', url: API }]);
-  probes.length = 0;
-  await page.goto(APP + '/applications'); await page.waitForLoadState('networkidle').catch(() => {});
-  ok(probes.some((p) => p.path === '/api/auth/session' && p.status === 401), 'a bad student cookie still gets 401');
+  const stale = page.waitForResponse((r) => PROBES.test(new URL(r.url()).pathname));
+  await page.goto(APP + '/applications');
+  const answer = await (await stale).json();
+  await page.waitForLoadState('networkidle').catch(() => {});
+  ok(answer.authenticated === false && answer.expired === true, 'a stale cookie reads as logged out, flagged expired');
   ok(/\/login/.test(page.url()), 'and the student-only page sends the visitor to log in', page.url());
 
   await browser.close();

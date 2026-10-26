@@ -114,7 +114,7 @@ export const NotificationProvider = ({ children }) => {
     polling.current = true;
     try {
       const cursor = readJSON(CURSOR_KEY, null);
-      const res = await api.get('/api/placements/changes', {
+      const res = await api.get('/api/drives/changes', {
         params: { since: cursor || new Date().toISOString() },
       });
       const { data = [], serverTime } = res.data || {};

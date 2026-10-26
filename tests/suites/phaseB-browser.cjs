@@ -167,7 +167,7 @@ const bellItems = async (page) => {
   const sctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const sp = await sctx.newPage();
   await sp.goto(APP + '/login');
-  await sp.fill('#email', email);
+  await sp.fill('#identifier', email);
   await sp.fill('#password', 'goodpass123');
   // Logging in is a client-side navigation: only the student's summary is fetched, not drive changes
   await afterPoll(sp, () => sp.click('button[type=submit]'), { changes: false, summary: true });

@@ -33,8 +33,7 @@ const up = async (url, tries = 60) => { for (let i = 0; i < tries; i++) { try { 
 // nothing from the real server/.env (production Atlas) can leak in.
 const apiEnv = {
   PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, TEMP: process.env.TEMP, TMP: process.env.TMP,
-  MONGODB_URI: env.assertLocalDb(), JWT_SECRET: 'test-secret-0123456789abcdef0123456789',
-  COOKIE_SECRET: 'test-cookie-0123456789abcdef0123456', CLIENT_URL: env.APP, NODE_ENV: 'development',
+  MONGODB_URI: env.assertLocalDb(), CLIENT_URL: env.APP, NODE_ENV: 'development',
   PORT: new URL(env.API).port, ADMIN_USERNAME: 'testadmin', ADMIN_PASSWORD: 'testadminpass', CRON_SECRET: env.CRON_SECRET,
   NODE_OPTIONS: process.env.NODE_OPTIONS || '',
 };

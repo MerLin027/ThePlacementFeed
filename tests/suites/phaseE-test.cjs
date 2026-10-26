@@ -156,7 +156,7 @@ const axeScan = async (page, label) => {
   await fetch(API + '/api/student/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Origin: APP, Cookie: sc }, body: JSON.stringify({ firstName: 'Ved', lastName: 'Shah', branch: 'CE', cgpa: 8, graduationYear: 2026, phone: '9876543210', resumeUrl: 'https://example.com/v.pdf' }) });
   await chooseInstitute(sc);
   await page.goto(APP + '/login');
-  await page.fill('#email', email);
+  await page.fill('#identifier', email);
   await page.fill('#password', 'goodpass123');
   await page.click('button[type=submit]');
   await page.waitForURL(APP + '/');

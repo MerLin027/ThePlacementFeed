@@ -50,7 +50,7 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await ctx.addInitScript(() => { try { localStorage.setItem('tpf:notificationCursor', JSON.stringify(new Date().toISOString())); } catch {} });
   const page = await ctx.newPage();
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);
@@ -116,7 +116,7 @@ const smallTargets = (page, scope = 'main') => page.evaluate((sel) => {
   await dialog.locator('input[name=applicationMode][value=in_app]').check();
   await dialog.getByRole('button', { name: 'Add question' }).click();
   await dialog.getByLabel('Question 1', { exact: true }).fill('Fine with Pune?');
-  await page.route('**/api/drives', async (route) => {
+  await page.route('**/api/admin/drives', async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
     await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ success: false, message: 'Validation failed', errors: [{ field: 'customPrompts[0].question', message: 'Questions cannot exceed 500 characters' }] }) });
   });

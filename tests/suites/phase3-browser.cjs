@@ -37,7 +37,7 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
 });
 
 const login = async (page, email, password = 'goodpass123') => {
-  await page.fill('#email', email);
+  await page.fill('#identifier', email);
   await page.fill('#password', password);
   await page.click('button[type=submit]');
 };
@@ -174,7 +174,7 @@ const login = async (page, email, password = 'goodpass123') => {
   console.log('# Admin: application settings + delete warning');
   await logout(page);
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);

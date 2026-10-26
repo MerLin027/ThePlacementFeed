@@ -82,8 +82,8 @@ const smallTargets = (page) => page.evaluate(() => {
   ok((await page.title()) === `${TAG} Corp — Engineer · The Placement Feed`, `drive page title (${await page.title()})`);
   await page.goto(APP + '/login');
   await settled(page);
-  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'email')), 'autofocused field keeps focus (not stolen by main)');
-  for (const [route, title] of [['/', 'Drives'], ['/timeline', 'Timeline'], ['/signup', 'Sign up'], ['/admin/login', 'Admin Login'], ['/nope', 'Page not found']]) {
+  ok(await until(() => page.evaluate(() => document.activeElement?.id === 'identifier')), 'autofocused field keeps focus (not stolen by main)');
+  for (const [route, title] of [['/', 'Drives'], ['/timeline', 'Timeline'], ['/signup', 'Sign up'], ['/admin/login', 'Log in'], ['/nope', 'Page not found']]) {
     await page.goto(APP + route);
     ok(await until(async () => (await page.title()) === `${title} · The Placement Feed`), `title for ${route}`);
   }
@@ -129,7 +129,7 @@ const smallTargets = (page) => page.evaluate(() => {
   console.log('# Touch targets (>= 44px) and accessibility scan');
   const studentPages = async (p) => {
     await p.goto(APP + '/login');
-    await p.fill('#email', email);
+    await p.fill('#identifier', email);
     await p.fill('#password', 'goodpass123');
     await p.click('button[type=submit]');
     await p.waitForURL(APP + '/');
@@ -160,8 +160,9 @@ const smallTargets = (page) => page.evaluate(() => {
     await axeScan(page, label);
   }
   // Admin pages
-  await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.context().clearCookies(); // one session per browser: sign the student out first
+  await page.goto(APP + '/login');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/dashboard/);

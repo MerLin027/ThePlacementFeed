@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // In production the API is reached through the site's own domain: Vercel proxies /api to Render
-// (client/vercel.json), so the session cookies are first-party. Phone browsers (all of iOS, many
+// (client/vercel.json), so the session cookie is first-party. Phone browsers (all of iOS, many
 // Android ones) drop cookies set by another site, which made logging in on a phone fail.
 const api = axios.create({
   baseURL: import.meta.env.PROD ? '' : import.meta.env.VITE_API_URL || 'http://localhost:5000',
@@ -11,30 +11,18 @@ const api = axios.create({
   },
 });
 
-// Requests under these prefixes use the student session; everything else is admin
-const STUDENT_API_PREFIXES = ['/api/students', '/api/applications'];
-
-// Login/check probes are expected to 401 when logged out — never redirect on them
-const AUTH_PROBE_URLS = [
-  '/api/auth/login',
-  '/api/auth/check',
-  '/api/students/auth/login',
-  '/api/students/auth/signup',
-  '/api/students/auth/check',
-];
-
-const isStudentRequest = (url = '') =>
-  STUDENT_API_PREFIXES.some((prefix) => url.startsWith(prefix));
+// Sign-in requests answer 401 for a wrong password: that's not an expired session
+const NO_EXPIRY_URLS = ['/api/auth/login', '/api/auth/signup', '/api/auth/session'];
 
 /**
- * Set up a global interceptor that clears auth state and redirects when a
- * session expires, or when a student must change a reset password first.
- * Called from AuthContext on mount.
+ * One interceptor for the whole site, set up by AuthContext:
+ * - 401 on any other request: the session ended (expired, idle, revoked, account disabled). The
+ *   account is cleared and the person is sent to the login page, then back here afterwards.
+ * - 403 PASSWORD_CHANGE_REQUIRED: a reset or new account must set its own password first.
  */
 let interceptorId = null;
 
-export const setupAuthInterceptor = ({ onAdminExpired, onStudentExpired, navigate }) => {
-  // Remove previous interceptor if it exists
+export const setupAuthInterceptor = ({ onExpired, navigate }) => {
   if (interceptorId !== null) {
     api.interceptors.response.eject(interceptorId);
   }
@@ -44,21 +32,17 @@ export const setupAuthInterceptor = ({ onAdminExpired, onStudentExpired, navigat
     (error) => {
       const url = error.config?.url || '';
       const status = error.response?.status;
+      const code = error.response?.data?.code;
 
-      if (status === 403 && error.response?.data?.code === 'PASSWORD_CHANGE_REQUIRED') {
+      if (status === 403 && code === 'PASSWORD_CHANGE_REQUIRED') {
         navigate('/change-password');
-      } else if (status === 401 && !AUTH_PROBE_URLS.includes(url)) {
-        // On a guarded page the route guard also redirects once state clears;
-        // it reads the expired flag from AuthContext so both land on the same URL.
-        if (isStudentRequest(url)) {
-          const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-          const reason = error.response?.data?.code === 'TEMP_PASSWORD_EXPIRED' ? 'temp' : true;
-          onStudentExpired(reason);
-          navigate(`/login?expired=${reason}&returnTo=${returnTo}`);
-        } else {
-          onAdminExpired();
-          navigate('/admin/login?expired=true');
-        }
+      } else if (status === 401 && !NO_EXPIRY_URLS.includes(url)) {
+        // On a guarded page the route guard also redirects once the account clears; it reads the
+        // same reason, so both land on the same URL
+        const reason = code === 'TEMP_PASSWORD_EXPIRED' ? 'temp' : true;
+        const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+        onExpired(reason);
+        navigate(`/login?expired=${reason}&returnTo=${returnTo}`);
       }
       return Promise.reject(error);
     }

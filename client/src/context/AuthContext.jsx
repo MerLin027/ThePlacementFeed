@@ -4,136 +4,96 @@ import api, { setupAuthInterceptor } from '../api/axios';
 import { AuthContext } from './auth';
 
 /**
- * Admin and student sessions use separate cookies and can coexist in one
- * browser (e.g. an admin testing a student account). `role` reports the
- * one the UI should present, with admin taking precedence.
+ * Who is signed in. One session per browser, for a student or a staff member alike:
+ *
+ *   account  — what GET /api/auth/session returns, or null:
+ *              students: { type: 'student', email, firstName, branch, cgpa, … , missingFields }
+ *              staff:    { type: 'staff', username, name, role, roleLabel, permissions }
+ *              both:     mustChangePassword
+ *   student / staff — the account when it is that kind, else null
+ *   can(permission) — a staff permission (the server checks every request; this only hides UI)
+ *
+ * sessionExpired explains a session that ended without a logout (true, or 'temp' when a reset
+ * password's window ran out); signedOut is where a deliberate logout goes (home for students, the
+ * login page for staff), so the guarded page being left sends people there, not to "log in to
+ * come back here", and can't race the logout's own navigation.
  */
 export const AuthProvider = ({ children }) => {
-  const [isAdmin, setIsAdmin] = useState(false);
-  // The admin's username, for the account menu (from /api/auth/check)
-  const [adminName, setAdminName] = useState('');
-  const [adminSessionExpired, setAdminSessionExpired] = useState(false);
-  const [student, setStudent] = useState(null);
-  // Set when a session ended because the server rejected it (not a logout), so route guards can
-  // tell the user why they're back on the login page: true, or 'temp' when a reset password's
-  // 72-hour window ran out
-  const [studentSessionExpired, setStudentSessionExpired] = useState(false);
-  // True right after the student chose to log out: student-only pages then send them home instead of
-  // to the login page (the guard can render before the navigation home lands)
-  const [studentSignedOut, setStudentSignedOut] = useState(false);
+  const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [signedOut, setSignedOut] = useState(false);
   const navigate = useNavigate();
 
-  const expireAdmin = useCallback(() => {
-    setAdminSessionExpired(true);
-    setIsAdmin(false);
-  }, []);
-  const expireStudent = useCallback((reason = true) => {
-    setStudentSessionExpired(reason);
-    setStudent(null);
+  const expire = useCallback((reason = true) => {
+    setSessionExpired(reason);
+    setAccount(null);
   }, []);
 
   useEffect(() => {
-    setupAuthInterceptor({
-      onAdminExpired: expireAdmin,
-      onStudentExpired: expireStudent,
-      navigate,
-    });
-  }, [expireAdmin, expireStudent, navigate]);
+    setupAuthInterceptor({ onExpired: expire, navigate });
+  }, [expire, navigate]);
 
-  const refreshStudent = useCallback(async () => {
+  // Re-reads the session (after a profile or password change, or to check who is signed in)
+  const refresh = useCallback(async () => {
     try {
-      const res = await api.get('/api/students/auth/check');
-      const next = res.data.authenticated ? res.data.student : null;
-      if (next) setStudentSessionExpired(false);
-      setStudent(next);
+      const res = await api.get('/api/auth/session');
+      const next = res.data.authenticated ? res.data.account : null;
+      if (next) setSessionExpired(false);
+      setAccount(next);
       return next;
     } catch {
-      setStudent(null);
+      setAccount(null);
       return null;
     }
   }, []);
 
-  // Check both sessions on mount
+  // Who is signed in, once on load
   useEffect(() => {
-    const checkAuth = async () => {
-      const [adminRes] = await Promise.allSettled([
-        api.get('/api/auth/check'),
-        refreshStudent(),
-      ]);
-      const admin = adminRes.status === 'fulfilled' && adminRes.value.data.authenticated === true;
-      setIsAdmin(admin);
-      setAdminName(admin ? adminRes.value.data.username || '' : '');
+    const check = async () => {
+      await refresh();
       setLoading(false);
     };
-    checkAuth();
-  }, [refreshStudent]);
+    check();
+  }, [refresh]);
 
-  const loginAdmin = async (username, password) => {
-    const res = await api.post('/api/auth/login', { username, password });
-    if (res.data.success) {
-      setAdminSessionExpired(false);
-      setIsAdmin(true);
-      setAdminName(username.trim().toLowerCase());
-    }
-    return res.data;
+  const signedIn = (next) => {
+    setSignedOut(false);
+    setSessionExpired(false);
+    setAccount(next);
+    return next;
   };
 
-  const logoutAdmin = async () => {
+  // A student's email, or a staff member's username or email
+  const login = async (identifier, password) => {
+    const res = await api.post('/api/auth/login', { identifier, password });
+    return signedIn(res.data.account);
+  };
+
+  const signup = async ({ email, rollNumber, password }) => {
+    const res = await api.post('/api/auth/signup', { email, rollNumber, password });
+    return signedIn(res.data.account);
+  };
+
+  const logout = async () => {
+    const destination = account?.type === 'staff' ? '/login' : '/';
     try {
       await api.post('/api/auth/logout');
     } catch {
-      // Even if the request fails, clear local state
+      // Even if the request fails, forget the account here
     }
-    setIsAdmin(false);
-    navigate('/admin/login');
+    setSignedOut(destination);
+    setAccount(null);
+    navigate(destination);
   };
 
-  const loginStudent = async (email, password) => {
-    const res = await api.post('/api/students/auth/login', { email, password });
-    setStudentSignedOut(false);
-    const next = await refreshStudent();
-    return { ...res.data, student: next };
-  };
-
-  const signupStudent = async ({ email, rollNumber, password }) => {
-    const res = await api.post('/api/students/auth/signup', { email, rollNumber, password });
-    setStudentSignedOut(false);
-    const next = await refreshStudent();
-    return { ...res.data, student: next };
-  };
-
-  const logoutStudent = async () => {
-    try {
-      await api.post('/api/students/auth/logout');
-    } catch {
-      // Even if the request fails, clear local state
-    }
-    setStudentSignedOut(true);
-    setStudent(null);
-    navigate('/');
-  };
-
-  const role = isAdmin ? 'admin' : student ? 'student' : null;
+  const student = account?.type === 'student' ? account : null;
+  const staff = account?.type === 'staff' ? account : null;
+  const can = (permission) => Boolean(staff?.permissions?.includes(permission));
 
   return (
     <AuthContext.Provider
-      value={{
-        role,
-        isAdmin,
-        adminName,
-        adminSessionExpired,
-        student,
-        studentSessionExpired,
-        studentSignedOut,
-        loading,
-        loginAdmin,
-        logoutAdmin,
-        loginStudent,
-        signupStudent,
-        logoutStudent,
-        refreshStudent,
-      }}
+      value={{ account, student, staff, can, loading, sessionExpired, signedOut, login, signup, logout, refresh }}
     >
       {children}
     </AuthContext.Provider>

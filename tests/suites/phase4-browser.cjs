@@ -53,13 +53,13 @@ const TAG = `P4B${Date.now() % 100000}`;
 
   console.log('# Student cannot reach the page');
   await page.goto(APP + '/login');
-  await page.fill('#email', s1.email);
+  await page.fill('#identifier', s1.email);
   await page.fill('#password', 'origpass123');
   await page.click('button[type=submit]');
   await page.waitForURL(APP + '/');
   ok(!(await page.locator('header nav').first().innerText()).includes('Students'), 'student nav has no Students link');
   await page.goto(APP + '/admin/students');
-  ok(await page.waitForURL(/\/admin\/login/).then(() => true, () => false), 'student at /admin/students -> /admin/login');
+  ok(await page.waitForURL(APP + '/').then(() => true, () => false), 'a signed-in student at /admin/students is sent home');
 
   console.log('# Full branch names (student side)');
   await page.goto(APP + '/profile');
@@ -75,7 +75,7 @@ const TAG = `P4B${Date.now() % 100000}`;
 
   console.log('# Admin Students page');
   await page.goto(APP + '/admin/login');
-  await page.fill('#username', 'testadmin');
+  await page.fill('#identifier', 'testadmin');
   await page.fill('#password', 'testadminpass');
   await page.click('button[type=submit]');
   await page.waitForURL(/\/admin\/dashboard/);
@@ -102,7 +102,9 @@ const TAG = `P4B${Date.now() % 100000}`;
   await kavyaRow.getByRole('button', { name: 'Reset password' }).click();
   await page.screenshot({ path: path.join(SHOTS, 'admin-reset-dialog.png') });
   await page.getByRole('alertdialog').getByRole('button', { name: 'Reset password' }).click();
-  ok(await hasText(page, "Kavya Joshi's password was reset to the default"), 'success toast');
+  const otp = page.getByRole('alertdialog', { name: 'Password reset' });
+  ok(await until(() => otp.isVisible()) && /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/.test((await otp.locator('code').innerText()).trim()), 'the one-time password is shown once');
+  await otp.getByRole('button', { name: 'Done' }).click();
   ok(await hasText(kavyaRow, 'Password reset pending'), 'pending badge on row');
   ok((await Student.findOne({ email: s1.email }).lean()).mustChangePassword === true, 'DB flag set');
 

@@ -25,16 +25,19 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     const login = async (password) => {
-      await page.goto(APP + '/admin/login');
-      await page.fill('#username', 'testadmin');
+      await page.goto(APP + '/login');
+      await page.fill('#identifier', 'testadmin');
       await page.fill('#password', password);
       await page.click('button[type=submit]');
     };
 
-    console.log('# Admin login page');
-    await page.goto(APP + '/admin/login');
-    ok((await page.locator('h1').innerText()).trim() === 'Admin Login', 'title reads "Admin Login"', await page.locator('h1').innerText());
-    ok(!(await page.locator('main').getByText('CDPC', { exact: true }).count()), 'no CDPC kicker above it');
+    console.log('# One login page for everyone');
+    await page.goto(APP + '/admin/login?expired=true');
+    await page.waitForURL(/\/login\?expired=true$/);
+    ok(true, 'the old admin login address moves to /login (query kept)');
+    ok((await page.locator('h1').innerText()).trim() === 'Log in', 'title reads "Log in"', await page.locator('h1').innerText());
+    ok(await page.getByLabel('Email or username').isVisible(), 'one field for an email or a username');
+    ok(await page.getByText('Your session has expired').isVisible(), 'the expired notice still shows');
 
     console.log('# The account menu');
     await login(PASSWORD);
@@ -45,6 +48,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     await account.click();
     const menu = page.locator('header [id]').filter({ hasText: 'CDPC admin' });
     ok(await menu.getByText('Signed in as testadmin').isVisible(), 'menu names the account');
+    ok(await account.getByText('Super admin').isVisible(), 'the badge shows the role');
     ok((await account.getAttribute('aria-expanded')) === 'true', 'button reports expanded');
     await page.keyboard.press('Escape');
     ok(await until(async () => !(await page.getByText('Signed in as testadmin').count())), 'Escape closes it');
@@ -53,7 +57,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     console.log('# Change password from the menu');
     await account.click();
     await page.locator('header').getByRole('link', { name: 'Change password' }).click();
-    await page.waitForURL(/\/admin\/change-password$/);
+    await page.waitForURL(/\/change-password$/);
     ok(await until(async () => !(await page.getByText('Signed in as testadmin').count())), 'menu closed after choosing an item');
     ok((await page.locator('h1').innerText()).trim() === 'Change password', 'change-password page');
     await page.fill('#currentPassword', 'not-the-password');
@@ -61,7 +65,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     await page.fill('#confirmPassword', NEW_PASSWORD);
     await page.getByRole('button', { name: 'Update password' }).click();
     ok(await until(() => page.getByText('Current password is incorrect').isVisible()), 'wrong current password shown on its field');
-    ok(new URL(page.url()).pathname === '/admin/change-password', 'stays on the page');
+    ok(new URL(page.url()).pathname === '/change-password', 'stays on the page');
     await page.fill('#currentPassword', PASSWORD);
     await page.getByRole('button', { name: 'Update password' }).click();
     await page.waitForURL(/\/admin\/dashboard/);
@@ -70,8 +74,8 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     console.log('# Log out from the menu, then the new password logs in');
     await account.click();
     await page.locator('header').getByRole('button', { name: 'Log out' }).click();
-    await page.waitForURL(/\/admin\/login/);
-    ok(!(await account.count()), 'logged out');
+    await page.waitForURL(/\/login$/);
+    ok(!(await account.count()), 'logged out (to the login page)');
     await login(PASSWORD);
     ok(await until(() => page.getByText('Invalid credentials').isVisible()), 'old password refused');
     await login(NEW_PASSWORD);
@@ -87,7 +91,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     ok(await phoneMenu.getByRole('link', { name: 'Change password' }).isVisible(), 'Change password in the phone menu');
     ok(await phoneMenu.getByRole('button', { name: 'Log out' }).isVisible(), 'Log out in the phone menu');
     await phoneMenu.getByRole('link', { name: 'Change password' }).click();
-    ok(await until(() => new URL(page.url()).pathname === '/admin/change-password'), 'phone link opens the page');
+    ok(await until(() => new URL(page.url()).pathname === '/change-password'), 'phone link opens the page');
 
     ok(errors.length === 0, 'no page errors', errors.join('\n    '));
   } finally {

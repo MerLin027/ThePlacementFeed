@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 
-export const usePlacementsFetch = () => {
+// Fetches pages of drives, flagging a slow first answer (Render waking up). url: the public list by
+// default; the admin dashboard passes the staff list (it includes whether a status is pinned).
+export const usePlacementsFetch = (url = '/api/drives') => {
   const [loading, setLoading] = useState(true);
   const [isColdStart, setIsColdStart] = useState(false);
   
@@ -23,7 +25,7 @@ export const usePlacementsFetch = () => {
     }, 3000);
 
     try {
-      const res = await api.get('/api/placements', {
+      const res = await api.get(url, {
         params,
         signal: abortController.signal
       });
@@ -47,7 +49,7 @@ export const usePlacementsFetch = () => {
       }
       return { error: err };
     }
-  }, []);
+  }, [url]);
 
   useEffect(() => {
     return () => {

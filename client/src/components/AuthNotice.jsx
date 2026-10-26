@@ -63,14 +63,14 @@ const AuthNotice = () => {
     const controller = new AbortController();
     const { signal } = controller;
     api
-      .get('/api/placements', { params: { status: 'Upcoming', sort: 'closing_soon', limit: ROWS }, signal })
+      .get('/api/drives', { params: { status: 'Upcoming', sort: 'closing_soon', limit: ROWS }, signal })
       .then(async (res) => {
         const upcoming = res.data.data || [];
         const total = res.data.pagination?.total ?? 0;
         let recent = [];
         if (upcoming.length < ROWS) {
           try {
-            const past = await api.get('/api/placements', {
+            const past = await api.get('/api/drives', {
               params: { status: 'Ongoing,Completed', sort: 'date_desc', limit: ROWS - upcoming.length },
               signal,
             });

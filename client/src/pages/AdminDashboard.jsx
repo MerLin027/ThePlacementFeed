@@ -27,7 +27,7 @@ const AdminDashboard = () => {
   usePageTitle('Admin dashboard');
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-  const { loading, fetchPlacements } = usePlacementsFetch();
+  const { loading, fetchPlacements } = usePlacementsFetch('/api/admin/drives');
 
   // Modal state
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +43,7 @@ const AdminDashboard = () => {
     const controller = new AbortController();
     const id = deleteTarget._id;
     api
-      .get(`/api/placements/${id}/application-count`, { signal: controller.signal })
+      .get(`/api/admin/drives/${id}/application-count`, { signal: controller.signal })
       .then((res) => setAppCount({ id, count: res.data.data.count }))
       .catch(() => setAppCount({ id, count: null }));
     return () => controller.abort();
@@ -74,7 +74,7 @@ const AdminDashboard = () => {
   const handleAdd = async (data) => {
     // Do NOT wrap in try/catch here — let errors propagate up to
     // PlacementForm's own catch block, which displays them in the form.
-    await api.post('/api/placements', data);
+    await api.post('/api/admin/drives', data);
     // Only close and refresh on success
     setShowForm(false);
     loadPlacements(1);
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
   const handleEdit = async (data) => {
     // Do NOT wrap in try/catch here — let errors propagate up to
     // PlacementForm's own catch block, which displays them in the form.
-    await api.put(`/api/placements/${editingPlacement._id}`, data);
+    await api.put(`/api/admin/drives/${editingPlacement._id}`, data);
     // Only close and refresh on success
     setEditingPlacement(null);
     setShowForm(false);
@@ -93,7 +93,7 @@ const AdminDashboard = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await api.delete(`/api/placements/${deleteTarget._id}`);
+      await api.delete(`/api/admin/drives/${deleteTarget._id}`);
       loadPlacements(pagination.page);
     } catch (err) {
       console.error('Delete failed:', err);
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
     setToggling((prev) => ({ ...prev, [id]: true }));
     setToggleError((prev) => ({ ...prev, [id]: '' }));
     try {
-      const res = await api.patch(`/api/placements/${id}/postpone`, {
+      const res = await api.patch(`/api/admin/drives/${id}/postpone`, {
         isPostponed: !p.isPostponed,
       });
       // Update only this row in state; no full refetch
@@ -135,7 +135,7 @@ const AdminDashboard = () => {
     setToggling((prev) => ({ ...prev, [id]: true }));
     setToggleError((prev) => ({ ...prev, [id]: '' }));
     try {
-      const res = await api.patch(`/api/placements/${id}/reset-status-automation`, {
+      const res = await api.patch(`/api/admin/drives/${id}/status-automation`, {
         statusManuallySet: false,
       });
       setPlacements((prev) =>

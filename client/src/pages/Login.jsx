@@ -5,42 +5,44 @@ import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
 import { parseApiError } from '../utils/formErrors';
+import { afterSignIn } from '../utils/accountHome';
 import { safeReturnTo } from '../utils/safeReturnTo';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-const StudentLogin = () => {
-  usePageTitle('Student login');
-  const [email, setEmail] = useState('');
+/**
+ * One sign-in page for everyone: students with their email, CDPC staff with their username or email.
+ * The account decides where it goes next (students back to the site, staff to the dashboard).
+ */
+const Login = () => {
+  usePageTitle('Log in');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { student, loginStudent } = useAuth();
+  const { account, login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawReturnTo = searchParams.get('returnTo');
-  const returnTo = safeReturnTo(rawReturnTo, '/');
   const expired = searchParams.get('expired');
 
-  // Already logged in (e.g. back button) — move on
+  // Already signed in (e.g. the back button): move on
   useEffect(() => {
-    if (student) {
-      navigate(student.mustChangePassword ? '/change-password' : returnTo, { replace: true });
-    }
-  }, [student, navigate, returnTo]);
+    if (account) navigate(afterSignIn(account, rawReturnTo), { replace: true });
+  }, [account, navigate, rawReturnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim() || !password) {
-      setError('Please enter your email and password');
+    if (!identifier.trim() || !password) {
+      setError('Please enter your email or username and your password');
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await loginStudent(email.trim(), password);
-      navigate(result.mustChangePassword ? '/change-password' : returnTo, { replace: true });
+      const next = await login(identifier.trim(), password);
+      navigate(afterSignIn(next, rawReturnTo), { replace: true });
     } catch (err) {
       setError(parseApiError(err, 'Login failed. Please try again.').message || 'Login failed. Please try again.');
     } finally {
@@ -48,28 +50,30 @@ const StudentLogin = () => {
     }
   };
 
+  const signupReturnTo = safeReturnTo(rawReturnTo, null);
+
   return (
     <AuthCard
       drives
-      kicker="Students"
+      kicker="Students and staff"
       title="Log in"
-      subtitle="Use the email you signed up with."
+      subtitle="Students: the email you signed up with. CDPC staff: your username or email."
       // A failed attempt opens the help (forgot / reset password)
       helpOpen={Boolean(error)}
       help={
         <>
           <p>Forgot your password? Please ask the CDPC admin to reset it.</p>
           <p>
-            Password just reset? Log in with the temporary password the admin gave you — you&apos;ll
-            choose a new one straight after.
+            Password just reset, or a new staff account? Log in with the one-time password you were
+            given — you&apos;ll choose your own straight after.
           </p>
         </>
       }
       footer={
         <p>
-          New here?{' '}
+          New student?{' '}
           <Link
-            to={`/signup${rawReturnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
+            to={`/signup${signupReturnTo ? `?returnTo=${encodeURIComponent(signupReturnTo)}` : ''}`}
             className="text-primary font-semibold hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs"
           >
             Create an account
@@ -80,7 +84,7 @@ const StudentLogin = () => {
       <form onSubmit={handleSubmit} className="space-y-sm" noValidate>
         {expired === 'temp' && !error && (
           <FormAlert tone="warning" icon="lock_reset">
-            Your temporary password has expired. Ask the CDPC admin to reset your password again.
+            Your one-time password has expired. Ask the CDPC admin to reset your password again.
           </FormAlert>
         )}
         {expired === 'true' && !error && (
@@ -91,12 +95,14 @@ const StudentLogin = () => {
         {error && <FormAlert>{error}</FormAlert>}
 
         <FormField
-          id="email"
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
+          id="identifier"
+          label="Email or username"
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           maxLength={254}
           autoFocus
         />
@@ -119,4 +125,4 @@ const StudentLogin = () => {
   );
 };
 
-export default StudentLogin;
+export default Login;

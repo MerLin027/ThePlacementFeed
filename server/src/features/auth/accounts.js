@@ -38,6 +38,7 @@ const describeAccount = (type, doc) => {
       id: doc._id.toString(),
       email: doc.email,
       firstName: doc.firstName ?? '',
+      lastName: doc.lastName ?? '',
       // Academic fields let the UI pre-check drive eligibility (the server re-checks on apply)
       branch: doc.branch ?? '',
       cgpa: doc.cgpa ?? null,

@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import ConfirmDialog from '../components/ConfirmDialog';
 import TwoStepConfirmDialog from '../components/TwoStepConfirmDialog';
+import OneTimePasswordDialog from '../components/OneTimePasswordDialog';
 import Pagination from '../components/Pagination';
 import { FormAlert } from '../components/AuthCard';
 import { useCatalog } from '../stores/catalog';
@@ -100,6 +101,8 @@ const AdminStudents = () => {
     return () => controller.abort();
   }, [page, paramsKey, reloadKey]);
 
+  // The one-time password from a reset, shown once
+  const [oneTime, setOneTime] = useState(null);
   const closeConfirm = useCallback(() => setConfirm(null), []);
 
   const handleReset = async (student) => {
@@ -107,7 +110,8 @@ const AdminStudents = () => {
     try {
       const res = await api.post(`/api/admin/students/${student.id}/reset-password`);
       setStudents((prev) => prev.map((s) => (s.id === student.id ? res.data.data : s)));
-      toast.success(`${displayName(student)}'s password was reset to the default. They'll choose a new one at their next login.`, { duration: 6000 });
+      // Shown once: the server never returns it again
+      setOneTime({ who: displayName(student), password: res.data.temporaryPassword });
     } catch (err) {
       toast.error(parseApiError(err, 'Could not reset the password.').message || 'Could not reset the password.');
     } finally {
@@ -167,7 +171,7 @@ const AdminStudents = () => {
     confirm?.type === 'reset'
       ? {
           title: 'Reset password?',
-          message: `${displayName(confirm.student)}'s password will be set to the default student password and they'll be signed out everywhere. Share it with them in person — they'll be asked to choose a new one when they next log in, within 72 hours.`,
+          message: `${displayName(confirm.student)} will be signed out everywhere and get a one-time password, shown to you once, to give them in person. They choose a new password when they next log in, within 72 hours.`,
           confirmLabel: 'Reset password',
           tone: 'primary',
           icon: 'key',
@@ -361,6 +365,13 @@ const AdminStudents = () => {
 
       <ConfirmDialog isOpen={Boolean(confirmProps)} onClose={closeConfirm} {...(confirmProps || {})} />
       <TwoStepConfirmDialog isOpen={Boolean(deleteTarget)} onClose={closeConfirm} first={deleteFirst} second={deleteSecond} />
+      <OneTimePasswordDialog
+        isOpen={Boolean(oneTime)}
+        onClose={() => setOneTime(null)}
+        title="Password reset"
+        who={oneTime?.who}
+        password={oneTime?.password}
+      />
     </div>
   );
 };

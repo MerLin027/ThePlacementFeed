@@ -94,7 +94,7 @@ const Home = () => {
     const sort = !filters.sort || filters.sort === DEFAULT_SORT ? 'date_desc' : filters.sort;
     setPast((prev) => ({ ...prev, loading: true }));
     try {
-      const res = await api.get('/api/placements', {
+      const res = await api.get('/api/drives', {
         params: { ...baseParams(filters), status: 'Completed', sort, page, limit: PAST_PAGE_SIZE },
         signal,
       });
