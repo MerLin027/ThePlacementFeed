@@ -37,6 +37,11 @@ const createTrustedProxy = (expected) => (req, res, next) => {
   req.proxyCheck = {
     secret: !expected ? 'not-configured' : verified ? 'verified' : typeof given === 'string' ? 'wrong' : 'missing',
     visitorAddress: visitorKnown ? 'used' : visitor ? 'ignored' : 'absent',
+    // Temporary: does Vercel's own header agree with the first forwarded address, and is it the
+    // test value a caller tried to plant (booleans only)
+    vercelMatchesFirst: (req.headers['x-vercel-forwarded-for'] || '').trim() === (req.headers['x-forwarded-for'] || '').split(',')[0].trim(),
+    vercelIsPlanted: (req.headers['x-vercel-forwarded-for'] || '').includes('192.0.2.44'),
+    forwardedHasPlanted: (req.headers['x-forwarded-for'] || '').includes('192.0.2.44'),
     // Temporary: how many entries each forwarding header carries (counts only)
     entries: Object.fromEntries(
       ['x-forwarded-for', 'x-vercel-forwarded-for', 'x-vercel-proxied-for', 'forwarded'].map((h) => [
