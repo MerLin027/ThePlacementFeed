@@ -180,6 +180,22 @@ const boxOf = (locator) => locator.boundingBox();
     });
     ok(tableOverflow <= 0, 'and the table needs no sideways scrolling', String(tableOverflow));
 
+    console.log('# The page spinner sits in the middle of the page area');
+    const slow = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const spage = await slow.newPage();
+    // Hold the session check, so the guarded page keeps showing its spinner
+    await spage.route('**/api/auth/session', () => {});
+    await spage.goto(APP + '/admin/dashboard');
+    await spage.getByRole('status', { name: 'Loading' }).waitFor();
+    const spot = await spage.evaluate(() => {
+      const s = document.querySelector('[role="status"][aria-label="Loading"]').getBoundingClientRect();
+      const top = document.querySelector('header').getBoundingClientRect().bottom;
+      const bottom = document.querySelector('footer').getBoundingClientRect().top;
+      return { x: s.x + s.width / 2, y: s.y + s.height / 2, middle: (top + bottom) / 2 };
+    });
+    ok(Math.abs(spot.x - 720) < 2 && Math.abs(spot.y - spot.middle) < 2, 'centred between the header and the footer', JSON.stringify(spot));
+    await slow.close();
+
     console.log('# The two halves of the login card line up');
     await page.setViewportSize({ width: 1440, height: 900 });
     // Signed out, or /login moves straight on to the dashboard

@@ -3,8 +3,9 @@ import { useAuth } from '../context/auth';
 import Spinner from './Spinner';
 import { homeFor } from '../utils/accountHome';
 
+// Fills the page area (between the header and the footer), so the spinner sits in its middle
 export const PageSpinner = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
+  <div className="flex items-center justify-center h-full min-h-[60vh]">
     <Spinner size="lg" label="Loading" />
   </div>
 );
