@@ -61,7 +61,7 @@ const signIn = async (page, identifier, password) => {
 
     console.log('# Add an admin');
     await page.getByRole('button', { name: 'Add admin' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Add admin' });
+    const dialog = page.getByRole('dialog', { name: 'Add Admin', exact: true });
     await dialog.waitFor();
     axe = await axeViolations(page);
     ok(axe.length === 0, 'axe: add form clean', axe.join('\n    '));
@@ -69,17 +69,19 @@ const signIn = async (page, identifier, password) => {
     const emptyErrors = await until(() => dialog.getByText('Enter their name').isVisible());
     if (!emptyErrors) await page.screenshot({ path: path.join(TEST.OUT, 'siteF-empty-form.png') });
     ok(emptyErrors, 'empty form: field errors');
+    ok(await dialog.getByText('Enter a valid email address').isVisible(), 'the email is required');
+    ok(!(await dialog.getByRole('radio').count()) && !(await page.locator('#staff-username').count()), 'no role to choose and no username: always an admin');
+    ok(await dialog.getByText('No access to').isVisible() && await dialog.getByText('12–72 characters').isVisible(), 'the form says what they can use and the password rules they will meet');
     await page.fill('#staff-name', 'Riya Shah');
-    await page.fill('#staff-username', `${TAG}riya`);
     await page.fill('#staff-email', `${TAG}riya@example.com`);
-    ok((await dialog.getByRole('radio', { name: /^Admin/ }).isChecked()), 'Admin is the default role');
     await dialog.getByRole('button', { name: 'Create account' }).click();
 
-    const otp = page.getByRole('alertdialog', { name: 'Account created' });
+    const otp = page.getByRole('alertdialog', { name: 'Account Created', exact: true });
     await otp.waitFor();
     const password = (await otp.locator('code').innerText()).trim();
     ok(/^[A-HJ-NP-Za-km-np-z2-9]{4}(-[A-HJ-NP-Za-km-np-z2-9]{4}){2}$/.test(password), 'the one-time password is shown', password);
     ok(await otp.getByText("It won't be shown again.").isVisible(), 'and says it is shown only once');
+    ok(await otp.getByText('12–72 characters, not a common password, and without their email name.').isVisible(), 'and which password they will have to choose');
     axe = await axeViolations(page);
     ok(axe.length === 0, 'axe: one-time password dialog clean', axe.join('\n    '));
     await otp.getByRole('button', { name: 'Copy' }).click();
@@ -88,13 +90,15 @@ const signIn = async (page, identifier, password) => {
     await page.keyboard.press('Escape');
     ok(await until(async () => !(await otp.isVisible())), 'Escape closes it');
     const row = page.locator('tr', { hasText: 'Riya Shah' });
-    ok(await until(() => row.getByText('First sign-in pending').isVisible()), 'the new row shows the pending first sign-in');
+    // The Status cell (phones show the same badge under the name instead)
+    const statusCell = row.getByRole('cell').nth(2);
+    ok(await until(() => statusCell.getByText('First sign-in pending').isVisible()), 'the new row shows the pending first sign-in');
 
     console.log('# The new admin signs in for the first time');
     const adminCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const apage = await adminCtx.newPage();
     apage.on('pageerror', (e) => errors.push(e.message));
-    await signIn(apage, `${TAG}riya`, password);
+    await signIn(apage, `${TAG}riya@example.com`, password);
     await apage.waitForURL(/\/change-password$/);
     ok(await until(() => apage.getByText('You signed in with a one-time password.').isVisible()), 'sent to set a password, with the reason');
     ok(!(await apage.locator('#currentPassword').count()), 'the one-time password is not asked again');
@@ -120,10 +124,10 @@ const signIn = async (page, identifier, password) => {
     await page.reload();
     await row.getByRole('button', { name: 'Disable Riya Shah' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: 'Disable' }).click();
-    ok(await until(() => row.getByText('Disabled').isVisible()), 'the row shows Disabled');
+    ok(await until(() => statusCell.getByText('Disabled').isVisible()), 'the row shows Disabled');
     await apage.goto(APP + '/admin/students');
     ok(await apage.waitForURL(/\/login\?/).then(() => true, () => false), 'the admin is sent to log in on their next page', apage.url());
-    await signIn(apage, `${TAG}riya`, 'riya-strong-pass-26');
+    await signIn(apage, `${TAG}riya@example.com`, 'riya-strong-pass-26');
     ok(await until(() => apage.getByText('Invalid credentials').isVisible()), 'and cannot sign in again');
     await adminCtx.close();
 
@@ -136,8 +140,9 @@ const signIn = async (page, identifier, password) => {
     await srow.getByRole('button', { name: 'Reset password' }).click();
     const confirm = page.getByRole('alertdialog');
     ok(await confirm.getByText('one-time password').isVisible(), 'the confirmation explains the one-time password');
+    ok(await confirm.getByText('8–72 characters').isVisible(), 'and the password rules the student will meet');
     await confirm.getByRole('button', { name: 'Reset password' }).click();
-    const sotp = page.getByRole('alertdialog', { name: 'Password reset' });
+    const sotp = page.getByRole('alertdialog', { name: 'Password Reset', exact: true });
     await sotp.waitFor();
     const studentTemp = (await sotp.locator('code').innerText()).trim();
     ok(/^[A-HJ-NP-Za-km-np-z2-9]{4}(-[A-HJ-NP-Za-km-np-z2-9]{4}){2}$/.test(studentTemp), 'the reset dialog shows the one-time password');
@@ -152,10 +157,10 @@ const signIn = async (page, identifier, password) => {
     ok(errors.length === 0, 'no page errors', errors.join('\n    '));
   } finally {
     await browser.close();
-    const staff = await Admin.find({ username: new RegExp(`^${TAG}`) }).select('_id').lean();
+    const staff = await Admin.find({ email: new RegExp(`^${TAG}`) }).select('_id').lean();
     const studs = await Student.find({ email: new RegExp(`^${TAG}`) }).select('_id').lean();
     await Session.deleteMany({ accountId: { $in: [...staff, ...studs].map((x) => x._id) } });
-    await Admin.deleteMany({ username: new RegExp(`^${TAG}`) });
+    await Admin.deleteMany({ email: new RegExp(`^${TAG}`) });
     await Student.deleteMany({ email: new RegExp(`^${TAG}`) });
     await mongoose.disconnect();
   }

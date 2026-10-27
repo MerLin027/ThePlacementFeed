@@ -5,13 +5,14 @@ import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
+import PasswordRules from '../components/PasswordRules';
 import { parseApiError } from '../utils/formErrors';
 import { safeReturnTo } from '../utils/safeReturnTo';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const StudentSignup = () => {
-  usePageTitle('Sign up');
+  usePageTitle('Sign Up');
   const [form, setForm] = useState({ email: '', rollNumber: '', password: '', confirmPassword: '' });
   const [fieldErrors, setFieldErrors] = useState({});
   const formRef = useRef(null);
@@ -65,8 +66,8 @@ const StudentSignup = () => {
   return (
     <AuthCard
       kicker="Students"
-      title="Sign up to start applying"
-      formTitle="Account details"
+      title="Sign Up to Start Applying"
+      formTitle="Account Details"
       intro={
         <>
           {/* Where signing up leads; this page is step 1 */}
@@ -140,7 +141,7 @@ const StudentSignup = () => {
           onChange={update('password')}
           autoComplete="new-password"
           maxLength={72}
-          helper="At least 8 characters."
+          helper={<PasswordRules password={form.password} kind="student" own={[form.email, form.rollNumber]} />}
           error={fieldErrors.password}
         />
 

@@ -257,7 +257,7 @@ const AdminSettings = () => {
           extraAction: deleting.item.active ? { label: 'Archive instead', onClick: () => setActive(deleting.kind, deleting.item, false) } : null,
         },
         second: {
-          title: 'This will change other records',
+          title: 'This Will Change Other Records',
           icon: 'warning',
           message:
             deleting.kind === 'branch' ? (

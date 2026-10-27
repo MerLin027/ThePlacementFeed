@@ -108,7 +108,7 @@ const axeScan = async (page, label) => {
   await page.getByRole('button', { name: /^Filters/ }).click();
   await page.getByLabel('Status', { exact: true }).selectOption('Completed');
   await page.getByLabel('Search drives by company or role').fill(TAG);
-  ok(await hasText(page, 'Past drives') && await until(async () => (await page.locator('main h1').innerText()) === 'Past drives'), 'heading follows the status filter');
+  ok(await hasText(page, 'Past Drives') && await until(async () => (await page.locator('main h1').innerText()) === 'Past Drives'), 'heading follows the status filter');
   ok(await until(async () => (await page.locator('main article h3').allInnerTexts()).join(',') === `${TAG} Gale`), 'only completed drives');
   ok(!(await page.getByRole('button', { name: /^Past drives/ }).count()), 'no separate past section when filtering by status');
   ok(await page.getByLabel('Sort by').isVisible() && await page.getByLabel('Branch', { exact: true }).isVisible(), 'filter controls are labelled');
@@ -118,12 +118,12 @@ const axeScan = async (page, label) => {
   await page.goto(`${APP}/placement/${A._id}`);
   ok(await hasText(page, 'Closes in 5 days'), 'detail shows countdown');
   const box = async (sel) => (await page.locator(sel).first().boundingBox());
-  const elig = await box('section:has(h2:text("Eligibility criteria"))');
-  const dates = await box('section:has(h2:text("Important dates"))');
+  const elig = await box('section:has(h2:text("Eligibility Criteria"))');
+  const dates = await box('section:has(h2:text("Important Dates"))');
   ok(dates.x < elig.x, 'desktop: dates in the left column, eligibility on the right');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${APP}/placement/${B._id}`);
-  const headingTops = () => page.evaluate(() => ['Eligibility criteria', 'Important dates', 'Selection process', 'Job description'].map((t) => {
+  const headingTops = () => page.evaluate(() => ['Eligibility Criteria', 'Important Dates', 'Selection Process', 'Job Description'].map((t) => {
     const h = [...document.querySelectorAll('main h2')].find((x) => x.textContent.trim() === t);
     return h ? Math.round(h.getBoundingClientRect().top) : null;
   }));

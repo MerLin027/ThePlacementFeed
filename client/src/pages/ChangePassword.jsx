@@ -6,6 +6,8 @@ import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
+import PasswordRules from '../components/PasswordRules';
+import { passwordRulesFor } from '../constants/passwords';
 import { homeFor } from '../utils/accountHome';
 import { parseApiError } from '../utils/formErrors';
 import { useFocusFirstInvalid } from '../hooks/useFocusFirstInvalid';
@@ -17,7 +19,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
  * such an account can do.
  */
 const ChangePassword = () => {
-  usePageTitle('Change password');
+  usePageTitle('Change Password');
   const { account, refresh, logout } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -30,7 +32,7 @@ const ChangePassword = () => {
   const isStaff = account?.type === 'staff';
   const isPending = Boolean(account?.mustChangePassword);
   // Staff accounts can see every student's details: a longer minimum (the server enforces both)
-  const minLength = isStaff ? 12 : 8;
+  const { min: minLength } = passwordRulesFor(isStaff ? 'staff' : 'student');
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
@@ -64,7 +66,7 @@ const ChangePassword = () => {
 
   return (
     <AuthCard
-      title={isPending ? 'Set a new password to continue' : 'Change password'}
+      title={isPending ? 'Set a New Password to Continue' : 'Change Password'}
       subtitle={isPending ? 'Required before you can use your account' : "You'll stay logged in here; other devices will be signed out"}
       footer={
         isPending ? (
@@ -117,7 +119,14 @@ const ChangePassword = () => {
           onChange={update('newPassword')}
           autoComplete="new-password"
           maxLength={72}
-          helper={`At least ${minLength} characters. Avoid common passwords and your own name, email or roll number.`}
+          helper={
+            <PasswordRules
+              password={form.newPassword}
+              kind={isStaff ? (account.role === 'admin' ? 'admin' : 'staff') : 'student'}
+              own={[account?.email, account?.username]}
+              pending={isPending}
+            />
+          }
           error={fieldErrors.newPassword}
           autoFocus={isPending}
         />

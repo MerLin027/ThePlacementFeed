@@ -421,7 +421,7 @@ const AdminApplicants = () => {
         isOpen={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={handleBulkDelete}
-        title={selected.size === 1 ? 'Delete application' : `Delete ${selected.size} applications`}
+        title={selected.size === 1 ? 'Delete Application' : `Delete ${selected.size} Applications`}
         message={`${selected.size === 1 ? 'This application' : `These ${selected.size} applications`} to ${drive?.company || 'this drive'} will be removed for good, with ${selected.size === 1 ? 'its' : 'their'} status, your notes and the student's answers. The student can apply again while the drive is open. This action cannot be undone.`}
       />
 

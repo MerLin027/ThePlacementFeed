@@ -12,6 +12,7 @@ import IconAction from '../components/IconAction';
 import { STUDENT_SORTS } from '../constants/applications';
 import { useUrlFilters } from '../hooks/useUrlFilters';
 import { addNumber, addList, addOne, addDay, gradYearOptions } from '../utils/filterParams';
+import { passwordRuleSummary } from '../constants/passwords';
 import { parseApiError } from '../utils/formErrors';
 import { TableRowsSkeleton } from '../components/Skeleton';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -170,8 +171,8 @@ const AdminStudents = () => {
   const confirmProps =
     confirm?.type === 'reset'
       ? {
-          title: 'Reset password?',
-          message: `${displayName(confirm.student)} will be signed out everywhere and get a one-time password, shown to you once, to give them in person. They choose a new password when they next log in, within 72 hours.`,
+          title: 'Reset Password?',
+          message: `${displayName(confirm.student)} will be signed out everywhere and get a one-time password, shown to you once, to give them in person. Within 72 hours they log in with it and choose a new password: ${passwordRuleSummary('student')}.`,
           confirmLabel: 'Reset password',
           tone: 'primary',
           icon: 'key',
@@ -179,7 +180,7 @@ const AdminStudents = () => {
         }
       : confirm?.type === 'resetInstitute'
         ? {
-            title: 'Reset institute?',
+            title: 'Reset Institute?',
             message: `${displayName(confirm.student)} chose ${confirm.student.institute?.name}. Resetting lets them choose again from their profile. They can't apply to drives until they do.`,
             confirmLabel: 'Reset institute',
             tone: 'primary',
@@ -192,7 +193,7 @@ const AdminStudents = () => {
   const appCount = deleteTarget?.applications;
   const appsNoun = appCount == null ? 'their applications' : `their ${appCount} application${appCount === 1 ? '' : 's'}`;
   const deleteFirst = deleteTarget && {
-    title: 'Delete account?',
+    title: 'Delete Account?',
     message: `Delete ${displayName(deleteTarget.student)}'s account (${deleteTarget.student.rollNumber})? They can sign up again afterwards. This can't be undone.`,
     confirmLabel: 'Delete account',
     icon: 'person_remove',
@@ -200,7 +201,7 @@ const AdminStudents = () => {
     onConfirm: () => handleDelete(deleteTarget.student, 'retain'),
   };
   const deleteSecond = deleteTarget && appCount !== 0 ? {
-    title: 'What about their applications?',
+    title: 'What About Their Applications?',
     icon: 'folder_delete',
     message: (
       <>
@@ -368,9 +369,10 @@ const AdminStudents = () => {
       <OneTimePasswordDialog
         isOpen={Boolean(oneTime)}
         onClose={() => setOneTime(null)}
-        title="Password reset"
+        title="Password Reset"
         who={oneTime?.who}
         password={oneTime?.password}
+        kind="student"
       />
     </div>
   );

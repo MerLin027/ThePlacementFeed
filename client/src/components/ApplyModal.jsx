@@ -142,7 +142,7 @@ const ApplyModal = ({ drive, isOpen, onClose }) => {
           <section aria-labelledby="apply-summary-heading" className="bg-surface-container-low rounded-xl p-sm">
             <div className="flex items-center justify-between gap-sm mb-xs">
               <h3 id="apply-summary-heading" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                Shared from your profile
+                Shared from Your Profile
               </h3>
               <Link to="/profile" className="font-body-sm text-body-sm text-primary hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-xs">
                 Edit profile

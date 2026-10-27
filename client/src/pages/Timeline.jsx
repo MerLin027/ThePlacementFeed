@@ -90,7 +90,7 @@ const Timeline = () => {
   return (
     <div className="w-full max-w-container-max mx-auto px-sm md:px-lg py-md md:py-xl">
       <div className="text-center mb-lg motion-safe:animate-rise-in">
-        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement timeline</h1>
+        <h1 className="font-display-lg text-display-lg text-on-surface mb-xs">Placement Timeline</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">Every drive by month, latest first.</p>
       </div>
 

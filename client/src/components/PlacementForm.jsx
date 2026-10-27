@@ -337,7 +337,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         </div>
       </Section>
 
-      <Section title="How students apply" tinted>
+      <Section title="How Students Apply" tinted>
         <FormField id="pf-formUrl" label="Application form link (optional)" type="url" inputMode="url" value={form.formUrl}
           onChange={(e) => handleChange('formUrl', e.target.value)} placeholder="https://forms.gle/..." maxLength={500}
           error={fieldErrors.formUrl} />
@@ -439,7 +439,7 @@ const PlacementForm = ({ initialData, onSubmit, onCancel }) => {
         </FormField>
       </Section>
 
-      <Section title="Selection process" hint="(optional)">
+      <Section title="Selection Process" hint="(optional)">
         {form.selectionRounds.length === 0 ? (
           <p className="font-body-sm text-body-sm text-on-surface-variant text-center py-sm border border-dashed border-outline-variant rounded-lg">
             No selection rounds added.

@@ -77,8 +77,9 @@ const TAG = `PC${Date.now() % 100000}`;
   await page.waitForURL(APP + '/');
   await Student.updateOne({ email }, { passwordHash: await bcrypt.hash('college123', 12), mustChangePassword: true, tempPasswordExpiresAt: new Date(Date.now() + 72 * 3600e3), $inc: { tokenVersion: 1 } });
   await page.goto(APP + '/login');
-  await page.getByText('Trouble logging in?').click(); // the reset hints sit in a disclosure
-  ok(await hasText(page, 'Log in with the one-time password you were given'), 'login page hint for reset accounts');
+  await page.getByRole('button', { name: 'Trouble logging in?' }).click(); // the reset hints sit in the help view
+  ok(await hasText(page, 'Got a one-time password?') && await hasText(page, 'Log in with it as usual within 72 hours'), 'login page hint for reset accounts');
+  await page.getByRole('button', { name: 'Back to log in' }).click();
   await loginStudent('college123');
   await page.waitForURL(/\/change-password/);
   ok(await hasText(page, 'Set a new password to continue') && await hasText(page, 'Required before you can use your account'), 'title says it is required');
@@ -122,7 +123,7 @@ const TAG = `PC${Date.now() % 100000}`;
   ok((await page.locator('header nav').getByRole('button', { name: 'Log out' }).count()) === 0, 'no Log out in the admin nav links');
   await page.getByRole('button', { name: 'Admin account' }).click();
   ok(await page.locator('header').getByRole('button', { name: 'Log out' }).isVisible(), 'Log out is in the admin account menu');
-  ok(await page.locator('header').getByRole('link', { name: 'Change password' }).isVisible(), 'Change password is in the admin account menu');
+  ok(await page.locator('header').getByRole('link', { name: 'Profile' }).isVisible(), 'Profile (with the password) is in the super admin account menu');
   await page.keyboard.press('Escape');
 
   console.log('# Every nav link resolves (no 404)');

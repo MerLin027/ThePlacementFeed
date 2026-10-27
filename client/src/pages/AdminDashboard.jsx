@@ -24,7 +24,7 @@ const centredCell = 'px-sm py-sm text-center [&>div]:items-center [&>div]:justif
 
 const AdminDashboard = () => {
   const catalog = useCatalog();
-  usePageTitle('Admin dashboard');
+  usePageTitle('Admin Dashboard');
   const [placements, setPlacements] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const { loading, fetchPlacements } = usePlacementsFetch('/api/admin/drives');
@@ -237,7 +237,7 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-sm mb-md">
         <div>
-          <h1 className="font-display-lg text-display-lg text-on-surface">Admin dashboard</h1>
+          <h1 className="font-display-lg text-display-lg text-on-surface">Admin Dashboard</h1>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
             Manage placement drives · <span className="tabular-nums">{pagination.total}</span> total
           </p>
@@ -391,7 +391,7 @@ const AdminDashboard = () => {
       <Modal
         isOpen={showForm}
         onClose={() => { setShowForm(false); setEditingPlacement(null); }}
-        title={editingPlacement ? 'Edit placement' : 'Add placement'}
+        title={editingPlacement ? 'Edit Placement' : 'Add Placement'}
         maxWidth="max-w-3xl"
       >
         <PlacementForm
@@ -406,7 +406,7 @@ const AdminDashboard = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete placement"
+        title="Delete Placement"
         message={`Are you sure you want to delete the ${deleteTarget?.company} — ${deleteTarget?.role} placement?${
           deleteAppCount > 0
             ? ` Its ${deleteAppCount} student application${deleteAppCount === 1 ? '' : 's'} will be deleted too.`

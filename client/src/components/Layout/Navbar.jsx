@@ -96,8 +96,11 @@ const Navbar = () => {
         can(PERMISSIONS.SETUP) && { to: '/admin/settings', label: 'Setup', icon: 'tune' },
         can(PERMISSIONS.STAFF) && { to: '/admin/team', label: 'Team', icon: 'badge' },
       ].filter(Boolean),
-      // The account menu holds this on wider screens; phones (no account button) get it in their menu
-      { to: '/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
+      // The account menu holds this on wider screens; phones (no account button) get it in their menu.
+      // The super admin changes its password on its profile.
+      can(PERMISSIONS.PROFILE)
+        ? { to: '/admin/profile', label: 'Profile', icon: 'person', phoneOnly: true }
+        : { to: '/change-password', label: 'Change password', icon: 'key', phoneOnly: true }
     );
   } else if (student) {
     // Profile and the password live in the avatar menu; phones (no avatar) get them in their menu
@@ -198,9 +201,13 @@ const Navbar = () => {
                   label={`${staff.roleLabel || 'Admin'} account`}
                   avatar={<span className="material-symbols-outlined text-[18px]">verified_user</span>}
                   tag={staff.roleLabel || 'Admin'}
-                  name={staff.name || 'CDPC admin'}
-                  detail={`Signed in as ${staff.username}`}
-                  links={[{ to: '/change-password', label: 'Change password', icon: 'key' }]}
+                  name={staff.name || (staff.role === 'super_admin' ? 'Super Admin' : 'Admin')}
+                  detail={staff.email || staff.username}
+                  links={
+                    can(PERMISSIONS.PROFILE)
+                      ? [{ to: '/admin/profile', label: 'Profile', icon: 'person' }]
+                      : [{ to: '/change-password', label: 'Change password', icon: 'key' }]
+                  }
                   onLogout={logout}
                 />
               </div>

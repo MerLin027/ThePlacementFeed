@@ -4,13 +4,15 @@ import { AnimatePresence, m } from 'motion/react';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { dialogOverlay, dialogBackdrop, dialogPanel } from '../utils/motion';
 import PresenceGuard from './PresenceGuard';
+import { passwordRuleSummary } from '../constants/passwords';
 
 /**
  * Shows a one-time password exactly once (after a reset or when a staff account is created). The
  * server never returns it again, so the dialog says so, offers a copy button and keeps the password
  * selectable; closing it is the only way out (no backdrop click), so it isn't dismissed by accident.
+ * `kind` ('student' | 'staff') says which password rules they'll meet when they choose their own.
  */
-const OneTimePasswordDialog = ({ isOpen, onClose, title, who, password }) => {
+const OneTimePasswordDialog = ({ isOpen, onClose, title, who, password, kind = 'student' }) => {
   const doneRef = useRef(null);
   const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -69,6 +71,13 @@ const OneTimePasswordDialog = ({ isOpen, onClose, title, who, password }) => {
                 </button>
               </div>
               <p className="sr-only" aria-live="polite">{copied ? 'Password copied' : ''}</p>
+
+              <p className="mt-sm flex items-start gap-xs rounded-xl bg-primary-fixed/40 px-sm py-xs font-body-sm text-body-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-[18px] mt-px text-primary" aria-hidden="true">password</span>
+                <span>
+                  When they sign in with it, they choose their own password: {passwordRuleSummary(kind)}.
+                </span>
+              </p>
 
               <div className="mt-md flex justify-center">
                 <button ref={doneRef} type="button" onClick={close} className="btn-primary min-w-[10rem]">

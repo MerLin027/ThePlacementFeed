@@ -172,7 +172,10 @@ const noHorizontalScroll = (page) => page.evaluate(() => {
   await page.click('button[type=submit]');
   await page.waitForSelector('[role=alert]');
   ok((await page.locator('[role=alert]').innerText()).includes('Invalid credentials'), 'login failure message');
-  ok(await hasText(page, 'ask the CDPC admin to reset it'), 'forgot-password hint shown');
+  ok((await page.locator('[role=alert]').innerText()).includes('Forgot your password?'), 'forgot-password hint shown with the error');
+  await page.locator('[role=alert]').getByRole('button', { name: "Here's what to do" }).click();
+  ok(await until(() => page.getByText('Ask the CDPC admin to reset it.').isVisible()), 'its link opens the help: ask the CDPC admin');
+  await page.getByRole('button', { name: 'Back to log in' }).click();
 
   console.log('# Admin-reset flow (simulated in DB)');
   await Student.updateOne({ email }, {

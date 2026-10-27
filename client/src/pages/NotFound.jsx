@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const NotFound = () => {
-  usePageTitle('Page not found');
+  usePageTitle('Page Not Found');
   return (
     <div className="relative isolate w-full max-w-container-max mx-auto px-sm md:px-lg py-xl flex items-center justify-center min-h-[60vh]">
       <div className="text-center max-w-(--container-md) motion-safe:animate-rise-in">
@@ -10,7 +10,7 @@ const NotFound = () => {
           <span className="material-symbols-outlined text-[40px] text-on-surface-variant" aria-hidden="true">explore_off</span>
         </div>
         <p className="font-label-md text-label-md text-on-surface-variant mb-base">Error 404</p>
-        <h1 className="font-headline-md text-headline-md text-on-surface mb-xs">Page not found</h1>
+        <h1 className="font-headline-md text-headline-md text-on-surface mb-xs">Page Not Found</h1>
         <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
           This link doesn&apos;t lead anywhere. It may be mistyped, or the page may have moved.
         </p>

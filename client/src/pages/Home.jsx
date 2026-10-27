@@ -26,10 +26,10 @@ const PAGE_SIZE = 12;
 const PAST_PAGE_SIZE = 6;
 
 const HEADINGS = {
-  '': { title: 'Active drives', subtitle: 'Open drives first, sorted by the closest deadline.' },
-  Upcoming: { title: 'Upcoming drives', subtitle: 'Drives that are still taking applications or yet to open.' },
-  Ongoing: { title: 'Ongoing drives', subtitle: 'Applications have closed; these drives are in progress.' },
-  Completed: { title: 'Past drives', subtitle: 'Drives that have already taken place.' },
+  '': { title: 'Active Drives', subtitle: 'Open drives first, sorted by the closest deadline.' },
+  Upcoming: { title: 'Upcoming Drives', subtitle: 'Drives that are still taking applications or yet to open.' },
+  Ongoing: { title: 'Ongoing Drives', subtitle: 'Applications have closed; these drives are in progress.' },
+  Completed: { title: 'Past Drives', subtitle: 'Drives that have already taken place.' },
 };
 
 // Filters shared by the main list and the past-drives section (status/sort handled per list)
@@ -179,7 +179,7 @@ const Home = () => {
       ) : (
         <>
           {/* Keeps the outline h1 → h2 → card h3 (cards are h3 so past drives can share them) */}
-          <h2 className="sr-only">{splitView ? 'Open drives' : heading.title}</h2>
+          <h2 className="sr-only">{splitView ? 'Open Drives' : heading.title}</h2>
           <DriveGrid drives={placements} />
           <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
         </>
@@ -187,7 +187,7 @@ const Home = () => {
 
       {splitView && !loading && !loadError && past.total > 0 && (
         <section className="mt-xl" aria-labelledby="past-drives-heading">
-          <h2 id="past-drives-heading" className="sr-only">Past drives</h2>
+          <h2 id="past-drives-heading" className="sr-only">Past Drives</h2>
           <button
             type="button"
             onClick={() => setPastOpen((v) => !v)}

@@ -30,6 +30,7 @@ const AdminStudents = lazy(() => import('./pages/AdminStudents'));
 const AdminApplicants = lazy(() => import('./pages/AdminApplicants'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminTeam = lazy(() => import('./pages/AdminTeam'));
+const AdminProfile = lazy(() => import('./pages/AdminProfile'));
 
 // Old addresses that moved, kept so bookmarks and links still work (the query string is carried over)
 const MovedTo = ({ to }) => {
@@ -106,6 +107,7 @@ function App() {
               <Route path="/admin/students" element={staff(<AdminStudents />, PERMISSIONS.STUDENTS)} />
               <Route path="/admin/settings" element={staff(<AdminSettings />, PERMISSIONS.SETUP)} />
               <Route path="/admin/team" element={staff(<AdminTeam />, PERMISSIONS.STAFF)} />
+              <Route path="/admin/profile" element={staff(<AdminProfile />, PERMISSIONS.PROFILE)} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>

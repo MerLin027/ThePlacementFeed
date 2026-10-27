@@ -4,9 +4,10 @@ import { useState } from 'react';
  * Labelled form control with helper text and an inline error, wired up with
  * aria-describedby / aria-invalid so screen readers announce both.
  * Pass `children` to render a custom control (e.g. a select) instead of an input.
- * Password inputs get a show/hide toggle.
+ * Password inputs get a show/hide toggle. `icon`: a Material Symbols name shown inside the input, on
+ * the left. `helper` may be text or a small block (e.g. the password rules).
  */
-const FormField = ({ id, label, helper, error, children, className = '', ...inputProps }) => {
+const FormField = ({ id, label, helper, error, icon, children, className = '', ...inputProps }) => {
   const [revealed, setRevealed] = useState(false);
   const helperId = helper ? `${id}-helper` : undefined;
   const errorId = error ? `${id}-error` : undefined;
@@ -19,7 +20,15 @@ const FormField = ({ id, label, helper, error, children, className = '', ...inpu
     'aria-invalid': error ? true : undefined,
   };
 
-  const inputClass = `input-field ${error ? 'border-error focus:border-error focus:ring-error/20' : ''}`;
+  const inputClass = `input-field ${icon ? 'pl-11' : ''} ${error ? 'border-error focus:border-error focus:ring-error/20' : ''}`;
+  const leadingIcon = icon && (
+    <span
+      className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[20px] text-outline transition-colors duration-200 group-focus-within/field:text-primary"
+      aria-hidden="true"
+    >
+      {icon}
+    </span>
+  );
 
   return (
     <div className={className}>
@@ -27,7 +36,8 @@ const FormField = ({ id, label, helper, error, children, className = '', ...inpu
       {children ? (
         children(controlProps)
       ) : isPassword ? (
-        <div className="relative">
+        <div className="group/field relative">
+          {leadingIcon}
           <input
             {...controlProps}
             {...inputProps}
@@ -47,6 +57,11 @@ const FormField = ({ id, label, helper, error, children, className = '', ...inpu
             </span>
           </button>
         </div>
+      ) : icon ? (
+        <div className="group/field relative">
+          {leadingIcon}
+          <input {...controlProps} {...inputProps} className={inputClass} />
+        </div>
       ) : (
         <input {...controlProps} {...inputProps} className={inputClass} />
       )}
@@ -57,9 +72,9 @@ const FormField = ({ id, label, helper, error, children, className = '', ...inpu
         </p>
       )}
       {helper && (
-        <p id={helperId} className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+        <div id={helperId} className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
           {helper}
-        </p>
+        </div>
       )}
     </div>
   );

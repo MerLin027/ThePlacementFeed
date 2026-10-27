@@ -119,7 +119,7 @@ const ApplicantDetailsModal = ({ applicant, isOpen, onClose, onSave, onDelete, d
 
         {applicant.coverNote && (
           <section>
-            <h3 className="label">Note from the student</h3>
+            <h3 className="label">Note from the Student</h3>
             <p className="font-body-md text-body-md text-on-surface whitespace-pre-wrap wrap-break-word">{applicant.coverNote}</p>
           </section>
         )}

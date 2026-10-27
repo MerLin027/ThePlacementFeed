@@ -1,5 +1,5 @@
-// Site upgrade, part E (browser) — the admin's account menu (who is signed in, Change password,
-// Log out) on desktop and in the phone menu, and changing the admin password from the website:
+// Site upgrade, part E (browser) — the super admin's account menu (who is signed in, Profile, Log
+// out) on desktop and in the phone menu, and changing the password from the website:
 // a wrong current password is shown on its field, a good change lands on the dashboard and the new
 // password is the one that logs in.
 const TEST = require('../lib/env.cjs');
@@ -35,7 +35,7 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     await page.goto(APP + '/admin/login?expired=true');
     await page.waitForURL(/\/login\?expired=true$/);
     ok(true, 'the old admin login address moves to /login (query kept)');
-    ok((await page.locator('h1').innerText()).trim() === 'Log in', 'title reads "Log in"', await page.locator('h1').innerText());
+    ok((await page.locator('h1').innerText()).trim() === 'Log In', 'title reads "Log In"', await page.locator('h1').innerText());
     ok(await page.getByLabel('Email or username').isVisible(), 'one field for an email or a username');
     ok(await page.getByText('Your session has expired').isVisible(), 'the expired notice still shows');
 
@@ -46,20 +46,24 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     ok(await account.isVisible(), 'Admin account button in the header');
     ok(!(await page.locator('header nav').getByRole('button', { name: 'Log out' }).count()), 'no Log out among the nav links');
     await account.click();
-    const menu = page.locator('header [id]').filter({ hasText: 'CDPC admin' });
-    ok(await menu.getByText('Signed in as testadmin').isVisible(), 'menu names the account');
+    const menu = page.locator('header [id]').filter({ hasText: 'testadmin' });
+    ok(await menu.getByText('testadmin', { exact: true }).isVisible(), 'menu names the account (its sign-in)');
+    ok(!(await menu.getByText('CDPC admin').count()), 'no placeholder name');
     ok(await account.getByText('Super admin').isVisible(), 'the badge shows the role');
     ok((await account.getAttribute('aria-expanded')) === 'true', 'button reports expanded');
     await page.keyboard.press('Escape');
-    ok(await until(async () => !(await page.getByText('Signed in as testadmin').count())), 'Escape closes it');
+    ok(await until(async () => !(await menu.count())), 'Escape closes it');
     ok(await account.evaluate((el) => el === document.activeElement), 'focus back on the button');
 
-    console.log('# Change password from the menu');
+    console.log('# Profile from the menu; the change-password page');
     await account.click();
-    await page.locator('header').getByRole('link', { name: 'Change password' }).click();
-    await page.waitForURL(/\/change-password$/);
-    ok(await until(async () => !(await page.getByText('Signed in as testadmin').count())), 'menu closed after choosing an item');
-    ok((await page.locator('h1').innerText()).trim() === 'Change password', 'change-password page');
+    ok(!(await page.locator('header').getByRole('link', { name: 'Change password' }).count()), 'the super admin changes its password on its profile');
+    await page.locator('header').getByRole('link', { name: 'Profile' }).click();
+    await page.waitForURL(/\/admin\/profile$/);
+    ok(await until(async () => !(await menu.count())), 'menu closed after choosing an item');
+    ok(await until(async () => (await page.locator('h1').innerText()).trim() === 'Profile'), 'profile page');
+    await page.goto(APP + '/change-password');
+    ok(await until(async () => (await page.locator('h1').innerText()).trim() === 'Change Password'), 'change-password page (Title Case)');
     await page.fill('#currentPassword', 'not-the-password');
     await page.fill('#newPassword', NEW_PASSWORD);
     await page.fill('#confirmPassword', NEW_PASSWORD);
@@ -82,16 +86,16 @@ const ok = (c, l, extra = '') => { c ? pass++ : fail++; console.log(c ? '  PASS'
     await page.waitForURL(/\/admin\/dashboard/);
     ok(true, 'new password logs in');
 
-    console.log('# Phone: the menu holds Change password and Log out');
+    console.log('# Phone: the menu holds Profile and Log out');
     await page.setViewportSize({ width: 390, height: 844 });
     await settled(page);
     ok(!(await account.isVisible()), 'no account button on phones');
     await page.getByRole('button', { name: 'Open menu' }).click();
     const phoneMenu = page.locator('#mobile-menu');
-    ok(await phoneMenu.getByRole('link', { name: 'Change password' }).isVisible(), 'Change password in the phone menu');
+    ok(await phoneMenu.getByRole('link', { name: 'Profile' }).isVisible(), 'Profile in the phone menu');
     ok(await phoneMenu.getByRole('button', { name: 'Log out' }).isVisible(), 'Log out in the phone menu');
-    await phoneMenu.getByRole('link', { name: 'Change password' }).click();
-    ok(await until(() => new URL(page.url()).pathname === '/change-password'), 'phone link opens the page');
+    await phoneMenu.getByRole('link', { name: 'Profile' }).click();
+    ok(await until(() => new URL(page.url()).pathname === '/admin/profile'), 'phone link opens the page');
 
     ok(errors.length === 0, 'no page errors', errors.join('\n    '));
   } finally {

@@ -7,4 +7,5 @@ export const PERMISSIONS = {
   INSIGHTS: 'insights:view',
   SETUP: 'setup:manage',
   STAFF: 'staff:manage',
+  PROFILE: 'profile:manage',
 };

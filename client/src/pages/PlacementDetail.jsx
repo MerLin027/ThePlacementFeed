@@ -190,7 +190,7 @@ const PlacementDetail = () => {
           {/* 2. Important Dates Card */}
           <section className="order-3 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm motion-safe:rise-in-stagger" style={{ '--i': 2 }} aria-labelledby="dates-heading">
             <h2 id="dates-heading" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-xs border-b border-surface-variant pb-xs">
-              Important dates
+              Important Dates
             </h2>
             {closing && (
               <p className={`inline-flex items-center gap-1 mb-xs px-2 py-0.5 rounded-md border font-label-sm text-label-sm ${DEADLINE_TONE_CLASS[closing.tone]}`}>
@@ -214,7 +214,7 @@ const PlacementDetail = () => {
           {placement.selectionRounds?.length > 0 && (
             <section className="order-4 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm motion-safe:rise-in-stagger" style={{ '--i': 3 }}>
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
-                Selection process
+                Selection Process
               </h2>
               <div className="flex flex-col gap-xs relative">
                 <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface-variant hidden sm:block" />
@@ -248,7 +248,7 @@ const PlacementDetail = () => {
           <section className="order-2 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm motion-safe:rise-in-stagger" style={{ '--i': 1 }}>
             <div className="flex items-center gap-xs mb-xs">
               <span className="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">verified_user</span>
-              <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility criteria</h2>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">Eligibility Criteria</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-xs">
               <div className="flex flex-col bg-surface-container-low p-xs rounded-xl">
@@ -276,7 +276,7 @@ const PlacementDetail = () => {
           {placement.jdDescription && (
             <section className="order-5 md:order-0 bg-surface-container-lowest border border-surface-variant rounded-2xl shadow-soft p-sm motion-safe:rise-in-stagger" style={{ '--i': 4 }}>
               <h2 className="font-headline-sm text-headline-sm text-on-surface mb-xs pb-xs border-b border-surface-variant">
-                Job description
+                Job Description
               </h2>
               <Suspense fallback={<div className="space-y-xs" aria-hidden="true"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" /></div>}>
                 <JobDescription source={placement.jdDescription} />

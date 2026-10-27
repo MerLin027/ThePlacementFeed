@@ -83,7 +83,7 @@ const DashboardInsights = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-sm">
         <ChartCard
-          title="Where applications stand"
+          title="Where Applications Stand"
           summary={hasApps ? `${pipeline.Offered} of ${kpis.applications} applications ended in a selection; ${pipeline.Applied} are still waiting for a first decision.` : 'No applications yet.'}
           table={{ columns: ['Status', 'Applications'], rows: pipelineData.map((d) => [d.name, d.value]) }}
         >
@@ -104,7 +104,7 @@ const DashboardInsights = () => {
         </ChartCard>
 
         <ChartCard
-          title="Applications per week"
+          title="Applications per Week"
           summary={weekTotal > 0 ? `${weekTotal} in the last ${weekly.length} weeks; the busiest was the week of ${shortDate(busiest.weekStart)} (${busiest.applications}).` : `None in the last ${weekly.length} weeks.`}
           table={{ columns: ['Week of', 'Applications'], rows: weekly.map((w) => [shortDate(w.weekStart), w.applications]) }}
         >
@@ -131,7 +131,7 @@ const DashboardInsights = () => {
 
         <ChartCard
           className="lg:col-span-2"
-          title="Drives with the most applications"
+          title="Drives with the Most Applications"
           summary={driveData.length > 0 ? `${driveData[0].name} leads with ${topDrives[0].total} applications. Bars are split by status.` : 'No applications yet.'}
           table={{
             columns: ['Drive', ...APPLICATION_STATUSES.map(statusLabel), 'Total'],
@@ -157,7 +157,7 @@ const DashboardInsights = () => {
 
         <ChartCard
           className="lg:col-span-2"
-          title="Applications and selections by branch"
+          title="Applications and Selections by Branch"
           summary={topBranch ? `${topBranch.name} applies most (${topBranch.applications} applications, ${topBranch.selected} selected).` : 'No applications yet.'}
           table={{ columns: ['Branch', 'Applications', 'Selected'], rows: branchData.map((b) => [b.name, b.applications, b.selected]) }}
         >

@@ -70,7 +70,7 @@ const DriveInsights = ({ driveId, reloadKey }) => {
       </ChartCard>
 
       <ChartCard
-        title="Applicants by branch"
+        title="Applicants by Branch"
         summary={branchData.length > 0 ? `${branchData[0].name} has the most applicants (${branchData[0].applications}, ${branchData[0].selected} selected).` : 'No applicants yet.'}
         table={{ columns: ['Branch', 'Applicants', 'Selected'], rows: branchData.map((b) => [b.name, b.applications, b.selected]) }}
       >

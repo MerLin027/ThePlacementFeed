@@ -59,7 +59,7 @@ const ReadOnlyRow = ({ label, value }) => (
 );
 
 const StudentProfile = () => {
-  usePageTitle('My profile');
+  usePageTitle('My Profile');
   const { refresh } = useAuth();
   const { activeBranches, institutes, branchLabel } = useCatalog();
   const navigate = useNavigate();
@@ -163,7 +163,7 @@ const StudentProfile = () => {
   return (
     <div className="max-w-3xl mx-auto w-full px-sm md:px-lg py-sm md:py-lg">
       <div className="mb-md">
-        <h1 className="font-headline-md text-headline-md text-on-surface">My profile</h1>
+        <h1 className="font-headline-md text-headline-md text-on-surface">My Profile</h1>
         <p className="font-body-md text-body-md text-on-surface-variant mt-base">
           These details are shared with the CDPC when you apply to a drive.
         </p>
@@ -248,7 +248,7 @@ const StudentProfile = () => {
           className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md space-y-sm"
           aria-labelledby="details-heading"
         >
-          <h2 id="details-heading" className="font-headline-sm text-headline-sm text-on-surface">Your details</h2>
+          <h2 id="details-heading" className="font-headline-sm text-headline-sm text-on-surface">Your Details</h2>
 
           {error && <FormAlert>{error}</FormAlert>}
 
@@ -309,7 +309,7 @@ const StudentProfile = () => {
         isOpen={confirmInstitute}
         onClose={() => setConfirmInstitute(false)}
         onConfirm={saveInstitute}
-        title="Confirm your institute?"
+        title="Confirm Your Institute?"
         message={`You're choosing ${chosenInstituteName}. You can only choose once; after that, only the CDPC admin can change it.`}
         confirmLabel="Yes, that's my institute"
         tone="primary"
