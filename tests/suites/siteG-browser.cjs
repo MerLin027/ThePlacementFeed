@@ -93,12 +93,12 @@ const boxOf = (locator) => locator.boundingBox();
     console.log('# Drives panel');
     const tickets = notice.locator('li');
     const count = await tickets.count();
-    ok(count >= 1 && count <= 5, `at most five drive tickets (${count})`);
+    ok(count >= 1 && count <= 4, `at most four drive tickets (${count})`);
     if (count > 0) {
       const href = await tickets.first().getByRole('link').getAttribute('href');
       ok(/^\/placement\/[a-f0-9]{24}$/.test(href || ''), 'each ticket links to its drive', href);
     }
-    if (count < 5) ok(await notice.getByText("That's everything for now").isVisible(), 'a short list ends in a "That\'s everything" slot instead of blank space');
+    if (count < 4) ok(await notice.getByText("That's everything for now").isVisible(), 'a short list ends in a "That\'s everything" slot instead of blank space');
 
     console.log('# Phone: nothing wider than the screen');
     const phone = await browser.newContext({ viewport: { width: 360, height: 760 } });
@@ -163,6 +163,10 @@ const boxOf = (locator) => locator.boundingBox();
     await row.getByRole('button', { name: "Edit Edit Me's details" }).click();
     const dialog = page.getByRole('dialog', { name: 'Edit Admin', exact: true });
     await dialog.waitFor();
+    await settleAnimations(page);
+    const dbox = await dialog.boundingBox();
+    const middle = dbox.y + dbox.height / 2;
+    ok(Math.abs(middle - 450) < 4 && Math.abs(dbox.x + dbox.width / 2 - 720) < 4, 'the dialog is centred on the screen', JSON.stringify(dbox));
     await page.fill('#staff-name', 'Edited Admin');
     await dialog.getByRole('button', { name: 'Save changes' }).click();
     ok(await until(() => page.locator('tr', { hasText: 'Edited Admin' }).isVisible()), 'the new name shows in the table');
@@ -175,6 +179,21 @@ const boxOf = (locator) => locator.boundingBox();
       return scroller.scrollWidth - scroller.clientWidth;
     });
     ok(tableOverflow <= 0, 'and the table needs no sideways scrolling', String(tableOverflow));
+
+    console.log('# The two halves of the login card line up');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // Signed out, or /login moves straight on to the dashboard
+    await ctx.clearCookies();
+    await page.goto(APP + '/login');
+    await page.locator('#identifier').waitFor();
+    await settled(page);
+    const lines = await page.evaluate(() => {
+      const top = (el) => Math.round(el.getBoundingClientRect().top);
+      const rules = [...document.querySelectorAll('[class*="min-h-[3.75rem]"]')].map(top);
+      return { titles: [top(document.querySelector('#notice-heading')), top(document.querySelector('h1'))], rules };
+    });
+    ok(lines.titles[0] === lines.titles[1], 'the two titles share a line', JSON.stringify(lines));
+    ok(lines.rules.length === 2 && lines.rules[0] === lines.rules[1], 'the two footer rules share a line', JSON.stringify(lines));
 
     ok(errors.length === 0, 'no page errors', errors.join('\n    '));
   } finally {

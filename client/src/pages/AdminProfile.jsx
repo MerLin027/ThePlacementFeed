@@ -22,39 +22,18 @@ const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STAFF_MIN = passwordRulesFor('staff').min;
 
-const formatDate = (value, withTime = false) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        ...(withTime && { hour: 'numeric', minute: '2-digit' }),
-      })
-    : 'Never';
-
 const initialsOf = (name, fallback) => {
   const words = (name || '').split(/\s+/).filter(Boolean);
   if (words.length === 0) return (fallback || '?').slice(0, 1).toUpperCase();
   return words.slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 };
 
-const Section = ({ id, title, description, children, as: Tag = 'section', ...rest }) => (
-  <Tag
-    aria-labelledby={id}
-    className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md"
-    {...rest}
-  >
+const Section = ({ id, title, description, children }) => (
+  <section aria-labelledby={id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-soft p-sm md:p-md">
     <h2 id={id} className="font-headline-sm text-headline-sm text-on-surface">{title}</h2>
     {description && <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{description}</p>}
     <div className="mt-sm">{children}</div>
-  </Tag>
-);
-
-const InfoRow = ({ label, children }) => (
-  <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-sm py-xs border-b border-outline-variant/60 last:border-b-0">
-    <dt className="sm:w-44 shrink-0 font-label-md text-label-md text-on-surface-variant">{label}</dt>
-    <dd className="font-body-md text-body-md text-on-surface min-w-0 break-words">{children}</dd>
-  </div>
+  </section>
 );
 
 const DetailsForm = ({ profile, onSaved }) => {
@@ -358,14 +337,6 @@ const AdminProfile = () => {
             <PasswordForm profile={profile} onChanged={refresh} />
           </Section>
 
-          <Section id="info-heading" title="Account Info">
-            <dl>
-              <InfoRow label="Role">Super Admin: everything, including Setup and the Team</InfoRow>
-              <InfoRow label="Signs in with">{profile.email ? `${profile.username} or ${profile.email}` : profile.username}</InfoRow>
-              <InfoRow label="Account created">{formatDate(profile.createdAt)}</InfoRow>
-              <InfoRow label="Last sign-in">{formatDate(profile.lastLoginAt, true)}</InfoRow>
-            </dl>
-          </Section>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import AuthNotice from './AuthNotice';
 import SheetHeading from './SheetHeading';
+import { PANEL_FOOTER } from './authLayout';
 
 const SheetFooter = ({ className = '', children }) => (
   <div className={`pt-sm border-t border-outline-variant/70 font-body-sm text-body-sm text-on-surface-variant space-y-xs ${className}`}>{children}</div>
@@ -26,7 +27,6 @@ const AuthCard = ({ title, kicker, subtitle, children, footer, drives = false, i
     : intro
       ? 'max-w-[56rem] grid grid-cols-1 lg:grid-cols-2'
       : 'max-w-[26rem]';
-  const subtitleLine = subtitle && <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">{subtitle}</p>;
 
   return (
     <div className="relative isolate min-h-full flex items-center justify-center py-lg px-sm">
@@ -45,8 +45,7 @@ const AuthCard = ({ title, kicker, subtitle, children, footer, drives = false, i
         )}
         {intro && (
           <div className="flex flex-col p-md md:p-lg border-b lg:border-b-0 lg:border-r border-outline-variant/60 bg-[linear-gradient(165deg,var(--color-brand-50)_0%,var(--color-surface-container-low)_75%)]">
-            <SheetHeading as="h1" kicker={kicker} title={title} />
-            {subtitleLine}
+            <SheetHeading as="h1" kicker={kicker} title={title} subtitle={subtitle} />
             <div className="mt-sm mb-md flex-1">{intro}</div>
             {footer && <SheetFooter>{footer}</SheetFooter>}
           </div>
@@ -55,15 +54,18 @@ const AuthCard = ({ title, kicker, subtitle, children, footer, drives = false, i
           {intro ? (
             <SheetHeading title={formTitle} />
           ) : (
-            title && (
-              <>
-                <SheetHeading as="h1" kicker={kicker} title={title} />
-                {subtitleLine}
-              </>
-            )
+            title && <SheetHeading as="h1" kicker={kicker} title={title} subtitle={subtitle} />
           )}
           <div className={title || intro ? 'mt-md' : 'flex-1 flex flex-col'}>{children}</div>
-          {!intro && footer && <SheetFooter className="mt-sm">{footer}</SheetFooter>}
+          {!intro && footer &&
+            (drives ? (
+              <div className={`${PANEL_FOOTER} font-body-sm text-body-sm text-on-surface-variant`}>
+                {/* As tall as the drives panel's footer link, so the two rules line up */}
+                <div className="min-h-[44px] flex items-center">{footer}</div>
+              </div>
+            ) : (
+              <SheetFooter className="mt-sm">{footer}</SheetFooter>
+            ))}
         </div>
       </div>
     </div>

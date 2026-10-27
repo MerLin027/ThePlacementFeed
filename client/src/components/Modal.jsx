@@ -7,7 +7,8 @@ import PresenceGuard from './PresenceGuard';
 
 /**
  * Modal dialog: labelled, focus kept inside while open (Escape closes and
- * focus returns to the opener), page behind it locked from scrolling.
+ * focus returns to the opener), page behind it locked from scrolling. Centred on
+ * the screen like the confirmation dialogs; tall content scrolls inside it.
  */
 const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => {
   const titleId = useId();
@@ -27,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
   return createPortal(
     <AnimatePresence>
     {isOpen && (
-    <m.div key="modal" {...dialogOverlay} className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-sm">
+    <m.div key="modal" {...dialogOverlay} className="fixed inset-0 z-50 flex items-center justify-center p-sm">
       <PresenceGuard>
       <m.div
         {...dialogBackdrop}

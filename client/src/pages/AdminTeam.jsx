@@ -62,23 +62,29 @@ const statusOf = (s) =>
       ? { tone: 'warning', icon: 'schedule', label: 'First sign-in pending' }
       : { tone: 'success', icon: 'check_circle', label: 'Active' };
 
+const FormSection = ({ id, title, children }) => (
+  <section aria-labelledby={id} className="space-y-sm">
+    <h3 id={id} className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-on-surface-variant">{title}</h3>
+    {children}
+  </section>
+);
+
 const AccessSummary = () => (
-  <div className="rounded-xl border border-outline-variant bg-surface-container-low/60 p-sm">
-    <p id="access-heading" className="font-label-md text-label-md text-on-surface">Access</p>
-    <ul className="mt-xs grid gap-xs sm:grid-cols-2" aria-labelledby="access-heading">
+  <div className="rounded-2xl border border-outline-variant bg-surface-container-low/60 p-sm md:p-md">
+    <ul className="grid gap-sm sm:grid-cols-2" aria-label="Can use">
       {ACCESS.can.map((a) => (
-        <li key={a.label} className="flex items-start gap-xs">
-          <span className="w-8 h-8 shrink-0 rounded-lg bg-primary-fixed text-on-primary-fixed flex items-center justify-center" aria-hidden="true">
-            <span className="material-symbols-outlined text-[18px]">{a.icon}</span>
+        <li key={a.label} className="flex items-start gap-sm">
+          <span className="w-11 h-11 shrink-0 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center" aria-hidden="true">
+            <span className="material-symbols-outlined text-[22px]">{a.icon}</span>
           </span>
-          <span>
+          <span className="pt-0.5">
             <span className="block font-label-md text-label-md text-on-surface">{a.label}</span>
-            <span className="block font-body-sm text-body-sm text-on-surface-variant">{a.hint}</span>
+            <span className="block mt-0.5 font-body-sm text-body-sm text-on-surface-variant">{a.hint}</span>
           </span>
         </li>
       ))}
     </ul>
-    <p className="mt-xs pt-xs border-t border-outline-variant/70 flex flex-wrap items-center gap-x-xs gap-y-1 font-body-sm text-body-sm text-on-surface-variant">
+    <p className="mt-sm pt-sm border-t border-outline-variant/70 flex flex-wrap items-center gap-x-xs gap-y-1 font-body-sm text-body-sm text-on-surface-variant">
       <span>No access to</span>
       {ACCESS.cannot.map((a) => (
         <Badge key={a.label} tone="muted" icon={a.icon}>{a.label}</Badge>
@@ -139,16 +145,19 @@ const AdminForm = ({ member, onCancel, onSaved }) => {
   const emailChanging = editing && form.email.trim().toLowerCase() !== member.email;
 
   return (
-    <form onSubmit={submit} className="space-y-sm" noValidate>
+    <form onSubmit={submit} className="space-y-md" noValidate>
       {!editing && (
-        <div className="flex items-start gap-sm">
-          <span className="w-10 h-10 shrink-0 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center" aria-hidden="true">
-            <span className="material-symbols-outlined text-[22px]">person_add</span>
+        <div className="flex items-center gap-sm rounded-2xl bg-[linear-gradient(120deg,var(--color-primary-fixed),var(--color-brand-50))] p-sm md:p-md">
+          <span className="w-12 h-12 shrink-0 rounded-2xl bg-surface-container-lowest text-primary shadow-soft flex items-center justify-center" aria-hidden="true">
+            <span className="material-symbols-outlined text-[24px]">person_add</span>
           </span>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            They&apos;ll be able to use the <strong className="font-semibold text-on-surface">Dashboard</strong> and{' '}
-            <strong className="font-semibold text-on-surface">Students</strong> pages.
-          </p>
+          <div>
+            <p className="font-label-md text-label-md text-on-surface">A new admin account</p>
+            <p className="mt-0.5 font-body-md text-body-md text-on-surface-variant">
+              They&apos;ll be able to use the <strong className="font-semibold text-on-surface">Dashboard</strong> and{' '}
+              <strong className="font-semibold text-on-surface">Students</strong> pages.
+            </p>
+          </div>
         </div>
       )}
       {formError && <FormAlert>{formError}</FormAlert>}
@@ -162,6 +171,7 @@ const AdminForm = ({ member, onCancel, onSaved }) => {
           maxLength={100}
           autoComplete="off"
           autoFocus
+          helper="Shown on the Team page and in their menu."
           error={errors.name}
         />
         <FormField
@@ -182,9 +192,11 @@ const AdminForm = ({ member, onCancel, onSaved }) => {
       </div>
       {!editing && (
         <>
-          <AccessSummary />
-          <p className="flex items-start gap-xs font-body-sm text-body-sm text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px] mt-px text-primary" aria-hidden="true">key</span>
+          <FormSection id="admin-access-heading" title="Access">
+            <AccessSummary />
+          </FormSection>
+          <p className="flex items-start gap-sm rounded-2xl bg-primary-fixed/40 px-sm md:px-md py-sm font-body-sm text-body-sm text-on-surface-variant">
+            <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">key</span>
             <span>
               Next you&apos;ll see a one-time password to give them. They use it once to sign in, within 72 hours, then
               choose their own: {passwordRuleSummary('admin')}.
@@ -192,7 +204,7 @@ const AdminForm = ({ member, onCancel, onSaved }) => {
           </p>
         </>
       )}
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-xs pt-xs">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-xs pt-md border-t border-outline-variant/70">
         <button type="button" onClick={onCancel} className="btn-secondary">Cancel</button>
         <SubmitButton isLoading={saving} loadingText={editing ? 'Saving...' : 'Creating...'} className="sm:w-auto sm:min-w-[11rem]">
           {editing ? 'Save changes' : 'Create account'}
@@ -408,7 +420,7 @@ const AdminTeam = () => {
         )}
       </div>
 
-      <Modal isOpen={editorOpen} onClose={closeEditor} title={editor.member ? 'Edit Admin' : 'Add Admin'} maxWidth="max-w-[36rem]">
+      <Modal isOpen={editorOpen} onClose={closeEditor} title={editor.member ? 'Edit Admin' : 'Add Admin'} maxWidth={editor.member ? 'max-w-[32rem]' : 'max-w-[44rem]'}>
         <AdminForm key={editor.member?.id || 'new'} member={editor.member} onCancel={closeEditor} onSaved={saved} />
       </Modal>
 

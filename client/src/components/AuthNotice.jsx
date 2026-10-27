@@ -4,13 +4,14 @@ import api from '../api/axios';
 import { useCatalog } from '../stores/catalog';
 import SheetHeading from './SheetHeading';
 import CompanyMonogram from './CompanyMonogram';
+import { PANEL_FOOTER, PANEL_SUBTITLE_LINES } from './authLayout';
 import { TYPE_META } from '../constants/applications';
 import { deadlineInfo, formatDay } from '../utils/deadline';
 import { getStartOfTodayIST } from '../utils/dates';
 
-// Rows on the notice: upcoming drives first, topped up with recently closed ones. Five fit beside
-// the login form, so the two halves end at the same height.
-const ROWS = 5;
+// Rows on the notice: upcoming drives first, topped up with recently closed ones. Four full-size
+// tickets fit beside the login form, so the two halves end at the same height.
+const ROWS = 4;
 
 // "Today" / "Tomorrow" (red) or "in 4 days" beside the closing date; nothing for later dates
 const closingNote = (closing) => {
@@ -33,26 +34,26 @@ const DriveRow = ({ drive, closed, index }) => {
   return (
     <li
       style={{ '--i': index }}
-      className={`group/row relative flex items-center gap-sm rounded-xl px-sm py-2.5 rise-in-stagger transition-[box-shadow,translate,background-color] duration-200 ease-out-soft focus-within:ring-2 focus-within:ring-primary ${
+      className={`group/row relative flex items-center gap-sm rounded-2xl px-sm py-3 rise-in-stagger transition-[box-shadow,translate,background-color] duration-200 ease-out-soft focus-within:ring-2 focus-within:ring-primary ${
         closed
           ? 'bg-surface-container-lowest/55 ring-1 ring-outline-variant/40 hover:bg-surface-container-lowest'
           : 'bg-surface-container-lowest ring-1 ring-outline-variant/60 shadow-soft hover:shadow-lift hover:-translate-y-px'
       }`}
     >
-      <CompanyMonogram name={drive.company} size="sm" className={closed ? 'opacity-60 grayscale' : ''} />
+      <CompanyMonogram name={drive.company} className={closed ? 'opacity-60 grayscale' : ''} />
       <div className="min-w-0 flex-1">
         <Link
           to={`/placement/${drive._id}`}
-          className={`block truncate font-label-md text-label-md after:absolute after:inset-0 after:rounded-xl focus-visible:outline-hidden group-hover/row:text-primary ${
+          className={`block truncate font-headline-sm text-[1.0625rem] leading-6 font-semibold after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-hidden group-hover/row:text-primary ${
             closed ? 'text-on-surface-variant' : 'text-on-surface'
           }`}
         >
           {drive.company}
         </Link>
-        <p className="truncate font-body-sm text-body-sm text-on-surface-variant">{[drive.role, type].filter(Boolean).join(' · ')}</p>
+        <p className="mt-0.5 truncate font-body-sm text-body-sm text-on-surface-variant">{[drive.role, type].filter(Boolean).join(' · ')}</p>
       </div>
       <div className="shrink-0 text-right tabular-nums">
-        <p className={`font-label-md text-label-md ${closed ? 'text-on-surface-variant' : 'text-on-surface'}`}>
+        <p className={`font-headline-sm text-[1.0625rem] leading-6 font-semibold ${closed ? 'text-on-surface-variant' : 'text-on-surface'}`}>
           {drive.ctc != null ? (
             <>
               {drive.ctc} <span className="font-body-sm text-body-sm text-on-surface-variant">LPA</span>
@@ -61,7 +62,7 @@ const DriveRow = ({ drive, closed, index }) => {
             <span className="text-on-surface-variant">CTC —</span>
           )}
         </p>
-        <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+        <p className="mt-0.5 font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
           {/* Phones: the date alone, so the company keeps its room (still read out) */}
           <span className="max-sm:sr-only">{closed ? 'Closed ' : 'Closes '}</span>
           {formatDay(drive.deadline, { day: 'numeric', month: 'short' })}
@@ -121,14 +122,9 @@ const AuthNotice = () => {
     <section className="relative flex flex-col flex-1" aria-labelledby="notice-heading">
       <SheetHeading
         id="notice-heading"
-        kicker={university || 'Campus placements'}
-        kickerIcon="school"
         title="Upcoming Drives"
-        aside={
-          <p className="shrink-0 rounded-full bg-surface-container-lowest/80 px-2.5 py-1 ring-1 ring-outline-variant/60 font-label-sm text-label-sm text-on-surface-variant tabular-nums">
-            As of {formatDay(new Date(getStartOfTodayIST()), { day: 'numeric', month: 'short' })}
-          </p>
-        }
+        subtitle={`${university ? `${university} placements` : 'Campus placements'} · as of ${formatDay(new Date(getStartOfTodayIST()), { day: 'numeric', month: 'short' })}`}
+        subtitleLines={PANEL_SUBTITLE_LINES}
       />
 
       <div className="mt-md flex-1 flex flex-col">
@@ -193,7 +189,7 @@ const AuthNotice = () => {
         )}
       </div>
 
-      <div className="mt-sm flex flex-wrap items-center justify-between gap-x-sm">
+      <div className={PANEL_FOOTER}>
         <p className="font-body-sm text-body-sm text-on-surface-variant tabular-nums">
           {!loading && !error && (total > upcoming.length ? `${upcoming.length} of ${total} upcoming` : `${total} upcoming`)}
         </p>

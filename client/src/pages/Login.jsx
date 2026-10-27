@@ -4,6 +4,8 @@ import { useAuth } from '../context/auth';
 import AuthCard, { FormAlert } from '../components/AuthCard';
 import FormField from '../components/FormField';
 import SubmitButton from '../components/SubmitButton';
+import SheetHeading from '../components/SheetHeading';
+import { PANEL_SUBTITLE_LINES } from '../components/authLayout';
 import { passwordRulesFor } from '../constants/passwords';
 import { parseApiError } from '../utils/formErrors';
 import { afterSignIn } from '../utils/accountHome';
@@ -112,10 +114,12 @@ const Login = () => {
       <div className="grid grid-cols-1 flex-1">
         {/* The form */}
         <div className={view(!helpOpen, '-translate-x-6')} inert={helpOpen || undefined}>
-          <h1 className="font-headline-md text-headline-md text-on-surface tracking-tight">Log In</h1>
-          <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">
-            Use the email you signed up with. CDPC staff: your email or username.
-          </p>
+          <SheetHeading
+            as="h1"
+            title="Log In"
+            subtitle="Use the email you signed up with. CDPC staff: your email or username."
+            subtitleLines={PANEL_SUBTITLE_LINES}
+          />
 
           <form onSubmit={handleSubmit} className="mt-md space-y-sm" noValidate>
             {expired === 'temp' && !error && (
@@ -191,15 +195,17 @@ const Login = () => {
 
         {/* The help, in the same place */}
         <section id="login-help" aria-labelledby="login-help-heading" className={view(helpOpen, 'translate-x-6')} inert={!helpOpen || undefined}>
-          <h2
+          <SheetHeading
             id="login-help-heading"
-            ref={helpHeadingRef}
-            tabIndex={-1}
-            className="font-headline-md text-headline-md text-on-surface tracking-tight rounded-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            Trouble Logging In?
-          </h2>
-          <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">There&apos;s no email reset here; the CDPC sorts it out in person.</p>
+            title="Trouble Logging In?"
+            subtitle="There's no email reset here; the CDPC sorts it out in person."
+            subtitleLines={PANEL_SUBTITLE_LINES}
+            titleProps={{
+              ref: helpHeadingRef,
+              tabIndex: -1,
+              className: 'rounded-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary',
+            }}
+          />
 
           <ul className="mt-md space-y-xs">
             {HELP.map((item, i) => (
