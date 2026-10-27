@@ -37,6 +37,13 @@ const createTrustedProxy = (expected) => (req, res, next) => {
   req.proxyCheck = {
     secret: !expected ? 'not-configured' : verified ? 'verified' : typeof given === 'string' ? 'wrong' : 'missing',
     visitorAddress: visitorKnown ? 'used' : visitor ? 'ignored' : 'absent',
+    // Temporary: how many entries each forwarding header carries (counts only)
+    entries: Object.fromEntries(
+      ['x-forwarded-for', 'x-vercel-forwarded-for', 'x-vercel-proxied-for', 'forwarded'].map((h) => [
+        h,
+        typeof req.headers[h] === 'string' ? req.headers[h].split(',').length : 0,
+      ])
+    ),
   };
   next();
 };
