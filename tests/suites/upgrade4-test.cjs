@@ -30,6 +30,8 @@ const describe = (indexes) => indexes
   await mongoose.connect(TEST.dbUri(freshName));
   for (const M of [Placement, Student, Application, Admin]) {
     await M.init();
+    // Admin builds its indexes at startup (features/auth/seed.js), not through autoIndex
+    if (M === Admin) await M.createIndexes();
     const fresh = describe(await M.collection.indexes());
     // The site upgrade replaced { institute, rollNumber } with { rollNumber }; existing databases keep
     // the old index until the cleanup release (the previous code still needs it for a rollback)

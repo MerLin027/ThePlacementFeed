@@ -26,6 +26,12 @@ The code is the source of truth; this file is kept next to it.
   | insights:view | ✓ | ✓ |
   | setup:manage | ✓ | — |
   | staff:manage | ✓ | — |
+  | profile:manage | ✓ | — |
+
+- **Staff accounts.** There is exactly one super admin (a unique index on the role makes a second one
+  impossible). It signs in with its username or email. Admins have a name and an email, sign in with
+  the email, and have no username; the super admin creates them and nobody can be promoted. Only
+  `scripts/resetAdmin.js` can restore or replace the super admin's access.
 
 - **Pending password change.** After a reset, or for a new staff account, the one-time password only opens `/api/auth/password` and `/api/auth/session` (plus the student's profile read). Everything else answers 403 `PASSWORD_CHANGE_REQUIRED`.
 - **Wrong kind of account.** A student on `/api/admin/*`, or staff on `/api/student/*`, gets 403 `FORBIDDEN`. With no session, the answer is 401.
@@ -65,7 +71,7 @@ names the `audit_events` action written (ids and outcomes only; see below).
 | Method | Path | Notes | Limit | Audit |
 |---|---|---|---|---|
 | POST | /api/auth/signup | Students only. Password policy; the same 409 for a taken email, roll number or staff email | studentSignup 30 | auth.signup |
-| POST | /api/auth/login | `{ identifier, password }`: student email, or staff username or email. The same 401 for every failure, after the same bcrypt work | login 100; loginAccount 5 failures per (address, identifier) | auth.login (success/failure, known accounts only) |
+| POST | /api/auth/login | `{ identifier, password }`: an email (students, admins, the super admin), or the super admin's username. The same 401 for every failure, after the same bcrypt work | login 100; loginAccount 5 failures per (address, identifier) | auth.login (success/failure, known accounts only) |
 | POST | /api/auth/logout | Ends this session | session 300 | auth.logout |
 | GET | /api/auth/session | `{ authenticated, account }`; a stale cookie gives `{ authenticated: false, expired: true }` and is cleared | session 300 | — |
 | POST | /api/auth/password | Signed in (a pending account too). `currentPassword` unless pending; the one-time password can't be kept; policy; ends other sessions and issues a new one | password: 5 wrong passwords per account | auth.password.change (success/failure) |
@@ -114,18 +120,23 @@ names the `audit_events` action written (ids and outcomes only; see below).
 | PATCH | /api/admin/catalog/institutes/:id | setup | catalogAdminWrite | catalog.institute.update |
 | DELETE | /api/admin/catalog/institutes/:id[?force=true] | setup | catalogAdminWrite | catalog.institute.delete |
 | GET | /api/admin/staff | staff | staffRead 300 | — |
-| POST | /api/admin/staff | staff. Returns the one-time password **once** | staffWrite 30 | staff.create |
-| PATCH | /api/admin/staff/:id | staff. Never your own role or active flag; always one active super admin | staffWrite | staff.update |
-| POST | /api/admin/staff/:id/reset-password | staff. Not your own; one-time password returned once | staffWrite | staff.resetPassword |
-| DELETE | /api/admin/staff/:id | staff. Disabled accounts only, never your own | staffWrite | staff.delete |
+| POST | /api/admin/staff | staff. `{ name, email }` only (any other field is a 400); always an admin. Returns the one-time password **once** | staffWrite 30 | staff.create |
+| PATCH | /api/admin/staff/:id | staff. `{ name, email, active }` of an admin; the super admin's account is 403 `SUPER_ADMIN`. A new email ends the admin's sessions | staffWrite | staff.update |
+| POST | /api/admin/staff/:id/reset-password | staff. Admins only; one-time password returned once | staffWrite | staff.resetPassword |
+| DELETE | /api/admin/staff/:id | staff. Disabled admins only | staffWrite | staff.delete |
+| GET | /api/admin/profile | profile. The super admin's own name, username, email, dates, and the College/University | staffRead 300 | — |
+| PATCH | /api/admin/profile | profile. `{ name, username, email, currentPassword }`; name and email may be cleared, the username is required. A new username or email needs the current password and ends the other sessions (this browser gets a fresh one) | staffWrite 30; password 5 wrong passwords per account | staff.profile.update (success/failure; which fields changed, never values) |
 
 ## Passwords
 
 - **Storage:** bcrypt, cost 12. Length is capped at 72 characters (bcrypt ignores the rest).
 - **Policy** (features/auth/passwordPolicy.js):
-  - students 8+ characters, staff 12+;
+  - students 8–72 characters, staff (admins and the super admin) 12–72;
   - a blocklist of common and local passwords;
-  - the password must not contain the email name, roll number or username (4+ characters).
+  - the password must not contain the account's own email name, roll number or username (4+
+    characters); the error names only the details that account has.
+  - The website shows these rules wherever a password is set or handed out (signup, change password,
+    the profile, the one-time password dialog and the reset confirmations).
 - **One-time passwords** (features/auth/tempPassword.js):
   - 12 characters from a 54-character unambiguous alphabet (≈69 bits);
   - the server keeps only the hash; valid for 72 hours, and only for setting a new password.
@@ -153,4 +164,6 @@ It never stores emails, names, passwords, tokens or free text. Each event is als
 | CRON_SECRET | | Enables /api/cron/trigger; warned when shorter than 32 characters |
 | ADMIN_USERNAME, ADMIN_PASSWORD | first start | Create the super admin when there is no staff account |
 
-`scripts/resetAdmin.js` is the break-glass tool. It makes one account an active super admin with a password typed (hidden) at the terminal, and ends that account's sessions.
+`scripts/resetAdmin.js` is the break-glass tool. It sets a new password (typed hidden at the terminal) and optionally a new username on the one super admin account, re-enables it and ends its sessions. When there is no super admin, it creates one; it never creates a second.
+
+At startup, `features/auth/seed.js` replaces the pre-2026-10-27 unique username index, keeps exactly one super admin, removes the usernames of admins that have an email (admins without one keep signing in with the username until an email is added), then builds the Admin indexes.

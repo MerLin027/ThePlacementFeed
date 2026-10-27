@@ -29,11 +29,13 @@ and apply. The CDPC admin posts drives and manages applicants from a protected d
 - For each drive, review applicants, change their status one at a time or in bulk, and export to
   Excel.
 - Manage student accounts: search, reset a password, delete.
-- Two roles. **Admins** can do all of the above. **Super admins** also manage Setup (branches,
-  institutes, the university name) and the team: add admins, change roles, reset passwords, disable
-  and delete accounts. There is always at least one super admin.
+- Two roles. **Admins** use the Dashboard and Students pages: all of the above. The one **super
+  admin** also manages Setup (branches, institutes, the university name), its own profile, and the
+  team: add admins (a name and an email), edit, reset passwords, disable and delete them. Nobody can
+  be made a second super admin.
 
-Everyone signs in on the same page: students with their email, staff with their username or email.
+Everyone signs in on the same page: students and admins with their email, the super admin with its
+username or email.
 There is no email sending. A student who forgets their password asks the CDPC, and staff issue a
 random one-time password, shown once. It works for 72 hours and only to set a new password. New
 staff accounts start the same way.
@@ -77,9 +79,10 @@ npm run dev
 ```
 
 On first start, the API creates the super admin from `ADMIN_USERNAME` and `ADMIN_PASSWORD` (an
-existing single admin from an older version becomes the super admin automatically). Staff sign in on
-the normal login page with their username. If nobody can sign in as a super admin any more, run
-`node server/scripts/resetAdmin.js` to restore one account.
+existing single admin from an older version becomes the super admin automatically). The super admin
+signs in on the normal login page with that username, and can add a name and an email on its
+Profile page. If nobody can sign in as the super admin any more, run
+`node server/scripts/resetAdmin.js` to restore its access.
 
 ### Configuration
 

@@ -4,9 +4,9 @@ const { missingProfileFields } = require('../../models/Student');
 const { permissionsFor, ROLE_LABELS } = require('./permissions');
 
 /**
- * Accounts across both collections: students sign in with their email, staff with their username or
- * email. An email belongs to one account only (checked when either kind is created, and a sign-in
- * that matches both is refused).
+ * Accounts across both collections: students and admins sign in with their email, the super admin
+ * with its username or email. An email belongs to one account only (checked when either kind is
+ * created, and a sign-in that matches both is refused).
  */
 
 const isEmail = (identifier) => identifier.includes('@');
@@ -50,7 +50,8 @@ const describeAccount = (type, doc) => {
   return {
     type: 'staff',
     id: doc._id.toString(),
-    username: doc.username,
+    // The super admin's; admins sign in with their email
+    username: doc.username || '',
     name: doc.name || '',
     email: doc.email || '',
     role: doc.role,

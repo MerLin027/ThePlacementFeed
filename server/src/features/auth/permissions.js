@@ -10,9 +10,11 @@ const PERMISSIONS = {
   STUDENTS: 'students:manage', // list accounts, reset password/institute, delete
   INSIGHTS: 'insights:view', // dashboard numbers
   SETUP: 'setup:manage', // branches, institutes, the university name
-  STAFF: 'staff:manage', // create, disable, reset and change the role of staff accounts
+  STAFF: 'staff:manage', // create, edit, disable, reset and delete admin accounts
+  PROFILE: 'profile:manage', // edit your own name, username and email
 };
 
+// Admins get the Dashboard (drives, applicants, numbers) and Students; the super admin everything
 const ROLE_PERMISSIONS = {
   super_admin: Object.values(PERMISSIONS),
   admin: [PERMISSIONS.DRIVES, PERMISSIONS.APPLICANTS, PERMISSIONS.STUDENTS, PERMISSIONS.INSIGHTS],

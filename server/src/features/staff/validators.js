@@ -1,34 +1,57 @@
 const { body } = require('express-validator');
-const { STAFF_ROLES, USERNAME_PATTERN } = require('../../models/Admin');
+const { USERNAME_PATTERN } = require('../../models/Admin');
+const { PASSWORD_MAX_LENGTH } = require('../auth/constants');
 
-const nameRule = (optional) =>
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Only these fields may be sent; anything else (a role, a username) is refused, not ignored
+const onlyFields = (allowed) =>
+  body()
+    .custom((value) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).every((key) => allowed.includes(key)))
+    .withMessage(`Only these fields can be sent: ${allowed.join(', ')}`)
+    .bail();
+
+const somethingToUpdate = (fields) =>
+  body().custom((value) => fields.some((key) => value[key] !== undefined)).withMessage('Nothing to update');
+
+const nameRule = ({ optional, clearable = false }) =>
   (optional ? body('name').optional() : body('name'))
     .isString()
     .withMessage('Name is required')
     .bail()
     .trim()
-    .isLength({ min: 2, max: 100 })
+    .custom((value) => (clearable && value === '') || (value.length >= 2 && value.length <= 100))
     .withMessage('Name must be 2–100 characters');
 
-// Optional everywhere: '' removes it
-const emailRule = body('email')
-  .optional()
-  .isString()
-  .withMessage('Email must be text')
-  .bail()
-  .trim()
-  .toLowerCase()
-  .custom((value) => value === '' || (value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)))
-  .withMessage('Please enter a valid email address');
+const emailRule = ({ optional, clearable = false }) =>
+  (optional ? body('email').optional() : body('email'))
+    .isString()
+    .withMessage('Email is required')
+    .bail()
+    .trim()
+    .toLowerCase()
+    .custom((value) => (clearable && value === '') || (value.length <= 254 && EMAIL_PATTERN.test(value)))
+    .withMessage('Please enter a valid email address');
 
-const roleRule = (optional) =>
-  (optional ? body('role').optional() : body('role'))
-    .isIn(STAFF_ROLES)
-    .withMessage(`Role must be one of: ${STAFF_ROLES.join(', ')}`);
+// The Team page: admins have a name and an email (their sign-in); the role is always admin
+const createStaffRules = [onlyFields(['name', 'email']), nameRule({ optional: false }), emailRule({ optional: false })];
 
-const createStaffRules = [
-  nameRule(false),
+const updateStaffRules = [
+  onlyFields(['name', 'email', 'active']),
+  nameRule({ optional: true }),
+  emailRule({ optional: true }),
+  body('active').optional().isBoolean({ strict: true }).withMessage('active must be true or false'),
+  somethingToUpdate(['name', 'email', 'active']),
+];
+
+// The super admin's own profile: name and email optional ('' clears), the username required.
+// Changing the username or email (what you sign in with) needs the current password; the handler
+// decides whether it is needed.
+const updateProfileRules = [
+  onlyFields(['name', 'username', 'email', 'currentPassword']),
+  nameRule({ optional: true, clearable: true }),
   body('username')
+    .optional()
     .isString()
     .withMessage('Username is required')
     .bail()
@@ -36,17 +59,15 @@ const createStaffRules = [
     .toLowerCase()
     .matches(USERNAME_PATTERN)
     .withMessage('Username must be 3–32 letters, digits, dots, hyphens or underscores, starting with a letter or digit'),
-  emailRule,
-  roleRule(false),
+  emailRule({ optional: true, clearable: true }),
+  body('currentPassword')
+    .optional()
+    .isString()
+    .withMessage('Enter your current password')
+    .bail()
+    .isLength({ max: PASSWORD_MAX_LENGTH })
+    .withMessage('Enter your current password'),
+  somethingToUpdate(['name', 'username', 'email']),
 ];
 
-const updateStaffRules = [
-  nameRule(true),
-  emailRule,
-  roleRule(true),
-  body('active').optional().isBoolean({ strict: true }).withMessage('active must be true or false'),
-  body().custom((value) => value && ['name', 'email', 'role', 'active'].some((key) => value[key] !== undefined))
-    .withMessage('Nothing to update'),
-];
-
-module.exports = { createStaffRules, updateStaffRules };
+module.exports = { createStaffRules, updateStaffRules, updateProfileRules };

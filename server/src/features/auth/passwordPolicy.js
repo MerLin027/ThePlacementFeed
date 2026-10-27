@@ -40,10 +40,16 @@ const passwordProblem = (password, { email, rollNumber, username, staff = false 
   if (COMMON_PASSWORDS.has(lower)) return 'This password is too common. Please choose another.';
 
   // Built from the account's own identifiers (only when they are long enough to mean something)
-  const own = [email?.split('@')[0], rollNumber, username]
-    .filter((v) => typeof v === 'string' && v.length >= 4)
-    .map((v) => v.toLowerCase());
-  if (own.some((v) => lower.includes(v))) return "Your password can't contain your email name, roll number or username.";
+  const own = [
+    { value: email?.split('@')[0], label: 'email name' },
+    { value: rollNumber, label: 'roll number' },
+    { value: username, label: 'username' },
+  ].filter(({ value }) => typeof value === 'string' && value.length >= 4);
+  const found = own.filter(({ value }) => lower.includes(value.toLowerCase()));
+  if (found.length > 0) {
+    // Names only what the account has: "your email name or username", "your email name or roll number"
+    return `Your password can't contain your ${own.map(({ label }) => label).join(' or ')}.`;
+  }
   return null;
 };
 
