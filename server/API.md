@@ -39,8 +39,12 @@ The code is the source of truth; this file is kept next to it.
 ## Protections on every request (src/app.js, in order)
 
 1. **Request id:** `X-Request-Id`, also written to error logs and audit events.
-2. **Visitor address:** taken from Vercel's `x-real-ip` only when the request carries the shared `PROXY_SECRET` (timing-safe comparison); otherwise the address that connected.
-3. **Headers:** helmet security headers; CORS limited to `CLIENT_URL`.
+2. **Headers:** helmet security headers.
+3. **Website only** (`trustedProxy`):
+   - Vercel adds the shared `PROXY_SECRET` to every request it proxies; it is checked in constant time and removed.
+   - In production a request without the right secret gets 403 `DIRECT_ACCESS`, so nobody can call the API around the website. The one exception is `GET /api/health`, for Render's health check; it reports `via: "website" | "direct"` and nothing else.
+   - With the secret, the visitor's address comes from `x-vercel-forwarded-for`, which Vercel sets itself (a visitor's own value is replaced). `x-forwarded-for` is never used, because a visitor can put addresses in it; `x-real-ip` isn't sent by Vercel. Rate limits and the audit trail therefore see each visitor.
+   - CORS is limited to `CLIENT_URL`.
 4. **CSRF** (POST/PUT/PATCH/DELETE): the `Origin` (or `Referer`) must equal `CLIENT_URL`, otherwise 403 `CSRF_REJECTED`. This sits on top of the SameSite=Lax cookie.
 5. **JSON only:** a request body must be `application/json`, otherwise 415. No form-encoded parser; 100 KB body cap.
 6. **Input clean-up** (`sanitize`):
@@ -160,7 +164,7 @@ It never stores emails, names, passwords, tokens or free text. Each event is als
 | CLIENT_URL | yes | The website's origin; https in production. CORS and CSRF compare against it |
 | NODE_ENV | | `production` turns on Secure / `__Host-` cookies |
 | PORT | | Default 5000 |
-| PROXY_SECRET | recommended | The same value as in Vercel; without it rate limits see Vercel's address. A warning at start when shorter than 32 characters |
+| PROXY_SECRET | yes (production) | The same value as in Vercel. Production refuses to start without it or when it is shorter than 32 characters |
 | CRON_SECRET | | Enables /api/cron/trigger; warned when shorter than 32 characters |
 | ADMIN_USERNAME, ADMIN_PASSWORD | first start | Create the super admin when there is no staff account |
 

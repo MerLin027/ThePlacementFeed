@@ -96,7 +96,7 @@ Profile page. If nobody can sign in as the super admin any more, run
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | first start | Create the super admin |
 | `PORT` | no | Defaults to 5000 (Render sets it) |
 | `CRON_SECRET` | no | Enables `GET /api/cron/trigger` for an external scheduler |
-| `PROXY_SECRET` | no | Same value as in Vercel; lets rate limits see each visitor's address (see Deployment) |
+| `PROXY_SECRET` | production | Same value as in Vercel (32+ random characters). The API answers only requests that carry it (see Deployment) |
 
 `client/.env`: `VITE_API_URL`, the address of the API in development. Production builds call `/api`
 on the site's own domain instead.
@@ -128,8 +128,10 @@ node run.mjs phaseE-test      # or run selected suites by file name
 - **Website:** Vercel, building `client/`. `vercel.json` proxies `/api/*` to the API on Render, so
   the browser only ever talks to the site's own domain and the session cookies are first-party
   (phone browsers block cookies from another site, which used to break logging in on phones). Each
-  proxied request carries `PROXY_SECRET` (a Vercel environment variable) in a header; the API
-  believes the visitor address Vercel forwards only when that matches its own `PROXY_SECRET`.
+  proxied request carries `PROXY_SECRET` (a Vercel environment variable) in a header. In
+  production the API refuses every request without it (except its health check), so it can only
+  be used through the website, and it takes the visitor's address from the header Vercel sets
+  (`x-vercel-forwarded-for`) only on those requests.
   Every other path goes to the single-page app. `vercel.json` also
   sets the security headers (Content-Security-Policy, no framing, no MIME sniffing). The policy only
   lets the site call its own origin (the API is reached through the proxy). If the API moves, update

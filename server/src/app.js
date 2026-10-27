@@ -17,8 +17,9 @@ const BODY_LIMIT = '100kb';
 
 /**
  * Builds the Express app (index.js starts it). The middleware order is the security model, top to
- * bottom: identify the request, find the real client address, security headers and CORS, refuse
- * cross-site and non-JSON writes, parse and sanitise the body, log, find who is signed in (the
+ * bottom: identify the request, security headers, refuse anything that didn't come through the
+ * website's proxy (production) and find the real visitor address, CORS, refuse cross-site and
+ * non-JSON writes, parse and sanitise the body, log, find who is signed in (the
  * session), then the routes (each namespace applies its own guard), a JSON 404 and the error handler.
  */
 const createApp = () => {
@@ -28,10 +29,9 @@ const createApp = () => {
   // Render sits behind one reverse proxy
   app.set('trust proxy', 1);
   app.use(requestId);
-  // Requests proxied by Vercel: the visitor's address, when the shared secret proves where it came from
-  app.use(trustedProxy);
-
   app.use(helmet());
+  // Only requests the website's proxy vouches for (shared secret); their visitor's real address
+  app.use(trustedProxy);
   app.use(cors({ origin: clientUrl, credentials: true }));
 
   // Every state-changing API request, before anything reads its body

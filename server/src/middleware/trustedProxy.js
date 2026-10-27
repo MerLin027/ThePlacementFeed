@@ -1,8 +1,15 @@
 const crypto = require('crypto');
 const net = require('net');
 const { config } = require('../config/env');
+const { fail } = require('../lib/http');
 
 const SECRET_HEADER = 'x-tpf-proxy-secret';
+// The visitor's address as Vercel saw it. Vercel sets this header itself: a value a visitor sends
+// is replaced (checked on production, 2026-10-27). Not x-forwarded-for, whose first entries carry
+// whatever the visitor put there, and not x-real-ip, which Vercel doesn't send to the API.
+const VISITOR_HEADER = 'x-vercel-forwarded-for';
+// Reachable without the proxy: Render's health check calls the API directly
+const OPEN_PATHS = new Set(['/api/health']);
 
 const sameSecret = (a, b) => {
   const left = Buffer.from(a);
@@ -11,51 +18,42 @@ const sameSecret = (a, b) => {
 };
 
 /**
- * The site proxies /api through Vercel (client/vercel.json), so every proxied request reaches the
- * API from a Vercel address and the rate limiters would put all visitors in one bucket. Vercel sends
- * the visitor's address in x-real-ip, but anyone calling the API directly could send that header
- * too. So it is believed only when the request also carries the shared PROXY_SECRET, which Vercel
- * adds on its side: then the visitor's address becomes the forwarded-for entry that `req.ip` reads
- * (`trust proxy` 1). Without the secret (unset, missing or wrong), nothing changes and req.ip stays
- * the address that connected, which a client cannot fake.
+ * The website proxies /api through Vercel (client/vercel.json), which adds the shared PROXY_SECRET
+ * to every request it forwards; visitors never see it. This middleware:
+ * - checks the secret (in constant time) and removes it, so it never reaches logs or handlers;
+ * - with the right secret, makes the visitor's address (VISITOR_HEADER) the request's address
+ *   (`req.ip`, with `trust proxy` 1), so rate limits and the audit trail see each visitor rather
+ *   than Vercel's or Render's machines;
+ * - `required` (production): refuses every request without the right secret, so nobody can reach
+ *   the API around the website (and around Vercel's protections), except OPEN_PATHS;
+ * - sets req.viaWebsite, which GET /api/health reports.
  *
- * createTrustedProxy(secret) builds it for a given secret (tests); the default export uses the
- * configured PROXY_SECRET.
+ * createTrustedProxy(secret, options) builds it (tests); the default export uses the configuration.
  */
-const createTrustedProxy = (expected) => (req, res, next) => {
+const createTrustedProxy = (expected, { required = false } = {}) => (req, res, next) => {
   const given = req.headers[SECRET_HEADER];
-  // Never passed further down (logs, error reports)
   delete req.headers[SECRET_HEADER];
 
   const verified = Boolean(expected && typeof given === 'string' && sameSecret(given, expected));
-  const visitor = typeof req.headers['x-real-ip'] === 'string' ? req.headers['x-real-ip'].trim() : '';
-  const visitorKnown = verified && net.isIP(visitor) !== 0;
-  if (visitorKnown) req.headers['x-forwarded-for'] = visitor;
+  req.viaWebsite = verified;
 
-  // How the request arrived, as flags only (never the secret or an address): GET /api/health
-  // reports it, to check the Vercel set-up from outside
-  req.proxyCheck = {
-    secret: !expected ? 'not-configured' : verified ? 'verified' : typeof given === 'string' ? 'wrong' : 'missing',
-    visitorAddress: visitorKnown ? 'used' : visitor ? 'ignored' : 'absent',
-    // Temporary: does Vercel's own header agree with the first forwarded address, and is it the
-    // test value a caller tried to plant (booleans only)
-    vercelMatchesFirst: (req.headers['x-vercel-forwarded-for'] || '').trim() === (req.headers['x-forwarded-for'] || '').split(',')[0].trim(),
-    vercelIsPlanted: (req.headers['x-vercel-forwarded-for'] || '').includes('192.0.2.44'),
-    forwardedHasPlanted: (req.headers['x-forwarded-for'] || '').includes('192.0.2.44'),
-    // Temporary: how many entries each forwarding header carries (counts only)
-    entries: Object.fromEntries(
-      ['x-forwarded-for', 'x-vercel-forwarded-for', 'x-vercel-proxied-for', 'forwarded'].map((h) => [
-        h,
-        typeof req.headers[h] === 'string' ? req.headers[h].split(',').length : 0,
-      ])
-    ),
-  };
+  if (verified) {
+    const visitor = typeof req.headers[VISITOR_HEADER] === 'string' ? req.headers[VISITOR_HEADER].trim() : '';
+    if (net.isIP(visitor)) req.headers['x-forwarded-for'] = visitor;
+    return next();
+  }
+  if (required && !OPEN_PATHS.has(req.path)) {
+    return fail(res, 403, 'This API is only available through the website.', { code: 'DIRECT_ACCESS' });
+  }
   next();
 };
 
 let configured = null;
 const trustedProxy = (req, res, next) => {
-  configured ||= createTrustedProxy(config().proxySecret);
+  if (!configured) {
+    const { proxySecret, requireProxy } = config();
+    configured = createTrustedProxy(proxySecret, { required: requireProxy });
+  }
   configured(req, res, next);
 };
 

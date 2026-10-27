@@ -36,6 +36,13 @@ const load = () => {
   if (!client) throw new Error('CLIENT_URL must be the website address, e.g. https://example.vercel.app');
   if (isProduction && client.protocol !== 'https:') throw new Error('CLIENT_URL must use https:// in production');
 
+  // In production the API only answers requests that came through the website's proxy, which
+  // proves itself with this secret (middleware/trustedProxy.js): no secret, no start. Render then
+  // keeps the previous version running instead of an unprotected one.
+  if (isProduction && (!env.PROXY_SECRET || env.PROXY_SECRET.length < MIN_SECRET_LENGTH)) {
+    throw new Error(`PROXY_SECRET must be set in production: ${MIN_SECRET_LENGTH}+ random characters, the same value as in Vercel`);
+  }
+
   const warnings = ['PROXY_SECRET', 'CRON_SECRET']
     .filter((key) => env[key] && env[key].length < MIN_SECRET_LENGTH)
     .map((key) => `${key} is shorter than ${MIN_SECRET_LENGTH} characters; replace it with a longer random value.`);
@@ -48,8 +55,9 @@ const load = () => {
     // The website's origin: CORS and the CSRF Origin check compare against exactly this
     clientUrl: env.CLIENT_URL,
     clientOrigin: client.origin,
-    // Shared with Vercel; see middleware/trustedProxy.js
+    // Shared with Vercel; see middleware/trustedProxy.js. Required, and enforced, in production.
     proxySecret: env.PROXY_SECRET || null,
+    requireProxy: isProduction,
     // Enables GET /api/cron/trigger for an external scheduler
     cronSecret: env.CRON_SECRET || null,
     // First boot only: creates the admin account when none exists

@@ -80,21 +80,43 @@ const J = (cookie) => ({ 'Content-Type': 'application/json', Origin: APP, ...(co
   ok(fwb.getWorksheet('Applicants').actualRowCount === 2, 'filtered export (status=Shortlisted) has 1 row');
 
   console.log('# production-mode boot on this Node (cwd without .env, local DB only)');
+  const PROXY = 'proxy-secret-for-tests-0123456789abcdef';
   const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, MONGODB_URI: TEST.MONGODB_URI, CLIENT_URL: 'https://client.example.test', NODE_ENV: 'production', PORT: '5098', ADMIN_USERNAME: 'testadmin', ADMIN_PASSWORD: 'testadminpass', NODE_OPTIONS: '--trace-deprecation' };
+
+  // Without the proxy secret, production refuses to start
+  const nosecret = spawn(process.execPath, [path.join(SERVER, 'index.js')], { cwd: TEST.OUT, env: { ...env, PORT: '5097' } });
+  let nosecretLog = '';
+  nosecret.stdout.on('data', (d) => { nosecretLog += d; });
+  nosecret.stderr.on('data', (d) => { nosecretLog += d; });
+  const nosecretCode = await new Promise((r) => nosecret.on('close', r));
+  ok(nosecretCode !== 0 && /PROXY_SECRET must be set in production/.test(nosecretLog), 'production without PROXY_SECRET does not start', nosecretLog.slice(-200));
+  const short = spawn(process.execPath, [path.join(SERVER, 'index.js')], { cwd: TEST.OUT, env: { ...env, PORT: '5097', PROXY_SECRET: 'too-short' } });
+  ok((await new Promise((r) => short.on('close', r))) !== 0, '…nor with a short one');
+
+  env.PROXY_SECRET = PROXY;
+  // As the website's proxy sends it
+  const viaWebsite = { 'x-tpf-proxy-secret': PROXY, 'x-vercel-forwarded-for': '198.51.100.20' };
   const srv = spawn(process.execPath, [path.join(SERVER, 'index.js')], { cwd: TEST.OUT, env });
   let log = '';
   srv.stdout.on('data', (d) => { log += d; });
   srv.stderr.on('data', (d) => { log += d; });
   const up = await until(async () => (await fetch('http://localhost:5098/api/health')).status === 200, { every: 250 });
   ok(up, 'production server answers /api/health', log.slice(-300));
-  const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
+  ok((await (await fetch('http://localhost:5098/api/health')).json()).via === 'direct', 'health says a direct request is direct');
+  ok((await (await fetch('http://localhost:5098/api/health', { headers: viaWebsite })).json()).via === 'website', '…and a proxied one came through the website');
+  for (const [method, url] of [['GET', '/api/drives'], ['GET', '/api/catalog'], ['POST', '/api/auth/login'], ['GET', '/api/admin/staff'], ['GET', '/api/made-up']]) {
+    const direct = await fetch(`http://localhost:5098${url}`, { method, headers: { 'Content-Type': 'application/json', Origin: 'https://client.example.test', 'x-tpf-proxy-secret': 'a-guess' }, ...(method === 'POST' && { body: '{}' }) });
+    ok(direct.status === 403 && (await direct.json()).code === 'DIRECT_ACCESS', `direct ${method} ${url} (wrong secret) -> 403 DIRECT_ACCESS`);
+  }
+  ok((await fetch('http://localhost:5098/api/drives', { headers: viaWebsite })).status === 200, 'through the website: the drives list answers');
+  const pl = await fetch('http://localhost:5098/api/auth/login', { method: 'POST', headers: { ...viaWebsite, 'Content-Type': 'application/json', Origin: 'https://client.example.test' }, body: JSON.stringify({ identifier: 'testadmin', password: 'testadminpass' }) });
   const ck = pl.headers.getSetCookie().find((c) => c.startsWith('__Host-tpf_session=')) || '';
   ok(pl.status === 200 && /HttpOnly/i.test(ck) && /Secure/i.test(ck) && /SameSite=Lax/i.test(ck) && /Path=\//.test(ck) && !/Domain=/i.test(ck),
     'prod cookie is __Host- prefixed; HttpOnly; Secure; SameSite=Lax; Path=/; no Domain', ck.replace(/=[^;]+/, '=…'));
-  const bad = await fetch('http://localhost:5098/api/drives/not-an-id');
+  const bad = await fetch('http://localhost:5098/api/drives/not-an-id', { headers: viaWebsite });
   const badText = await bad.text();
   ok(bad.status === 400 && !/stack|\bat /.test(badText), 'prod error response has no stack trace');
-  const csrf = await fetch('http://localhost:5098/api/auth/logout', { method: 'POST', headers: { Origin: 'https://evil.example.test' } });
+  const csrf = await fetch('http://localhost:5098/api/auth/logout', { method: 'POST', headers: { ...viaWebsite, Origin: 'https://evil.example.test' } });
   ok(csrf.status === 403, `prod CSRF check rejects a foreign origin → ${csrf.status}`);
   await wait(500); // deliberate: lets late warnings reach the log before it is checked
   srv.kill();

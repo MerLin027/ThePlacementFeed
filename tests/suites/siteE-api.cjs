@@ -108,25 +108,42 @@ const fieldError = (r, field) => (r.json.errors || []).find((e) => e.field === f
     ok(events.filter((e) => e.action === 'auth.password.change' && e.outcome === 'success').length >= 2, 'password changes stored');
     ok(!/definitely-wrong|a-new-admin-pass|testadmin"/.test(JSON.stringify(events)), 'no passwords or usernames in stored events');
 
-    console.log('# Proxy secret: the forwarded visitor address is believed only with the secret');
-    let secret = null;
-    const run = (headers) => {
-      const req = { headers: { 'x-forwarded-for': '203.0.113.9', ...headers } };
+    console.log('# Proxy secret: the visitor address is believed only with the secret');
+    const fakeRes = () => ({ statusCode: 200, body: null, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } });
+    const run = (secret, headers, { required = false, path: reqPath = '/api/drives' } = {}) => {
+      const req = { path: reqPath, headers: { 'x-forwarded-for': '203.0.113.9', ...headers } };
+      const res = fakeRes();
       let called = false;
-      createTrustedProxy(secret)(req, {}, () => { called = true; });
-      return { xff: req.headers['x-forwarded-for'], secretLeft: 'x-tpf-proxy-secret' in req.headers, called };
+      createTrustedProxy(secret, { required })(req, res, () => { called = true; });
+      return { xff: req.headers['x-forwarded-for'], secretLeft: 'x-tpf-proxy-secret' in req.headers, called, via: req.viaWebsite, res };
     };
-    let out = run({ 'x-real-ip': '198.51.100.7', 'x-tpf-proxy-secret': 'anything' });
-    ok(out.xff === '203.0.113.9' && !out.secretLeft && out.called, 'no PROXY_SECRET set: unchanged, header dropped');
-    secret = 's3cret-value-for-tests';
-    out = run({ 'x-real-ip': '198.51.100.7' });
-    ok(out.xff === '203.0.113.9', 'secret missing: unchanged');
-    out = run({ 'x-real-ip': '198.51.100.7', 'x-tpf-proxy-secret': 's3cret-value-for-test' });
-    ok(out.xff === '203.0.113.9' && !out.secretLeft, 'wrong secret: unchanged, header dropped');
-    out = run({ 'x-real-ip': '198.51.100.7', 'x-tpf-proxy-secret': 's3cret-value-for-tests' });
-    ok(out.xff === '198.51.100.7' && !out.secretLeft, 'right secret: the visitor address is used');
-    out = run({ 'x-real-ip': 'not-an-ip, 1.2.3.4', 'x-tpf-proxy-secret': 's3cret-value-for-tests' });
-    ok(out.xff === '203.0.113.9', 'right secret but a malformed address: unchanged');
+    const SECRET = 's3cret-value-for-tests';
+    let out = run(null, { 'x-vercel-forwarded-for': '198.51.100.7', 'x-tpf-proxy-secret': 'anything' });
+    ok(out.xff === '203.0.113.9' && !out.secretLeft && out.called && out.via === false, 'no PROXY_SECRET set: unchanged, header dropped');
+    out = run(SECRET, { 'x-vercel-forwarded-for': '198.51.100.7' });
+    ok(out.xff === '203.0.113.9' && out.called && out.via === false, 'secret missing: unchanged');
+    out = run(SECRET, { 'x-vercel-forwarded-for': '198.51.100.7', 'x-tpf-proxy-secret': 's3cret-value-for-test' });
+    ok(out.xff === '203.0.113.9' && !out.secretLeft && out.via === false, 'wrong secret: unchanged, header dropped');
+    out = run(SECRET, { 'x-vercel-forwarded-for': '198.51.100.7', 'x-tpf-proxy-secret': SECRET });
+    ok(out.xff === '198.51.100.7' && !out.secretLeft && out.via === true, 'right secret: the visitor address (x-vercel-forwarded-for) is used');
+    out = run(SECRET, { 'x-vercel-forwarded-for': '2001:db8::7', 'x-tpf-proxy-secret': SECRET });
+    ok(out.xff === '2001:db8::7', 'an IPv6 visitor address works too');
+    out = run(SECRET, { 'x-real-ip': '198.51.100.8', 'x-tpf-proxy-secret': SECRET });
+    ok(out.xff === '203.0.113.9', 'x-real-ip is never used');
+    out = run(SECRET, { 'x-vercel-forwarded-for': 'not-an-ip, 1.2.3.4', 'x-tpf-proxy-secret': SECRET });
+    ok(out.xff === '203.0.113.9' && out.called, 'right secret but a malformed address: unchanged');
+
+    console.log('# Required (production): nothing gets in around the website');
+    out = run(SECRET, { 'x-vercel-forwarded-for': '198.51.100.7' }, { required: true });
+    ok(!out.called && out.res.statusCode === 403 && out.res.body.code === 'DIRECT_ACCESS', 'no secret: 403 DIRECT_ACCESS, nothing else runs', JSON.stringify(out.res.body));
+    out = run(SECRET, { 'x-tpf-proxy-secret': 'guess' }, { required: true });
+    ok(!out.called && out.res.statusCode === 403, 'a wrong secret: 403');
+    out = run(SECRET, { 'x-tpf-proxy-secret': SECRET }, { required: true });
+    ok(out.called && out.via === true, 'the right secret: through');
+    out = run(SECRET, {}, { required: true, path: '/api/health' });
+    ok(out.called && out.via === false, 'the health check stays reachable directly (it reveals nothing)');
+    out = run(SECRET, {}, { required: true, path: '/api/health/../drives' });
+    ok(!out.called, 'only that exact path');
   } finally {
     // Whatever happened above, leave the shared admin with its usual password
     const hash = await bcrypt.hash(PASSWORD, 12);
