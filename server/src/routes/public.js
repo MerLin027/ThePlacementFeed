@@ -7,7 +7,7 @@ const cron = require('../features/cron/routes');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
-  res.json({ success: true, message: 'Server is running' });
+  res.json({ success: true, message: 'Server is running', proxy: req.proxyCheck });
 });
 router.use('/drives', publicDrives);
 router.use('/catalog', publicCatalog);

@@ -27,12 +27,17 @@ const createTrustedProxy = (expected) => (req, res, next) => {
   // Never passed further down (logs, error reports)
   delete req.headers[SECRET_HEADER];
 
-  if (expected && typeof given === 'string' && sameSecret(given, expected)) {
-    const visitor = req.headers['x-real-ip'];
-    if (typeof visitor === 'string' && net.isIP(visitor.trim())) {
-      req.headers['x-forwarded-for'] = visitor.trim();
-    }
-  }
+  const verified = Boolean(expected && typeof given === 'string' && sameSecret(given, expected));
+  const visitor = typeof req.headers['x-real-ip'] === 'string' ? req.headers['x-real-ip'].trim() : '';
+  const visitorKnown = verified && net.isIP(visitor) !== 0;
+  if (visitorKnown) req.headers['x-forwarded-for'] = visitor;
+
+  // How the request arrived, as flags only (never the secret or an address): GET /api/health
+  // reports it, to check the Vercel set-up from outside
+  req.proxyCheck = {
+    secret: !expected ? 'not-configured' : verified ? 'verified' : typeof given === 'string' ? 'wrong' : 'missing',
+    visitorAddress: visitorKnown ? 'used' : visitor ? 'ignored' : 'absent',
+  };
   next();
 };
 
