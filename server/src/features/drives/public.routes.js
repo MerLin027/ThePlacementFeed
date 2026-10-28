@@ -9,8 +9,10 @@ const { toPublicDrive } = require('./dto');
 // Mounted at /api/drives — public drive data: the list, the change feed for notifications, one drive
 const router = express.Router();
 
-// One budget across the public drive endpoints
+// One budget for browsing (the list and single drives); the change feed, polled by every open tab,
+// has its own
 const publicRead = limit('publicRead');
+const driveChanges = limit('driveChanges');
 
 const badRequest = (res, message) => fail(res, 400, message, { code: 'INVALID_QUERY' });
 
@@ -32,7 +34,7 @@ router.get('/', publicRead, freshStatuses, async (req, res, next) => {
 
 // GET /changes?since=ISO — recent changes, newest first. serverTime is the client's next cursor, so
 // device clock skew can't drop changes.
-router.get('/changes', publicRead, freshStatuses, async (req, res, next) => {
+router.get('/changes', driveChanges, freshStatuses, async (req, res, next) => {
   try {
     const { since } = req.query;
     if (typeof since !== 'string' || !since) return badRequest(res, 'since timestamp is required');

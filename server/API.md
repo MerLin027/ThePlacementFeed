@@ -56,28 +56,32 @@ The code is the source of truth; this file is kept next to it.
 
 ## Endpoints
 
-Rate limits are per 15 minutes, per visitor address unless noted (src/middleware/rateLimit.js). "Audit"
-names the `audit_events` action written (ids and outcomes only; see below).
+Rate limits are per 15 minutes (src/middleware/rateLimit.js). A campus shares one public address, so:
+- signed-in requests count per account;
+- anonymous ones count per address, with campus-sized ceilings ("600 / 3000" below means 600 per account, 3000 per address);
+- password guessing is limited per (address, identifier), on failures only.
+
+"Audit" names the `audit_events` action written (ids and outcomes only; see below).
 
 ### Public
 
 | Method | Path | Notes | Limit | Audit |
 |---|---|---|---|---|
 | GET | /api/health | `{ success, message }` | — | — |
-| GET | /api/drives | List; filters `status`, `branch`, `ctcMin`, `ctcMax`, `search` (≤100), `sort`, `page` (≤10000), `limit` (≤50). Public fields only | publicRead 100 (shared) | — |
-| GET | /api/drives/changes?since= | Change feed, 7-day lookback, ≤50 items | publicRead | — |
+| GET | /api/drives | List; filters `status`, `branch`, `ctcMin`, `ctcMax`, `search` (≤100), `sort`, `page` (≤10000), `limit` (≤50). Public fields only | publicRead 600 / 3000 (shared with one drive) | — |
+| GET | /api/drives/changes?since= | Change feed (polled every 30 s by each open tab), 7-day lookback, ≤50 items | driveChanges 300 / 6000 | — |
 | GET | /api/drives/:id | One drive, public fields | publicRead | — |
-| GET | /api/catalog | University, branches, active institutes | catalogRead 300 | — |
+| GET | /api/catalog | University, branches, active institutes | catalogRead 300 / 3000 | — |
 | GET | /api/cron/trigger | Bearer `CRON_SECRET` (timing-safe); 503 when unset | cronTrigger 10 | — |
 
 ### Auth (any account)
 
 | Method | Path | Notes | Limit | Audit |
 |---|---|---|---|---|
-| POST | /api/auth/signup | Students only. Password policy; the same 409 for a taken email, roll number or staff email | studentSignup 30 | auth.signup |
-| POST | /api/auth/login | `{ identifier, password }`: an email (students, admins, the super admin), or the super admin's username. The same 401 for every failure, after the same bcrypt work | login 100; loginAccount 5 failures per (address, identifier) | auth.login (success/failure, known accounts only) |
+| POST | /api/auth/signup | Students only. Password policy; the same 409 for a taken email, roll number or staff email | studentSignup 300 per address | auth.signup |
+| POST | /api/auth/login | `{ identifier, password }`: an email (students, admins, the super admin), or the super admin's username. The same 401 for every failure, after the same bcrypt work | login 600 per address; loginAccount 5 failures per (address, identifier) | auth.login (success/failure, known accounts only) |
 | POST | /api/auth/logout | Ends this session | session 300 | auth.logout |
-| GET | /api/auth/session | `{ authenticated, account }`; a stale cookie gives `{ authenticated: false, expired: true }` and is cleared | session 300 | — |
+| GET | /api/auth/session | `{ authenticated, account }`; a stale cookie gives `{ authenticated: false, expired: true }` and is cleared | session 300 / 3000 | — |
 | POST | /api/auth/password | Signed in (a pending account too). `currentPassword` unless pending; the one-time password can't be kept; policy; ends other sessions and issues a new one | password: 5 wrong passwords per account | auth.password.change (success/failure) |
 
 ### Student (`/api/student`, a student session)
