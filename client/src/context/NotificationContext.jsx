@@ -51,7 +51,7 @@ const claimUnseen = (items) => {
 };
 
 export const NotificationProvider = ({ children }) => {
-  const { student } = useAuth();
+  const { student, loading: authLoading } = useAuth();
   const { byDrive, loadedFor } = useMyApplications();
   const [notifications, setNotifications] = useState(() => {
     const stored = readJSON(NOTIFS_KEY, []);
@@ -83,6 +83,20 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     removeKeys(...LEGACY_KEYS);
   }, []);
+
+  // A student's application updates (company, role, outcome) belong to that student only: once we
+  // know who is signed in, drop any that aren't theirs, so after a logout (or another account
+  // signing in on a shared computer) they are gone from the bell and from storage. Drive updates
+  // are public and stay. Waits for the session check, so a reload doesn't wipe the student's own.
+  const currentStudentId = student?.id ?? null;
+  useEffect(() => {
+    if (authLoading) return;
+    // oxlint-disable-next-line react/set-state-in-effect -- follows the signed-in account (external)
+    setNotifications((prev) => {
+      const kept = prev.filter((n) => n.kind !== 'application' || (currentStudentId && n.studentId === currentStudentId));
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [authLoading, currentStudentId]);
 
   // Persist, and follow other tabs
   useEffect(() => {
@@ -169,6 +183,8 @@ export const NotificationProvider = ({ children }) => {
           changes.push({
             id: `app-${driveId}-${a.status}-${a.updatedAt}`,
             kind: 'application',
+            // Whose it is: dropped when someone else is signed in (see above)
+            studentId: loadedFor,
             type: 'applicationStatus',
             placementId: driveId,
             company: a.company,
